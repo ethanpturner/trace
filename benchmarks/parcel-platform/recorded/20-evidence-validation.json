@@ -1,0 +1,1034 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 207,
+    "output_tokens": 23330,
+    "cache_read_tokens": 13952,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.23530275",
+    "duration_seconds": 321.6970265409909
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-075",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 directly documents that the Notification Service sends emails and SMS through an external messaging provider and logs the full rendered message body to a shared application log, but it says nothing about any external model or AI provider or about req-AI-003. There is no evidence about thr-005\u2019s definition or about the absence of external model providers, so the conclusion that req-AI-003 is not applicable to thr-005 is not established by the available documentation.",
+        "missing_evidence": [
+          "Architecture or design documentation stating whether any external model or AI providers are used anywhere in the system, including in the Notification Service.",
+          "Threat-model documentation for thr-005 describing its attack path and data flows."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-076",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 shows that notification text is rendered by templates and logged, but it does not mention any model, model output, or req-AI-004, nor does it define thr-005. The statement that thr-005 does not involve model output and that req-AI-004 is therefore not applicable relies on assumptions not documented in the evidence, so the mapping is not established.",
+        "missing_evidence": [
+          "Documentation describing whether any model or AI components produce output that is rendered in user interfaces in this system.",
+          "Threat-model documentation for thr-005 clarifying whether model output plays any role in the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-077",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 documents that the API Gateway is the single public entry point that authenticates every request against the Identity Service. evd-003 documents the Notification Service in the core zone and that it logs to a shared application log, and also that interactive sign-in is delegated to the company\u2019s SSO provider via the Identity Service. This supports the architectural premise that the Notification Service and its logs are internal and sit behind delegated end-user authentication. However, none of the evidence describes thr-005\u2019s specific attack path or the detailed scope of req-AUTH-001, so the stronger claim that req-AUTH-001 does not bear on thr-005 is only partially established.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-005, including which components and access paths participate in the threat.",
+          "Requirements documentation for req-AUTH-001 describing its intended scope and what counts as in-scope threats."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-078",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 documents the existence and capabilities of the Admin Console and the Notification Service, but it does not describe how access to the Shared Application Log is obtained, whether any privileged administrative interface can read logs, or how multi-factor authentication responsibilities are assigned. thr-005 is not described in the evidence. Therefore the claim that the threat does not involve a privileged administrative interface and that req-AUTH-002 is not applicable to thr-005 is not established.",
+        "missing_evidence": [
+          "Documentation of how log-reading access to the Shared Application Log is granted (interfaces, roles, and authentication mechanisms).",
+          "Requirements documentation for req-AUTH-002 and which administrative interfaces it is intended to cover.",
+          "Threat-model documentation for thr-005 clarifying whether administrative interfaces or accounts are involved."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-079",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 confirms that the Notification Service logs full rendered notification bodies to a shared application log but says nothing about tenant scoping, tenant-aware authorization, or the definition of thr-005. There is no documentation showing that the threat path is unrelated to tenant-scoped customer access paths, so the conclusion that req-AUTHZ-001 is not applicable to thr-005 is not established by the available evidence.",
+        "missing_evidence": [
+          "Architecture or design documentation describing the system\u2019s tenant model and any tenant-aware authorization on customer-facing requests.",
+          "Threat-model documentation for thr-005 describing whether cross-tenant access or tenant scoping is relevant."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-080",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 directly documents integrations with an external messaging provider and an external payment provider, but it does not describe thr-005 or how those integrations relate to the threat. The assertion that thr-005 concerns only exposure from the Shared Application Log and not misuse of delegated access to external providers is not documented, so the non-applicability of req-AUTHZ-002 to thr-005 is unsupported by the cited evidence.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-005 explaining whether compromised or over-privileged integrations to external providers are part of the threat scenario.",
+          "Requirements documentation for req-AUTHZ-002 clarifying which kinds of integration privileges it covers."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-081",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-005 documents that a Deploy Runner exists to run the deployment pipeline, and evd-003 documents that the Notification Service logs full rendered notification bodies to the shared application log. This supports the premise that there is a distinct deployment pipeline and a runtime logging path involving the Notification Service. However, the evidence does not describe thr-005\u2019s attack path or explicitly rule out compromise of the deployment pipeline as a contributing factor, nor does it define the scope of req-CICD-001. The conclusion that deployment-path trust does not bear on thr-005 is therefore only partially established.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-005 clarifying whether supply-chain or deployment compromise is in or out of scope.",
+          "Requirements documentation for req-CICD-001 explaining which threats it is intended to address."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-082",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 shows that the Notification Service logs full rendered message bodies, including personal data, to a shared application log, but it does not describe how that log store is protected in transit or at rest, nor does it define thr-005 or req-DATA-001. The claim that any encryption in transit or at rest has already been bypassed in the threat scenario, and therefore that req-DATA-001 is not applicable, is not documented in the available evidence.",
+        "missing_evidence": [
+          "Documentation of the Shared Application Log\u2019s storage and transport protections (encryption at rest and in transit).",
+          "Threat-model documentation for thr-005 describing the attacker\u2019s level of access and how encryption controls are assumed to behave.",
+          "Requirements documentation for req-DATA-001 defining its scope relative to attackers with different levels of access."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-083",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 directly states that for debugging, the Notification Service logs the full rendered message body, including the recipient\u2019s name, delivery address, and delivery window, to a shared application log. This establishes that sensitive working copies of customer data are retained in logs as a by-product of processing, which makes a requirement about defining and enforcing retention for such data clearly relevant in general. However, the evidence does not describe thr-005\u2019s specifics or any retention period or enforcement for the Shared Application Log, so while applicability of req-DATA-002 is supported, the status of the control as \"unverified\" and its relationship to thr-005 are only partially established.",
+        "missing_evidence": [
+          "Documentation of retention policies and enforcement mechanisms for the Shared Application Log.",
+          "Threat-model documentation for thr-005 confirming that accumulation of log data over time is part of the threat scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-084",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 documents that the Notification Service logs full rendered message bodies to a shared application log, and evd-004 documents that Object Storage holds label PDFs and proof-of-delivery photos. Neither passage defines req-DATA-003 or thr-005, nor do they state that the threat scenario cannot involve stored artifacts such as labels or proofs-of-delivery. The conclusion that req-DATA-003 is not applicable to thr-005 is therefore not established by the available evidence.",
+        "missing_evidence": [
+          "Requirements documentation for req-DATA-003 describing precisely which stored artifacts and access paths it is intended to cover.",
+          "Threat-model documentation for thr-005 clarifying which data stores and artifacts are in scope for the threat."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-085",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 and evd-004 describe several data stores and that notification messages containing personal data are logged, and that copies of the Orders Database are sent to the Data Warehouse. They do not define thr-005 or req-DATA-004, nor do they state that the ability to delete customer data end-to-end is irrelevant to threats involving log compromise. As a result, the claim that req-DATA-004 is not applicable to thr-005 is not supported by the provided evidence.",
+        "missing_evidence": [
+          "Requirements documentation for req-DATA-004 explaining its relationship to logs and derived data copies.",
+          "Threat-model documentation for thr-005 clarifying whether data deletion capabilities would mitigate or influence the threat."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-086",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 explicitly states that the Notification Service logs the full rendered message body, including the recipient\u2019s name, delivery address, and delivery window, to a shared application log. This is exactly the kind of logging of restricted customer data that a requirement like req-LOG-001 (keeping sensitive data out of application logs and documenting log destinations) is intended to address. Although thr-005 is not described in the evidence, the applicability of a log-minimisation requirement to a threat involving exposure of sensitive data from logs follows directly from the documented logging behaviour. Marking the control as applicable and currently unverified is consistent with the evidence, which describes logging but does not describe any mitigation or sanitisation.",
+        "missing_evidence": [
+          "Documentation of any controls that limit or redact sensitive fields in the Shared Application Log.",
+          "Documentation listing log destinations, access controls, and retention for the Shared Application Log."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-087",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 describes both the Admin Console and the logging behaviour of the Notification Service, but it does not describe any logging of security-relevant administrative actions or the detailed content of req-LOG-002. thr-005 is not defined in the evidence. Consequently, the assertion that req-LOG-002 does not bear on thr-005 cannot be validated from the available documentation.",
+        "missing_evidence": [
+          "Requirements documentation for req-LOG-002 specifying which administrative actions must be logged.",
+          "Threat-model documentation for thr-005 clarifying whether administrative activity (such as granting log access) is relevant to the threat.",
+          "Logging design documentation showing what administrative actions, if any, are recorded."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-088",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 and evd-004 distinguish edge and data/core zones and state that certain data stores (such as the Orders Database and Tracking Store) are reachable only from the core zone. They mention a shared application log only in passing and provide no details of its network exposure. thr-005 is not described. The claim that network reachability from untrusted networks is not a differentiating factor and that req-NET-001 is not applicable to thr-005 is therefore not established by the documented evidence.",
+        "missing_evidence": [
+          "Architecture or network topology documentation showing where the Shared Application Log resides and which networks and components can reach it.",
+          "Threat-model documentation for thr-005 explaining how an attacker gains access to the log and whether network segmentation is assumed.",
+          "Requirements documentation for req-NET-001 specifying its intended scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-089",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "None of the provided evidence passages discuss how long-lived signing keys or provider credentials are stored or used, nor do they define thr-005 or req-SECRET-001. The statement that thr-005 does not involve such credentials and that req-SECRET-001 is therefore not applicable is not grounded in the supplied documentation.",
+        "missing_evidence": [
+          "Documentation of where and how signing keys and provider credentials are stored and accessed in the platform.",
+          "Threat-model documentation for thr-005 clarifying whether compromise or misuse of such credentials is in scope.",
+          "Requirements documentation for req-SECRET-001 defining which credentials and use cases it covers."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-090",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The supplied evidence does not mention credentials used to access customer resources on external platforms, short-lived credential lifetimes, or req-SECRET-002, nor does it define thr-005. The conclusion that req-SECRET-002 is not applicable to thr-005 is therefore not supported by the available documentation.",
+        "missing_evidence": [
+          "Documentation of any credentials used to access customer resources on external platforms and whether they are short-lived.",
+          "Threat-model documentation for thr-005 clarifying whether such external access paths are relevant.",
+          "Requirements documentation for req-SECRET-002 specifying its scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-091",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 directly documents that the platform uses an external messaging provider and an external payment provider, and that notifications are also logged to a shared application log. However, there is no description of thr-005 or of the precise scope of req-TPI-001. The assertion that req-TPI-001 does not address a log-compromise threat cannot be validated from these passages alone.",
+        "missing_evidence": [
+          "Requirements documentation for req-TPI-001 describing how it relates to internal copies of data derived from processing by external processors.",
+          "Threat-model documentation for thr-005 stating whether external processor data handling is considered part of the threat.",
+          "Documentation of data flows to and from external processors and any controls around those flows."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-092",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "None of the evidence passages discuss externally triggered or metered work, or requirements to bound such work, and thr-005 is not defined in the documentation. As a result, the conclusion that req-TPI-002 is not applicable to thr-005 is unsupported.",
+        "missing_evidence": [
+          "Documentation of any externally triggered or metered work in the system and how it is bounded.",
+          "Threat-model documentation for thr-005 clarifying whether unbounded external work contributes to the threat.",
+          "Requirements documentation for req-TPI-002 describing its intended scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-093",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 describes several core services and their interactions but does not mention inbound webhooks or event receivers, nor does it define thr-005 or req-WEBHOOK-001. From this documentation alone, we cannot conclude that inbound events or webhooks are absent from the threat scenario or that req-WEBHOOK-001 is not applicable.",
+        "missing_evidence": [
+          "Architecture documentation describing any inbound webhook or event endpoints and how their authenticity is verified.",
+          "Threat-model documentation for thr-005 indicating whether such inbound events exist or are relevant.",
+          "Requirements documentation for req-WEBHOOK-001 specifying its applicability conditions."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-094",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "There is no evidence in the supplied passages about replay of inbound events, idempotency, or req-WEBHOOK-002, and thr-005 is not described. The statement that req-WEBHOOK-002 does not bear on thr-005 is therefore not substantiated by the documentation.",
+        "missing_evidence": [
+          "Documentation of any inbound event-handling or webhook mechanisms, including replay protections.",
+          "Threat-model documentation for thr-005 showing whether replayed events could contribute to the threat.",
+          "Requirements documentation for req-WEBHOOK-002 clarifying its scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-095",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 states that the Label Service renders shipping labels as PDFs and stores them in the Object Storage bucket keyed by shipment. evd-004 states that Object Storage is a managed object store holding label PDFs and proof-of-delivery photos. This directly supports the premise that Object Storage holds customer-related artifacts that are likely sensitive. However, the evidence does not explicitly describe the data fields contained in those artifacts, does not define thr-006 as compromise of this store, and does not describe req-DATA-001. Thus, while the existence of a sensitive object store makes it plausible and reasonable that an encryption-at-rest and in-transit requirement applies, the full assertion that req-DATA-001 is applicable to thr-006 and unverified is only partially established by the documentation.",
+        "missing_evidence": [
+          "Documentation of the contents of label PDFs and proof-of-delivery photos, including what customer and shipment details they contain.",
+          "Threat-model documentation for thr-006 confirming that compromise of Object Storage is the focus of the threat.",
+          "Requirements documentation for req-DATA-001 clarifying its applicability to managed object stores.",
+          "Evidence of the current encryption-in-transit and at-rest configuration for Object Storage."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-096",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 specifies that the Label Service stores shipping label PDFs in an Object Storage bucket keyed by shipment, and evd-004 states that Object Storage holds label PDFs and proof-of-delivery photos. This supports the claim that artifacts for many shipments (and, by inference, many customers) share a single storage system addressed by predictable object keys. This makes a tenant-separation requirement such as req-DATA-003 plausibly applicable. However, the documentation does not explicitly discuss multi-tenancy for Object Storage, does not define thr-006 as bulk access to stored objects, and does not document the detailed scope of req-DATA-003, so the mapping is only partially established.",
+        "missing_evidence": [
+          "Documentation of how tenants are represented in Object Storage keys or access controls and whether artifacts from multiple tenants share buckets.",
+          "Threat-model documentation for thr-006 confirming that bulk access to these stored objects is the threat scenario.",
+          "Requirements documentation for req-DATA-003 specifying expectations for tenant separation in object storage."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-097",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 identifies Object Storage as a managed object store in the data zone holding label PDFs and proof-of-delivery photos, and notes that other data stores in the data zone (such as the Orders Database and Tracking Store) are reachable only from the core zone. This supports the view that Object Storage is an internal data-store component rather than a public interface, which is the type of component req-NET-001 typically addresses. However, the evidence does not explicitly describe Object Storage\u2019s network reachability, does not define thr-006, and does not specify the scope of req-NET-001, so the claim that req-NET-001 is applicable to thr-006 is only partially supported.",
+        "missing_evidence": [
+          "Network architecture documentation showing how Object Storage is accessed (from which zones, networks, and components).",
+          "Threat-model documentation for thr-006 specifying how an attacker would gain access to Object Storage.",
+          "Requirements documentation for req-NET-001 detailing which internal components must be isolated from untrusted networks."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-098",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-005 documents Carrier Link as a connector to carrier partners\u2019 APIs and evd-003 documents the Tracking Service, but neither passage defines thr-007, req-ADMIN-001, or whether any administrative or operator interface participates in the described attack path. The assertion that no administrative or operator interface participates and that req-ADMIN-001 is not applicable to thr-007 is not demonstrated by the available evidence.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-007 describing all interfaces and actors involved in the threat scenario.",
+          "Documentation of administrative or operator interfaces that can influence carrier integrations or tracking state.",
+          "Requirements documentation for req-ADMIN-001 specifying its intended coverage."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-099",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 and evd-005 describe Carrier Link, the Tracking Service, and their use of carrier partners\u2019 HTTPS APIs, but there is no mention of models or AI processing, nor any explicit statement that such processing is absent. thr-007 and req-AI-001 are not defined in the evidence. Therefore, the claim that req-AI-001 is not applicable to thr-007 because no model or AI processing of untrusted content occurs is not established by the documentation.",
+        "missing_evidence": [
+          "Documentation stating whether any model or AI components are involved in processing carrier data or parcel tracking information.",
+          "Threat-model documentation for thr-007 clarifying whether model processing plays any role.",
+          "Requirements documentation for req-AI-001 describing which kinds of input and processing it covers."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-100",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence describes parcel tracking state being maintained by the Tracking Service and carrier status updates flowing via Carrier Link over HTTPS APIs, but does not mention any model output or req-AI-002, nor does it define thr-007. From this documentation alone, we cannot conclude that model output is not being published externally or that req-AI-002 is not applicable to thr-007.",
+        "missing_evidence": [
+          "Documentation indicating whether any model outputs are used in parcel tracking or exposed to users.",
+          "Threat-model documentation for thr-007 detailing the sources of parcel status data and whether any model components are involved.",
+          "Requirements documentation for req-AI-002 specifying what constitutes \"model output\" and \"external publication\"."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-101",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-005 describes Carrier Link exchanging manifests and status updates over carriers\u2019 HTTPS APIs but does not discuss any external model providers. While it suggests a traditional API integration, it does not explicitly rule out model providers, and it does not define thr-007 or req-AI-003. The conclusion that req-AI-003 is not applicable to thr-007 because no customer content is sent to external model providers is therefore not established.",
+        "missing_evidence": [
+          "Documentation specifying whether Carrier Link or related components send any data to external AI or model providers.",
+          "Threat-model documentation for thr-007 clarifying which external services are involved.",
+          "Requirements documentation for req-AI-003 describing its scope with respect to non-model external APIs."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-102",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 describes that parcel tracking views are served from the Tracking Service\u2019s stored state but does not mention any model output or define req-AI-004 or thr-007. It therefore does not establish that no model-generated content is rendered in user interfaces, nor that req-AI-004 is not applicable to thr-007.",
+        "missing_evidence": [
+          "Documentation confirming whether any model outputs are rendered in user-facing tracking interfaces.",
+          "Threat-model documentation for thr-007 clarifying the data sources used for displayed tracking information.",
+          "Requirements documentation for req-AI-004 specifying its applicability conditions."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-103",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 documents that interactive sign-in for customers, drivers, and staff is delegated to an SSO provider via the Identity Service, and evd-005 documents the Carrier Link integration with carrier APIs. However, the evidence does not define thr-007 or req-AUTH-001, nor does it state that delegated user authentication is irrelevant to the threat scenario. As such, the assertion that req-AUTH-001 is not applicable to thr-007 cannot be validated from these passages alone.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-007 describing all authentication and authorization flows involved.",
+          "Requirements documentation for req-AUTH-001 clarifying its scope and target threats.",
+          "Any documentation linking or decoupling carrier integration threats from end-user authentication concerns."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-104",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-005 shows that Carrier Link is a machine-to-machine integration with carrier partners\u2019 APIs but says nothing about multi-factor authentication, privileged human sign-ins, or the detailed scope of req-AUTH-002. thr-007 is not defined in the evidence. Therefore, the conclusion that req-AUTH-002 is not applicable to thr-007 is unsupported.",
+        "missing_evidence": [
+          "Documentation of any privileged access used to configure or operate Carrier Link and related integrations, including MFA requirements.",
+          "Threat-model documentation for thr-007 clarifying whether compromise of privileged accounts contributes to the threat.",
+          "Requirements documentation for req-AUTH-002 describing which privileged access paths it covers."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-105",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 and evd-005 describe a multi-tenant platform in broad terms and the use of Carrier Link to ingest status updates, but they do not detail tenant-aware authorization mechanisms for tracking data, nor do they define thr-007 or req-AUTHZ-001. The assertion that thr-007 does not turn on per-request tenant scoping and that req-AUTHZ-001 is not applicable therefore is not grounded in explicit evidence.",
+        "missing_evidence": [
+          "Documentation of tenant-aware authorization controls for tracking and related APIs.",
+          "Threat-model documentation for thr-007 clarifying whether cross-tenant data access is a concern.",
+          "Requirements documentation for req-AUTHZ-001 defining its applicability to machine-to-machine integrations."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-106",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-005 documents that Carrier Link connects to carrier partners\u2019 APIs for manifests and status updates but does not describe what delegated privileges Parcelworks holds on those external platforms, nor does it define thr-007 or req-AUTHZ-002. The claim that the threat scenario assumes the carrier side is compromised and that Parcelworks\u2019 own integration privileges therefore do not matter is not documented, so the non-applicability of req-AUTHZ-002 to thr-007 is unsupported.",
+        "missing_evidence": [
+          "Documentation of the scopes and permissions Carrier Link holds on carrier partner APIs.",
+          "Threat-model documentation for thr-007 clarifying assumptions about which party (Parcelworks vs carrier) is compromised.",
+          "Requirements documentation for req-AUTHZ-002 explaining how it applies to third-party API integrations."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-107",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-005 confirms the existence of a Deploy Runner that runs the deployment pipeline but does not define thr-007, describe its attack path, or specify the scope of req-CICD-001. It is not documented that supply-chain or deployment-path compromise cannot contribute to falsified status updates, so the statement that req-CICD-001 is not applicable to thr-007 is unsupported.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-007 stating whether compromised builds or dependencies are considered in scope.",
+          "Pipeline and dependency documentation describing trust boundaries and controls relevant to Carrier Link and tracking.",
+          "Requirements documentation for req-CICD-001 detailing the threats it is meant to mitigate."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-108",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 and evd-005 show that tracking data is maintained based on scan events and carrier status updates, but they do not define thr-007 as purely an integrity threat, nor do they define req-DATA-001 or its relationship to confidentiality vs integrity. The conclusion that req-DATA-001, an encryption requirement, does not bear on thr-007 because the threat is about incorrect statuses is not established by the evidence provided.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-007 explaining the confidentiality and integrity aspects of the threat.",
+          "Requirements documentation for req-DATA-001 clarifying whether it is limited to confidentiality concerns.",
+          "Any analysis showing that encryption at rest and in transit could not influence or detect falsified status updates."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-109",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence describes how parcel statuses are recorded and displayed but does not define thr-007, req-DATA-002, or any retention of working copies specifically for tracking data. It is not documented that retention of sensitive working data has no bearing on threats involving incorrect statuses, so the non-applicability of req-DATA-002 to thr-007 is unsupported.",
+        "missing_evidence": [
+          "Documentation of any working copies, caches, or logs used for tracking data and their retention policies.",
+          "Threat-model documentation for thr-007 stating whether persistence and retention of incorrect data affects impact or detection.",
+          "Requirements documentation for req-DATA-002 specifying its relevance to integrity-only threats."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-110",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-004 documents that Object Storage holds label PDFs and proof-of-delivery photos, and evd-003 and evd-005 describe tracking components and carrier integrations. None of the evidence defines thr-007 or req-DATA-003, nor do they show that unauthorized cross-tenant access to stored artifacts is irrelevant to the described threat. The assertion that req-DATA-003 does not bear on thr-007 is therefore not supported.",
+        "missing_evidence": [
+          "Threat-model documentation for thr-007 clearly delineating which data stores and artifacts are in scope.",
+          "Requirements documentation for req-DATA-003 detailing how it applies to objects such as labels and proofs-of-delivery.",
+          "Evidence of whether manipulation or exposure of stored artifacts could be coupled with falsified status updates."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-111",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 and evd-005 describe that customers and staff see parcel statuses derived from carrier updates and scan events, but they do not define thr-007, req-DATA-004, or the system\u2019s deletion capabilities. The claim that data deletion requirements are irrelevant to a threat involving incorrect tracking states cannot be verified from the available documentation.",
+        "missing_evidence": [
+          "Documentation of how customer data deletion requests affect tracking histories and related records.",
+          "Threat-model documentation for thr-007 considering whether deletion or correction workflows mitigate impact.",
+          "Requirements documentation for req-DATA-004 clarifying its relationship to such integrity issues."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-112",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 notes the existence of logs in the platform and describes logging of notification contents, but it does not define thr-007 or req-LOG-001, nor does it state that sensitive data cannot leak via logs in the context of tracking and carrier updates. The assertion that req-LOG-001 does not address thr-007 is therefore not supported by the evidence.",
+        "missing_evidence": [
+          "Logging design documentation for Carrier Link and the Tracking Service, including whether sensitive tracking-related data is logged.",
+          "Threat-model documentation for thr-007 stating whether log-based leakage or detection is in scope.",
+          "Requirements documentation for req-LOG-001 clarifying whether its scope includes integrity-related threats."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-113",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence describes that Carrier Link ingests status updates into the Tracking Service, and that there is an Admin Console used for various staff operations, but it provides no detail on logging of security-relevant administrative actions or the scope of req-LOG-002. thr-007 is not defined. Thus, the conclusion that auditing administrative actions does not bear on thr-007 cannot be validated from the supplied documentation.",
+        "missing_evidence": [
+          "Documentation of administrative actions that can affect carrier integrations or tracking data, and whether these actions are logged.",
+          "Threat-model documentation for thr-007 indicating whether misuse of administrative interfaces could contribute to the threat.",
+          "Requirements documentation for req-LOG-002 describing expected coverage for administrative actions in this context."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-114",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-005 documents that Carrier Link connects outbound over HTTPS to carrier partners\u2019 APIs, and evd-006 lists Carrier Partner as an actor, but neither passage describes any internal store, queue, or cache being reachable from untrusted networks, nor do they define thr-007 or req-NET-001. While the evidence suggests an outbound integration, it does not establish that network reachability of internal components is irrelevant to the threat, so the non-applicability of req-NET-001 to thr-007 is unsupported.",
+        "missing_evidence": [
+          "Network architecture documentation showing which internal queues, caches, or stores participate in the carrier status ingestion path and how they are exposed.",
+          "Threat-model documentation for thr-007 detailing whether direct network access from untrusted networks is a concern.",
+          "Requirements documentation for req-NET-001 clarifying how it applies to components used in the Carrier Link and Tracking Service path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      }
+    ]
+  }
+}

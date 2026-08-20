@@ -1,0 +1,207 @@
+{
+  "components": [
+    {
+      "name": "Helpdesk Translate connector",
+      "component_type": "connector service"
+    },
+    {
+      "name": "Helpdesk",
+      "component_type": "ticketing platform"
+    },
+    {
+      "name": "External translation provider",
+      "component_type": "translation SaaS"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Compromise of over-privileged helpdesk API token",
+      "affected_components": [
+        "Helpdesk Translate connector",
+        "Helpdesk"
+      ],
+      "rationale": "The connector uses a workspace API token that \"grants full workspace access\" even though the integration \"only reads tickets and writes notes\". If this token is leaked or abused, an attacker gains broad access to the entire workspace, far beyond what the integration functionally requires.\n\nEvidence: \"The connector authenticates to the helpdesk with a workspace API token. The token grants full workspace access; it was scoped that way during setup because it was convenient, and the integration only reads tickets and writes notes.\""
+    },
+    {
+      "title": "Uncontrolled retention and secondary use of ticket data by translation provider",
+      "affected_components": [
+        "Helpdesk Translate connector",
+        "External translation provider"
+      ],
+      "rationale": "Full ticket bodies and attachment text are sent to an external provider, but there is \"no agreement\" on how long the provider retains that data or how it may be used, and the provider's standard terms \"have not been reviewed\". This creates risk of excessive retention, reuse for purposes like model training, and regulatory non-compliance.\n\nEvidence: \"The connector sends the full ticket body — including any customer-written text and the extracted text of customer attachments — to the translation provider over HTTPS\" and \"No agreement covering the translation provider's retention of submitted text, or its use of submitted text for any purpose beyond returning the translation, has been established. The provider's standard terms apply; they have not been reviewed for this integration.\""
+    },
+    {
+      "title": "Overexposure of sensitive ticket and attachment content to external provider",
+      "affected_components": [
+        "Helpdesk Translate connector",
+        "External translation provider"
+      ],
+      "rationale": "The design always sends the full ticket body and extracted attachment text to the translation provider. Tickets and attachments may contain sensitive or regulated information, and the documentation does not describe any minimization or redaction. This increases impact if the provider misuses or breaches the data.\n\nEvidence: \"The connector sends the full ticket body — including any customer-written text and the extracted text of customer attachments — to the translation provider over HTTPS\"."
+    },
+    {
+      "title": "Unvalidated translation text written back into helpdesk tickets",
+      "affected_components": [
+        "Helpdesk Translate connector",
+        "Helpdesk"
+      ],
+      "rationale": "The connector writes the provider's response back into the ticket \"as an internal note\" with no description of validation or encoding. If the provider ever returns unexpected markup or control sequences, this could affect how the helpdesk UI renders the note or interacts with other systems.\n\nEvidence: \"…and writes the returned translation back onto the ticket as an internal note.\" (No further detail is given on validation or encoding.)"
+    }
+  ],
+  "findings": [
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Helpdesk Translate connector",
+      "title": "Helpdesk API token is significantly over-privileged relative to integration needs",
+      "rationale": "The connector is configured with a workspace API token that has full workspace access, even though the integration only needs to read tickets and write notes. This violates the principle of least privilege for integration credentials.",
+      "evidence_quote": "\"The connector authenticates to the helpdesk with a workspace API token. The token grants full workspace access; it was scoped that way during setup because it was convenient, and the integration only reads tickets and writes notes.\""
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "External translation provider",
+      "title": "External translation provider data handling (retention and use) is undocumented and ungoverned for this integration",
+      "rationale": "There is explicitly no agreement specifying how the translation provider may retain or use submitted text beyond returning the translation, and the standard terms have not been reviewed. This means external processor data handling is not documented or controlled for this integration.",
+      "evidence_quote": "\"No agreement covering the translation provider's retention of submitted text, or its use of submitted text for any purpose beyond returning the translation, has been established. The provider's standard terms apply; they have not been reviewed for this integration.\""
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "External translation provider",
+      "title": "Retention and use of sensitive working data at the translation provider are undefined and cannot be aligned with customer expectations",
+      "rationale": "Because there is no agreement on how long the provider retains submitted text or how it may be used, the service cannot ensure that retention and use match what customers are told (if anything). The lack of reviewed terms prevents confirming that actual behavior aligns with stated data handling practices.",
+      "evidence_quote": "\"No agreement covering the translation provider's retention of submitted text, or its use of submitted text for any purpose beyond returning the translation, has been established. The provider's standard terms apply; they have not been reviewed for this integration.\""
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Who has privileged administrative access to configure the connector and its credentials, how that access is restricted, and whether its scope is documented."
+    },
+    {
+      "requirement_id": "req-AI-001",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether customer ticket content and attachment text are treated as untrusted model input (e.g., checked or constrained before being sent or used in any automated flows)."
+    },
+    {
+      "requirement_id": "req-AI-002",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether translations returned by the external provider are validated (e.g., for expected format/type) before being written back to tickets as internal notes."
+    },
+    {
+      "requirement_id": "req-AI-003",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether the connector minimizes data sent to the translation provider (for example, limiting to the specific text the agent wants translated or redacting sensitive fields and attachment content)."
+    },
+    {
+      "requirement_id": "req-AI-004",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether the translation output is safely encoded or escaped for the helpdesk ticket context to prevent any formatting or injection issues when rendered in the UI."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether multi-factor authentication is enforced for accounts or roles that can create, view, or rotate the workspace API token used by the connector."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Helpdesk",
+      "what_cannot_be_determined": "How tenant (workspace) boundaries are enforced and documented for the API token used by the connector, and whether any cross-tenant access is possible via this integration."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "How the connector is built and deployed, what its deployment path is, and how dependencies and artifacts in that path are trusted and verified."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether any data the connector stores (such as cached ticket content, logs, or configuration) is encrypted at rest, and whether all network paths other than the documented HTTPS call are encrypted in transit."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether the connector itself stores copies of ticket or translation data, what its retention periods are, and how those are documented to and aligned with what customers are told."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether any stored artifacts or logs maintained by the connector are separated by tenant/workspace."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether and how customer ticket data held by the connector (if any) and data at the translation provider can be deleted in response to customer deletion requests."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "What the connector logs about requests and responses, and whether sensitive ticket or attachment content is excluded or redacted from those logs."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether security-relevant administrative actions (such as changing the workspace API token or connector configuration) are recorded in logs or audit trails."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "How network access to the connector is restricted so that only expected workloads (e.g., the helpdesk and the translation provider endpoints) can reach it."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Where and how the workspace API token is stored (for example, in a managed secret store vs. configuration files or environment variables) and how access to it is controlled."
+    },
+    {
+      "requirement_id": "req-SECRET-002",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether the workspace API token is short-lived or rotated regularly, and whether there is any mechanism to limit its lifetime or automatically rotate it."
+    },
+    {
+      "requirement_id": "req-TPI-002",
+      "affected_component": "Helpdesk Translate connector",
+      "what_cannot_be_determined": "Whether any asynchronous work is triggered by external events from the translation provider (such as callbacks or webhooks), and if so, how that work is bounded to prevent untrusted external triggers from causing unbounded processing."
+    }
+  ],
+  "questions": [
+    {
+      "question": "Can the workspace API token used by the connector be scoped down to only the specific permissions required (reading tickets and writing internal notes), and if so, why is full workspace access still in use?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "What reviewed and approved terms, data processing agreements, or addenda govern the translation provider’s retention and use of submitted text for this integration (including whether data can be used for training or analytics)?",
+      "requirement_id": "req-TPI-001"
+    },
+    {
+      "question": "Does the connector implement any data minimization or redaction before sending content to the translation provider, such as limiting translation to selected text, excluding certain ticket fields, or omitting/transforming sensitive attachment content?",
+      "requirement_id": "req-AI-003"
+    },
+    {
+      "question": "Where is the workspace API token stored (e.g., cloud secret manager, encrypted configuration), who can access it, and what is the process and frequency for its rotation?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "Does the connector or its underlying platform store any copies of ticket content, attachment text, or translations (beyond the helpdesk itself), and if so, are these stores encrypted at rest and subject to defined retention periods?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What logging does the connector perform, and how do you ensure that sensitive ticket or attachment content is excluded or redacted from logs while still retaining useful operational and security telemetry?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "How are translations from the external provider validated and encoded before being written back to the ticket as an internal note (for example, ensuring they are plain text and properly escaped for the helpdesk UI)?",
+      "requirement_id": "req-AI-002"
+    },
+    {
+      "question": "How do you fulfill customer data deletion requests for content that has been sent to the translation provider, given the current lack of an explicit agreement on retention and deletion?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "Who can administratively configure the Helpdesk Translate connector and its credentials, and what controls (such as role-based access and MFA) are in place to restrict and audit that privileged access?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "Does the translation provider ever initiate callbacks or webhooks to the connector (for example, for asynchronous translations), and if so, how are those inbound events authenticated and bounded to prevent abuse?",
+      "requirement_id": "req-TPI-002"
+    }
+  ]
+}

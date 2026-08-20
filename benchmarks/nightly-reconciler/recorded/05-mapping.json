@@ -1,0 +1,115 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11084,
+    "output_tokens": 9898,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.115347",
+    "duration_seconds": 144.45075708301738
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-org-secrets-vault",
+        "name": "Organization secrets vault",
+        "description": "Central secrets-vault control asserted in the org_controls_catalog for this system, indicating that a managed secrets service is available to hold application credentials rather than storing them directly in code or configuration.",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [],
+        "protected_asset_ids": [],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007"
+        ],
+        "owner": null,
+        "limitations": [
+          "The documentation does not state whether the payment processor reporting API service credential used by the Reconciler Job is actually stored in this secrets vault or how the vault integrates with the standard workload deployment."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [
+          "ctrl-org-secrets-vault"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applicable because the system holds a service credential issued by the external payment processor reporting API for this integration [evd-003], which authenticates it to an external platform and matches req-SECRET-001\u2019s applicable condition that the system holds a credential that authenticates it to an external platform; there is no indication that outbound authentication uses only short-lived workload identity with no stored credential.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Conditionally applicable because the Reconciler Job uses a service credential issued by the payment processor reporting API to access reporting data on an external platform [evd-003], satisfying req-SECRET-002\u2019s first applicable condition that the system accesses customer resources on an external platform; applicability further depends on whether the payment processor offers short-lived or installation-scoped credentials, which the documentation does not establish.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Storage and lifetime of the payment processor reporting API credential are undocumented",
+        "description": "The documentation states that the Reconciler Job authenticates to the payment processor\u2019s reporting API with a service credential issued for this integration and that the credential is provisioned through the standard workload deployment [evd-003], but it does not describe where this credential is stored at rest (for example, a managed secrets vault, configuration file, or environment variable), how it is injected into the workload, or whether it is a long-lived key or a short-lived token with a defined rotation policy. Without this information, it is not possible to determine whether long-lived external credentials are held in a managed secret store (req-SECRET-001) or whether short-lived credentials are used to limit the impact of theft (req-SECRET-002) in the scenario described by threat thr-002.",
+        "importance": "Clarifying how the payment processor reporting API credential is stored, injected, and rotated is important to assess how easily an attacker who compromises the Reconciler Job\u2019s environment or its secrets injection path could exfiltrate and reuse the credential, and whether existing platform controls such as the organization\u2019s secrets vault meaningfully mitigate threat thr-002.",
+        "related_object_ids": [
+          "thr-002",
+          "ast-004",
+          "cmp-001"
+        ],
+        "requested_evidence": [
+          "Documentation describing where the payment processor reporting API service credential is stored at rest (for example, in a managed secrets vault, configuration file, or environment variable) and how it is injected into the Reconciler Job at runtime.",
+          "Documentation describing the credential\u2019s type, lifetime, and rotation policy (for example, long-lived API key, short-lived token, or workload-identity-based access), including any constraints the payment processor imposes."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog does not explicitly address binding long-lived service credentials used to reach external processors to the originating workload or environment (for example, via mTLS with workload identity, sender-constrained tokens, or IP allowlisting), so that an attacker who exfiltrates such a credential from a compromised workload cannot freely use it from arbitrary infrastructure, as in the threat scenario where the payment processor reporting API service credential could be reused outside the application subnet.",
+        "suggested_category": "secrets_management",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 governs where high-value external credentials are stored (in a managed secret store rather than source control, images, or configuration) but does not address constraining where those credentials may be used; a credential can be stored correctly and still be usable from any host once stolen, which is central to the threat of off-environment misuse."
+          },
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "req-SECRET-002 governs whether credentials used to reach customer resources are short-lived versus long-lived, but does not address binding a credential\u2019s usability to a specific workload or network location; even a short-lived credential could be abused from another environment if exfiltrated promptly."
+          },
+          {
+            "requirement_id": "req-TPI-002",
+            "why_not": "req-TPI-002 bounds the amount of work or spend triggered by external events or retries against a metered service, rather than constraining which caller or environment may present a credential to that service, so it does not cover the environment-binding aspect of service credentials either."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ]
+  }
+}

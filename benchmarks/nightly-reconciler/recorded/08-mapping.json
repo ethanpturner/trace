@@ -1,0 +1,811 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11639,
+    "output_tokens": 16128,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.17834075",
+    "duration_seconds": 206.03512070898432
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 concerns only the internal Reconciler Job and the Billing Database (evd-001, evd-002) and does not involve any administrative or operator interface used by humans, so this requirement about privileged administrative access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AGENT-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 involves a deterministic nightly batch job comparing database records with an external report (evd-001, evd-002) and does not describe any multi-step or recursive model-driven agent loop, so this requirement about bounding agent execution does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AGENT-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system context for threat thr-005 describes no agent that autonomously executes privileged, irreversible, or outward-facing actions; it is a scheduled reconciler batch job operating only on internal billing data (evd-001, evd-002), so this requirement about human approval gates for high-impact agent actions does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AGENT-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 does not involve any model invoking tools or external services under its own control; the only described automation is a batch job directly reading and writing a database and calling an HTTPS API (evd-001, evd-002, evd-003), so this requirement about tool authorization for agents does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AGENT-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components involved in threat thr-005 are an internal batch job, a managed database, and an external payment processor API (evd-001, evd-002); there is no use of external tool servers or protocols like MCP, so this requirement about adopting and authenticating external tool servers does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 involves structured billing and settlement records processed by a batch job (evd-001, evd-004) and does not describe any AI model consuming untrusted free-form content, so this requirement about treating content under analysis as untrusted model input does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is described as being published to an external destination; the reconciler writes discrepancy summaries back into the internal Billing Database for a finance analyst to review (evd-001, evd-002, evd-005), so this requirement about validating model output before external publication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While customer billing records are processed, there is no indication that customer content is sent to an external model provider; the only external interaction is fetching a settlement report over HTTPS (evd-001, evd-002, evd-003), so this requirement about minimizing data sent to external model providers does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 does not involve rendering model output into a user interface or markup; discrepancy summaries are stored in the Billing Database for later internal review (evd-001, evd-002, evd-005), so this requirement about encoding model output for rendering contexts does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario involves an internal batch Reconciler Job with no end-user sign-in path or delegated user authentication described (evd-001, evd-002), so this requirement about documenting delegated user authentication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 does not involve any administrative interface or externally reachable privileged access; it concerns an internal scheduled job running inside the application subnet (evd-001, evd-002), so this requirement about establishing MFA responsibility for administrative access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although billing records are per-customer (evd-004), threat thr-005 focuses on the Reconciler Job\u2019s over-privileged access to its own database via a service credential, not on enforcing tenant-aware authorization on end-user requests, so this requirement about constraining each request to its tenant context does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The only external platform described is the payment processor, which publishes a settlement report the reconciler reads (evd-001, evd-002, evd-003); the system is not described as holding delegated access to act on customer resources on that platform, so this requirement about limiting delegated integration privileges does not bear on threat thr-005.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 concerns the privileges of the Reconciler Job\u2019s database credentials and the possibility of a defect or compromise in the running job (evd-002); while CI/CD trust could influence how compromises occur, this requirement about pipeline authentication and dependency control does not directly address the over-broad database privileges that define this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OPS-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Threat thr-005 involves potential corruption or deletion of billing records in the Billing Database (evd-002, evd-004), and the ability to recover from such tampering depends in part on how backups are protected; this requirement would apply if the system maintains backups of this data that are reachable with operator credentials, but the documentation does not state whether such backups exist or how they are governed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OPS-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario is about integrity of billing records due to an over-privileged reconciler and does not involve abusive resource consumption or spend anomalies on metered infrastructure (evd-001, evd-002), so this requirement about alerting on cost anomalies does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OPS-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 unfolds entirely within a single described environment where the Reconciler Job reaches the Billing Database inside an application subnet (evd-002); separation between production and non-production environments does not affect whether the reconciler\u2019s database role is over-privileged, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OPS-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although a compromise of the Reconciler Job could in principle be introduced via the deployment pipeline, threat thr-005 is specifically about what the job can do once running, given its database privileges (evd-002); this requirement about visibility into pipeline definition changes and out-of-band deployments does not directly address that over-privilege, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OPS-005",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The scenario for threat thr-005 does not describe any alerting or monitoring path; the core risk is silent corruption of billing records by an over-privileged job (evd-002, evd-004), so this requirement about keeping alert volume actionable does not directly bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While billing records are likely sensitive, threat thr-005 is about authorized-but-over-broad modification of those records by the Reconciler Job (evd-002, evd-004); encryption in transit or at rest does not mitigate this integrity risk, so this requirement does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 addresses corruption or deletion of primary billing records by an over-privileged job (evd-002, evd-004), not the retention of intermediate or working copies of customer data, so this requirement about defined retention of sensitive working data does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Billing Database is described as holding billing records and discrepancy summaries (evd-002, evd-004), but threat thr-005 concerns integrity of those records under the reconciler\u2019s role, not cross-tenant separation of stored artifacts accessible by predictable paths, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 involves unintended modification or deletion of billing records by the Reconciler Job (evd-002, evd-004), whereas this requirement concerns documented procedures for intentional customer-initiated deletion across stores, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No redirect-based sign-in or OIDC-style browser flow is described for the components involved in threat thr-005; the Reconciler Job is a scheduled internal workload with no inbound interface (evd-001, evd-002), so this requirement about delegated sign-in redirects does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 involves no consumption of identity-provider-issued tokens; the Reconciler Job authenticates to the payment processor with a service credential (evd-003) and to the Billing Database through configured database credentials (evd-002), so this requirement about validating external tokens does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system elements in threat thr-005 do not establish browser-based user sessions from delegated sign-in; they are a headless batch job and a database (evd-001, evd-002), so this requirement about bounding the relying party\u2019s session lifetime does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No authorization-code grant or code-to-token exchange is described in the components relevant to threat thr-005 (evd-001, evd-002, evd-003), so this requirement about binding the authorization code exchange does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system context for threat thr-005 contains no model training or fine-tuning; it is limited to a reconciler batch job, a billing database, and an external payment processor (evd-001, evd-002), so this requirement about governing writes to a training corpus does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No training pipeline or use of customer/production content for training is described for the components in threat thr-005 (evd-001, evd-002, evd-004), so this requirement about minimizing sensitive content before training does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture for threat thr-005 does not mention tuned model artifacts or a model registry; it is limited to deterministic data processing between a database and an external payment processor (evd-001, evd-002), so this requirement about recording tuned artifact lineage does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although billing records may be sensitive (evd-004), threat thr-005 is concerned with their corruption by an over-privileged job, not with whether restricted data appears in application logs, so this requirement about excluding sensitive data from logs does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 does not involve an administrative interface used by operators; it focuses on an automated batch Reconciler Job that reads and writes billing data directly (evd-001, evd-002), so this requirement about auditing security-relevant administrative actions does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CODEGEN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model-generated code or queries are executed by the system in the threat scenario; the Reconciler Job is described as a conventional batch workload (evd-001, evd-002), so this requirement about isolation for model-generated code execution does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CODEGEN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 does not describe any model-generated code, configuration, or infrastructure definitions being merged or deployed; it involves a hand-authored reconciler job and a database (evd-001, evd-002), so this requirement about gates for model-generated changes does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Billing Database is a non-public internal data store holding billing records and discrepancy summaries and is explicitly described as reachable only from the Reconciler Job inside the application subnet (evd-002). For threat thr-005, this is exactly the kind of internal component whose network reachability must be restricted under this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture for threat thr-005 does not use retrieval-augmented generation; content is not indexed into a retrieval corpus and then fed to a model, but is read directly from the Billing Database by a batch job (evd-001, evd-002, evd-004), so this requirement about governing writes to a retrieval corpus does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No retrieval corpus serving multiple principals or tenants is described; the reconciler simply reads billing records from the Billing Database (evd-002, evd-004), so this requirement about filtering retrieval results by requester authorization does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 involves primary billing data in a relational database (evd-002, evd-004) and does not mention any retrieval index or embeddings that must follow source lifecycle, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Reconciler Job uses a database credential and a service credential for the payment processor (evd-002, evd-003), but threat thr-005 assumes the job already has valid credentials and focuses on their over-broad database privileges, not on where those credentials are stored or how long-lived they are, so this requirement about holding high-value external credentials in a managed secret store does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 concerns the reconciler\u2019s standing database access and the scope of that access (evd-002, evd-004); it does not involve the system accessing customer resources on an external platform with tokens whose lifetime could bound impact, so this requirement about short-lived external access credentials does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the reconciler consumes a settlement report from an external payment processor (evd-001, evd-002, evd-003), threat thr-005 is about internal billing-record integrity, not about documenting the external processor\u2019s retention and usage of customer data, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Reconciler Job runs once per night on a schedule (evd-001) and is not triggered by inbound events or unbounded external work; threat thr-005 concerns what that job can do to the Billing Database once running (evd-002), so this requirement about bounding work triggered by external events does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No inbound webhook or event-receiver endpoint is described for the components in threat thr-005; the reconciler pulls data from the payment processor\u2019s API over HTTPS (evd-001, evd-002, evd-003) rather than accepting pushed events, so this requirement about verifying inbound event authenticity does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Since the system in threat thr-005 does not expose a webhook-style endpoint or process pushed external events (evd-001, evd-002, evd-003), there is no replay surface of inbound events, so this requirement about preventing or absorbing event replay does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Reconciler Job database privileges are not documented",
+        "description": "The threat thr-005 scenario depends on whether the Reconciler Job\u2019s database credentials can modify or delete billing records, or are limited to the minimum needed to read billing records and write discrepancy summaries. The system overview states that the job reads billing records and writes discrepancy summaries to the Billing Database (evd-002, evd-004) but does not document the database role or permissions granted to the reconciler. Without a description of that role\u2019s allowed operations and table scope, it is not possible to determine whether least-privilege access is in place or whether an over-privileged role makes the described corruption of billing records plausible.",
+        "importance": "Understanding the Reconciler Job\u2019s database role and privileges is necessary to assess whether a defect or compromise in the job could in fact alter or delete primary billing records at scale, and to evaluate mitigations or controls relevant to threat thr-005.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-001",
+          "cmp-002",
+          "ast-001",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Database role definition or DDL/migration scripts showing the privileges granted to the Reconciler Job\u2019s database user, including which tables it can INSERT, UPDATE, and DELETE.",
+          "Architecture or operations documentation describing the permission model for the Billing Database, especially how the reconciler\u2019s role is constrained relative to other roles."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog does not explicitly cover least-privilege database roles for internal batch jobs accessing their own datastore, such as constraining the Reconciler Job\u2019s database account to only the tables and operations needed for reconciliation rather than broad UPDATE/DELETE on billing records, which is central to threat thr-005.",
+        "suggested_category": "authorization",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 addresses tenant-aware authorization for serving multiple customers or organizations and deriving tenant context from server-side state, but does not speak to scoping an internal service\u2019s database role to specific tables or operations within a single tenant or corpus."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 covers network reachability of internal components, ensuring that data stores are reachable only from named workloads, but it assumes a caller is already authorized and does not address the granularity of permissions granted to that caller\u2019s database credentials."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      }
+    ]
+  }
+}

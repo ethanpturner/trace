@@ -1,0 +1,138 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12908,
+    "output_tokens": 10989,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.127385",
+    "duration_seconds": 115.46771162492223
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-msg-bus-service-credentials",
+        "name": "Per-service authentication to Message Bus",
+        "description": "Core services authenticate to the Message Bus using per-service credentials issued at deploy time, so that only services with a credential can publish and consume events.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-013",
+        "protected_component_ids": [
+          "cmp-005",
+          "cmp-002",
+          "cmp-008"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002",
+          "ast-008"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": [
+          "Available documentation does not describe how Message Bus service credentials are stored, rotated, or scoped beyond being issued at deploy time."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system is deployed by an automated pipeline (the Deploy Runner) [evd-005], and the threat explicitly involves per-service Message Bus credentials issued at deploy time [evd-004], so how the pipeline authenticates and manages build inputs bears directly on whether those credentials can be stolen.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The threat targets the internal Message Bus, a queue-like internal component connecting core services and holding work for many customers [evd-004], so the first two applicable_conditions hold. Applicability depends on whether its per-service credential-based authentication is considered \"weak\" for the purposes of req-NET-001; this is not established in the documentation.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [
+          "Assume that using static per-service credentials on the Message Bus constitutes \"weak\" authentication in the sense of req-NET-001, because compromise of one credential allows arbitrary event publication [evd-004]."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Network reachability of Message Bus is not documented",
+        "description": "The Message Bus is described as the event backbone connecting core services with per-service credentials [evd-004], but the documentation does not state which network segments or components can reach it or how that reachability is restricted. This prevents establishing whether internal queue access is limited to the workloads that need it for req-NET-001 and for evaluating threat thr-003.",
+        "importance": "Network placement and access control for the Message Bus determines how difficult it is for an attacker with a stolen service credential to connect and publish forged events.",
+        "related_object_ids": [
+          "cmp-013",
+          "df-007",
+          "df-008",
+          "df-009",
+          "thr-003"
+        ],
+        "requested_evidence": [
+          "Network or deployment diagrams showing which network segments and components can reach the Message Bus and how that access is enforced (for example, security groups, firewall rules, or service mesh policies)."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Deployment pipeline authentication and handling of Message Bus credentials is not described",
+        "description": "The Deploy Runner runs the deployment pipeline for core services [evd-005], and services authenticate to the Message Bus using per-service credentials issued at deploy time [evd-004], but the documentation does not describe how the pipeline authenticates to target environments, how these credentials are generated and stored, or how build artifacts expose them. This prevents assessing req-CICD-001 and understanding the likelihood of credential compromise in threat thr-003.",
+        "importance": "Credential generation, storage, and distribution by the deployment pipeline directly affect the risk that Message Bus service credentials can be extracted from build output or images.",
+        "related_object_ids": [
+          "cmp-013",
+          "ast-008",
+          "thr-003"
+        ],
+        "requested_evidence": [
+          "Deployment documentation describing how the pipeline authenticates to each environment.",
+          "Documentation or configuration showing how per-service Message Bus credentials are generated, stored (including any secret store use), injected into services, and rotated.",
+          "Any description of how build artifacts and container images are scanned or controlled to prevent credential leakage."
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-005"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The architecture relies on internal per-service Message Bus credentials that, if compromised, allow forged events to corrupt orders and tracking data, but the catalog has no requirement that explicitly covers protection, storage, rotation, and scope of internal service-to-service credentials.",
+        "suggested_category": "secrets_management",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 is scoped to credentials that authenticate the system to an external platform, whereas the Message Bus per-service credentials are used between internal components of the same system [evd-004], so the requirement does not apply to this internal secret."
+          },
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "req-SECRET-002 concerns credentials used to reach customer resources on external platforms and encouraging short-lived access tokens; it does not address long-lived internal service credentials such as those used to reach the Message Bus [evd-004]."
+          }
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      }
+    ]
+  }
+}

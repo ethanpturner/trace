@@ -1,0 +1,224 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9612,
+    "output_tokens": 8611,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.098125",
+    "duration_seconds": 102.23044658405706
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documentation directly supports the core architectural preconditions of this threat and the impact on confidentiality and integrity, while the attacker compromise is a standard inferred scenario.\n\n- evd-003 states that the Label Service stores shipping labels as PDFs in Object Storage: this is direct evidence that label PDFs reside in a shared object storage bucket.\n- evd-004 states that Object Storage is \"the managed object store holding label PDFs and proof-of-delivery photos\": this is direct evidence that both assets (labels and proof-of-delivery photos) are co-located in this bucket.\n- evd-002 describes the Mobile Gateway as the endpoint through which proof-of-delivery photos are sent \"up\" behind the API Gateway, providing contextual evidence of the data flow that leads into Object Storage.\n\nFrom these passages, it is directly documented that:\n1) label PDFs and proof-of-delivery photos are stored in a managed Object Storage bucket; and\n2) those photos enter the platform via the Mobile Gateway.\n\nIt is an inferred (but straightforward) security conclusion that if this bucket is compromised or misconfigured to allow broader access than intended, an attacker could:\n- exfiltrate stored labels and photos (compromising confidentiality), and\n- tamper with or delete them (compromising integrity),\nby virtue of Object Storage being the central repository for these objects. No passages contradict this, and the inference does not rely on undocumented implementation details beyond the general behavior of an object store holding these assets.\n\nTherefore, the threat statement \u2014 that compromise or misconfiguration of Object Storage exposing or allowing tampering with label PDFs and proof-of-delivery photos \u2014 is supported by the documented architecture, with the attacker aspect clearly inferred from that architecture.",
+        "missing_evidence": [
+          "Documentation of Object Storage access controls (identity/permissions model, network exposure, public access settings) for the bucket holding label PDFs and proof-of-delivery photos.",
+          "Operational documentation on monitoring, logging, and alerting for access to Object Storage, including detection of bulk access or modification.",
+          "Description of any encryption, segregation of buckets, or object-level integrity protections (e.g., object versioning, immutability) applied to label PDFs and proof-of-delivery photos."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Label Service\n\nRenders shipping labels as PDFs and stores them in the Object Storage bucket, keyed by\nshipment."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Object Storage\n\nThe managed object store holding label PDFs and proof-of-delivery photos."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### Mobile Gateway\n\nThe endpoint for the driver mobile application: route assignments down, scan events and\nproof-of-delivery photos up. Served over HTTPS behind the API Gateway."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-007",
+        "evidence_ids": [
+          "evd-005",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documentation directly establishes that carrier partners send status updates into the platform via Carrier Link, and that there is a Tracking Service responsible for parcel tracking state. The specific threat that compromised carrier API credentials could be used to send fraudulent but syntactically valid status updates, thereby corrupting tracking data, is an inferred but well-grounded scenario.\n\nDocumented facts:\n- evd-005 defines Carrier Link as \"the connector to carrier partners' APIs for line-haul handoff: manifests out, status updates in, over the carriers' HTTPS APIs.\" This is direct evidence that status updates from carriers enter the system over authenticated HTTPS APIs via Carrier Link.\n- evd-006 describes the carrier partner actor as one that \"receives manifests and returns status through Carrier Link,\" directly reinforcing that status information flows from external carrier partners into the platform.\n- evd-003 describes the Tracking Service, which \"maintains per-parcel tracking state\" and \"serves tracking queries from the portal.\" This is contextual evidence for the impact: the platform has a specific component responsible for parcel tracking data that backs customer-visible tracking.\n\nInferred but reasonable chain, based on these passages:\n- Carrier status updates received through Carrier Link are part of the inputs shaping parcel tracking state (the documentation does not spell out this dataflow, but this is a standard, reasonable inference for a parcel-logistics platform given that status updates come in and a Tracking Service maintains tracking state).\n- If an attacker gains control of a carrier partner's API account or credentials, they can send arbitrary but syntactically valid status messages through the same \"status updates in\" channel that Carrier Link uses for normal operations.\n- Because those messages arrive via the expected HTTPS API and from what appears to be a legitimate partner account, Carrier Link (and downstream consumers) will treat them as legitimate unless there are additional, undocumented integrity checks.\n- As a result, internal tracking state and the customer-visible tracking data served by the Tracking Service can be made incorrect (integrity impact on parcel tracking data).\n\nThe attacker compromise and the absence of additional validation controls are inferred elements, but they are standard threat-model assumptions and do not conflict with any documented behavior. The architecture documentation firmly establishes the existence of the integration and the tracking system, so the threat that compromised carrier API credentials could corrupt tracking data is supported by the evidence, with the corruption mechanism inferred.",
+        "missing_evidence": [
+          "Explicit dataflow or design documentation showing how status updates received via Carrier Link are propagated into the Tracking Service and other components that determine parcel tracking state.",
+          "Documentation of any integrity controls on carrier status updates (e.g., partner-specific signing, sequence checking, idempotency keys, sanity checks) and how fraudulent or out-of-order updates are detected or rejected.",
+          "Details of credential management and access control for carrier partner API accounts (issuance, rotation, revocation, and monitoring of use)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Carrier partner** \u2014 receives manifests and returns status through Carrier Link."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Tracking Service\n\nConsumes scan events from the Message Bus and maintains per-parcel tracking state in the\nTracking Store. Serves tracking queries from the portal."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-008",
+        "evidence_ids": [
+          "evd-005",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documentation directly establishes that the Deploy Runner runs the deployment pipeline that builds and releases the core services, and that those core services handle or access a wide range of sensitive data assets. From this, it is a well-founded inference that compromise of the Deploy Runner could allow malicious code injection into core services, leading to broad and persistent unauthorized access.\n\nDocumented facts:\n- evd-005 states: \"Deploy Runner\n\nRuns the deployment pipeline that builds and releases the core services.\" This is direct evidence that the Deploy Runner has a central role in building and releasing the core services; by definition, it influences the artifacts or configurations deployed.\n- evd-003 describes multiple core services (Identity Service, Order Service, Routing Service, Dispatch Service, Tracking Service, Notification Service, Label Service, Billing Service, Admin Console) and the sensitive business functions and data they own (e.g., authentication, orders, tracking state, labels, billing and payments, admin access to customer accounts).\n- evd-004 describes core data-zone components (Message Bus, Orders Database, Tracking Store, Object Storage, Data Warehouse) that store or carry sensitive data such as customer accounts, addresses, tracking history, label PDFs, and proof-of-delivery photos.\n\nInferred chain, given these passages:\n- Because the Deploy Runner builds and releases the core services, it necessarily has the ability to influence the code or configurations that are ultimately deployed into the environments that access the Orders Database, Tracking Store, Object Storage, etc.\n- If an attacker compromises the Deploy Runner environment or its credentials, they could modify build scripts, injected dependencies, or release configurations to insert malicious behavior into one or more core services.\n- Deployed malicious services, running with their normal privileges, could then gain broad, long-lived access to the various data assets handled by those services (orders, tracking data, labels, proof-of-delivery photos, payment references, analytics data, etc.), enabling extensive data exfiltration and tampering.\n\nThe attacker compromise scenario and the exact privilege level of the pipeline are inferred but are standard consequences of a CI/CD system that \"builds and releases the core services\". No evidence contradicts this. The combination of the Deploy Runner's role and the sensitivity of the core services and data zone components supports the stated threat and impact.\n\nTherefore, the conclusion that a compromised Deploy Runner could inject malicious code into core services and thereby gain broad, persistent access to sensitive data is supported by the documentation, with the attack mechanics inferred from the described CI/CD role.",
+        "missing_evidence": [
+          "Detailed documentation of the deployment pipeline's privileges (e.g., where build artifacts are stored, how they are promoted, and what credentials the Deploy Runner holds).",
+          "Documentation of any safeguards on the build and release process (e.g., code signing, artifact integrity verification, approval gates, separation of duties, or isolated runners).",
+          "Operational security documentation for the Deploy Runner environment (hardening, access controls, secret management, monitoring, and incident response procedures)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Deploy Runner\n\nRuns the deployment pipeline that builds and releases the core services."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Order Service\n\nOwns shipment bookings: creation, pricing acceptance, and lifecycle state. Writes to the\nOrders Database and publishes order events to the Message Bus."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-009",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documentation directly establishes that the platform does not store card data, but instead stores only the payment provider's reference for each transaction. From this, it is a well-grounded inference that tampering with these stored references could misassociate payments with orders and corrupt billing and reconciliation, even without access to card data.\n\nDocumented fact:\n- evd-003 states under Billing Service: \"Prices shipments, raises invoices, and records payments. Card payments are processed entirely by an external payment provider; the platform stores only the provider's payment reference.\" This is direct evidence that payment provider references are the key linkage the platform retains for card payments, and that they are part of the billing and payment-recording process.\n\nInferred chain, based on this passage:\n- Because the platform \"stores only the provider's payment reference\" for card payments, this reference is necessarily used to associate external payment transactions with internal orders/invoices for billing and reconciliation.\n- If an attacker were able to modify those stored references (e.g., by altering database records via a compromised Billing Service instance or direct data-store access), the mapping between orders/invoices and provider-side payments could be altered.\n- Such tampering could lead to misassociated payments (e.g., payments appearing against the wrong order or customer), incorrect billing records, reconciliation discrepancies between the platform and the external payment provider, and opportunities for fraud, all without ever needing to access raw card data.\n\nThe documentation does not specify where the references are stored or how access is controlled, so the precise attack vector is inferred. However, the existence and centrality of the stored payment provider reference are clearly documented, and the integrity consequences of modifying that reference follow directly from its role. No evidence contradicts this.\n\nAccordingly, the threat that tampering with stored payment provider references can corrupt billing and reconciliation is supported by the evidence, with the attacker access precondition and detailed mechanism inferred.",
+        "missing_evidence": [
+          "Documentation of where payment provider references are stored (specific database or store) and how they are linked to orders and invoices.",
+          "Access control and authorization model for creating and updating payment provider references (which services, roles, or tools can write or modify them).",
+          "Description of reconciliation processes between the platform and the external payment provider, including any integrity checks that would detect mismatched or altered payment references."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-010",
+        "evidence_ids": [
+          "evd-002",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documentation directly establishes that the API Gateway is the single public entry point for the platform and fronts both the Customer Portal and the Mobile Gateway. From this, it is a straightforward security inference that a volumetric or distributed denial-of-service attack overwhelming the API Gateway would disrupt customers' and drivers' ability to book, manage, and track shipments, impairing the availability of the associated data from the users' perspective.\n\nDocumented facts:\n- evd-002 describes the Customer Portal as \"The public web application where customers book shipments, print labels, and track parcels. Served over HTTPS behind the API Gateway.\" This is direct evidence that customer booking and tracking functions are accessed through the API Gateway.\n- evd-002 describes the Mobile Gateway as \"The endpoint for the driver mobile application: route assignments down, scan events and proof-of-delivery photos up. Served over HTTPS behind the API Gateway.\" This is direct evidence that driver interactions (including delivery scans and proof-of-delivery uploads) also traverse the API Gateway.\n- evd-002 further defines the API Gateway as: \"The single public entry point. It terminates TLS, authenticates every request against the Identity Service, applies per-client rate limits, and routes to the core services.\" This is direct evidence that there is only one public entry point and that all external requests must pass through it.\n- evd-001 gives the platform context: customers book and track shipments, and drivers collect and deliver them, reinforcing that booking and tracking are key user-facing functions relying on the public-facing interfaces.\n\nInferred chain, based on these passages:\n- Because the API Gateway is the \"single public entry point\" for both customers and drivers, it is a single point whose unavailability would block access to booking, management, and tracking functionality, regardless of the internal state of core services or data.\n- Although per-client rate limits exist, a volumetric or distributed attack from many sources could exceed the API Gateway's processing or network capacity and overwhelm it.\n- In that situation, legitimate customer and driver requests would fail or time out, preventing them from creating or managing bookings or viewing tracking information, which is an availability impact on orders and tracking data from the users' perspective.\n\nNo documentation describes DDoS protections beyond per-client rate limits, so the attack's feasibility is inferred but consistent with the described architecture. There is no contradictory evidence.\n\nTherefore, the threat that a denial-of-service attack against the single public API Gateway can disrupt booking and tracking is supported by the evidence, with the specific attack execution and capacity assumptions inferred.",
+        "missing_evidence": [
+          "Documentation of API Gateway deployment architecture (e.g., redundancy, autoscaling, regional distribution, and upstream load balancers).",
+          "Description of DDoS protection measures beyond per-client rate limits (e.g., provider-managed DDoS mitigation, upstream scrubbing, or WAF integration).",
+          "Operational runbooks or SLOs describing how API Gateway saturation or failure is detected, mitigated, and recovered."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Customer Portal\n\nThe public web application where customers book shipments, print labels, and track parcels.\nServed over HTTPS behind the API Gateway.\n\n### Mobile Gateway\n\nThe endpoint for the driver mobile application: route assignments down, scan events and\nproof-of-delivery photos up. Served over HTTPS behind the API Gateway.\n\n### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "Parcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      }
+    ]
+  }
+}

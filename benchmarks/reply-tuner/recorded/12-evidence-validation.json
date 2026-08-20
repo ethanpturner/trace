@@ -1,0 +1,971 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12534,
+    "output_tokens": 30254,
+    "cache_read_tokens": 1024,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.3183355",
+    "duration_seconds": 311.84019358293153
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system-overview document (evd-001\u2013evd-005) does not mention CI/CD pipelines or requirement req-CICD-001. There is no passage that describes how a deployment pipeline relates to the Transcript Exporter, the Training Store, or threat thr-004, so the claim that req-CICD-001 is not applicable to thr-004 is not established by the available evidence.",
+        "missing_evidence": [
+          "Architecture or process documentation describing the CI/CD pipeline for this system and how, if at all, it interacts with the Transcript Exporter and Training Store.",
+          "A description or specification of req-CICD-001 and a recorded rationale for its applicability or non-applicability to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The provided system-overview excerpts (evd-001\u2013evd-005) do not describe operational backup handling, backup deletion, or requirement req-OPS-001. Nothing in the evidence addresses how backup operations relate to the training pipeline or threat thr-004, so the assertion that req-OPS-001 is not applicable to thr-004 is not documented.",
+        "missing_evidence": [
+          "Operations documentation describing backup creation, storage, and deletion for the Training Store and related components.",
+          "A specification of req-OPS-001 and an explicit rationale connecting (or disconnecting) it from threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "None of the cited system-overview passages (evd-001\u2013evd-005) mention cost monitoring, spend anomalies, or requirement req-OPS-002. The documents do not establish any relationship between cost-anomaly detection and threat thr-004, so the claim that req-OPS-002 is not applicable is unsupported by the evidence.",
+        "missing_evidence": [
+          "Documentation of cost monitoring or anomaly-detection controls for the infrastructure running the Transcript Exporter, Training Store, and Tuning Job.",
+          "The definition of req-OPS-002 and a written analysis of whether and how it addresses threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) does not discuss environment separation (for example, production vs non-production) or requirement req-OPS-003. No passage ties environment separation controls to the components involved in thr-004, so the statement that req-OPS-003 is not applicable to thr-004 is not established.",
+        "missing_evidence": [
+          "Architecture or operations documentation describing environment separation for this system (production, staging, test) and where the Transcript Exporter, Training Store, and Tuning Job run.",
+          "The text of req-OPS-003 and an explicit rationale for its applicability or non-applicability to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided passage (evd-001\u2013evd-005) describes deployment pipeline change visibility, out-of-band deployments, or requirement req-OPS-004. The mapping that this requirement is not applicable to thr-004 therefore has no documentary support.",
+        "missing_evidence": [
+          "Documentation of deployment pipeline change controls and monitoring for this system.",
+          "A specification of req-OPS-004 and reasoning that connects or disconnects it from threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-067",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) does not mention alerting configuration, alert routing, or requirement req-OPS-005. There is no evidence tying operational alert volume or routing to threat thr-004, so the assertion that req-OPS-005 is not applicable is not supported.",
+        "missing_evidence": [
+          "Operations documentation describing alert sources, routing, and tuning for this system.",
+          "The definition of req-OPS-005 and an analysis of whether alerts related to thr-004 would or should be in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-068",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-003 directly support the descriptive part of the mapping: they show that the Training Store holds full closed-ticket transcripts, including names, email addresses, and complete message bodies, and that there is no redaction or filtering step.\n\nWhat is not documented is any discussion of requirement req-DATA-001 itself or an explicit statement that encryption in transit or at rest is considered not applicable to threat thr-004. Whether this encryption-focused requirement should or should not be mapped to this integrity-focused threat is inferred, not established by the system-overview text, so only the factual description of the data and pipeline is supported.",
+        "missing_evidence": [
+          "The specification of req-DATA-001, including its intended threat coverage (for example, confidentiality vs integrity).",
+          "A rationale document or risk analysis explicitly explaining why req-DATA-001 is or is not considered applicable to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-069",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The available evidence (evd-001\u2013evd-005) does not describe data-retention policies or requirement req-DATA-002. There is no documentation about how long training data or working copies are retained, so the claim that req-DATA-002 is not applicable to threat thr-004 cannot be validated.",
+        "missing_evidence": [
+          "Data-retention and deletion policies for ticket transcripts and training data, including any time bounds or retention justifications.",
+          "The definition of req-DATA-002 and its intended linkage (or non-linkage) to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-070",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided passage (evd-001\u2013evd-005) discusses cross-tenant separation, multi-tenancy of the Training Store, or requirement req-DATA-003. The statement that cross-tenant separation controls do not bear on threat thr-004 is therefore not grounded in the supplied documentation.",
+        "missing_evidence": [
+          "Documentation on tenancy and isolation for the Training Store bucket and related storage.",
+          "The specification of req-DATA-003 and reasoning on its applicability to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-071",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) does not mention data-subject deletion requests, right-to-erasure flows, or requirement req-DATA-004. There is no evidence connecting deletion-on-request controls to threat thr-004, so the assertion that req-DATA-004 is not applicable is unsupported.",
+        "missing_evidence": [
+          "Design or operations documentation describing how customer deletion requests are processed across the Helpdesk, Transcript Exporter, Training Store, and model artifacts.",
+          "The text of req-DATA-004 and an explicit assessment of how it interacts with the training pipeline and threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-072",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly supports the factual part of the mapping: the Transcript Exporter is the only writer to the Training Store, and its job identity is granted write access via the platform's access policy. This shows that the threat centers on an authorized job identity with storage permissions.\n\nHowever, the conclusion that requirement req-NET-001 (about network placement with respect to untrusted networks) is not applicable to threat thr-004 is not established anywhere in the documentation; network segmentation or exposure is not described. Thus, only the description of the job identity and its exclusive write access is supported by the evidence; the applicability judgement for req-NET-001 remains an inference.",
+        "missing_evidence": [
+          "Network architecture documentation showing how the Transcript Exporter and Training Store are placed relative to untrusted networks and internal segments.",
+          "The specification of req-NET-001 and an explicit rationale for its applicability or non-applicability to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-073",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The evidence (evd-001\u2013evd-005) contains no description of browser-based delegated sign-in, redirect URIs, or OAuth/OIDC client registration. Requirement req-OIDC-001 and its applicability are not mentioned, so the claim that it is not applicable to threat thr-004 is not documented.",
+        "missing_evidence": [
+          "Any documentation of interactive sign-in flows, OAuth/OIDC clients, and redirect URI handling for this system, if they exist.",
+          "The definition of req-OIDC-001 and an explicit assessment of whether any described flows (if present) relate to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-074",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly supports the statement that the Transcript Exporter runs as a non-interactive job with a platform-granted identity that can write to the Training Store bucket. This shows that the threat involves a batch job identity with direct platform access to storage.\n\nThe further conclusion that requirement req-OIDC-002 (about token validation in delegated authentication flows) is not applicable to this threat is not grounded in any passage of the system overview; OIDC tokens and delegated sign-in are not discussed. Therefore, the descriptive part about the job identity is supported, but the applicability judgement for req-OIDC-002 is not evidenced.",
+        "missing_evidence": [
+          "Documentation of any OIDC or delegated authentication flows used by this system, and how identities for jobs like the Transcript Exporter are provisioned and authenticated.",
+          "The specification of req-OIDC-002 and an explicit rationale for whether it is relevant to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-075",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No evidence excerpt (evd-001\u2013evd-005) describes interactive browser sessions, local sessions, or session lifetime controls. Requirement req-OIDC-003 and its applicability to threat thr-004 are not mentioned, so the assertion that it is not applicable is unsupported.",
+        "missing_evidence": [
+          "Documentation of any browser-based login sessions associated with this system and their management (lifetimes, termination, etc.), if they exist.",
+          "The definition of req-OIDC-003 and analysis of whether any such sessions have bearing on threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-076",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) does not mention authorization codes, code-to-token exchanges, or any OAuth/OIDC flows. There is no evidence to support the claim that req-OIDC-004 is not applicable to threat thr-004.",
+        "missing_evidence": [
+          "Documentation of any OAuth/OIDC authorization code flows used in the system.",
+          "The specification of req-OIDC-004 and an explicit rationale about whether any such flows, if present, intersect with threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-077",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly supports the factual core of the mapping: the Transcript Exporter is the only writer to the Training Store, and its job identity is the only principal with write access to that bucket via the platform's access policy. This shows that the training data write path is mediated through a single job identity.\n\nHowever, the requirement req-TRAIN-001 and the judgement that it is both applicable to threat thr-004 and satisfied are not mentioned in the documentation. Whether this single-writer design meets all elements of req-TRAIN-001 (for example, governance, approvals, or monitoring) is not established by the system overview. Thus, the architectural description is supported, but the requirement mapping and satisfaction claim are not.",
+        "missing_evidence": [
+          "The full text of req-TRAIN-001, including what constitutes a governed write path for training data.",
+          "Design or policy documentation that explicitly designates the Transcript Exporter as the governed training-data write path and explains how it satisfies req-TRAIN-001 (for example, change control, monitoring, or approvals)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-078",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-003 directly support that training data consists of full closed-ticket transcripts, including customer names, email addresses, and complete message bodies, and that there is no redaction or filtering between the helpdesk and the Training Store. This shows that sensitive ticket content is indeed used directly for fine-tuning.\n\nThe mapping further asserts that requirement req-TRAIN-002 is applicable and that its satisfaction is only partial. The existence and detailed criteria of req-TRAIN-002 (for example, what counts as acceptable minimisation or justification) are not documented here, nor is any explicit justification for training on full transcripts. As a result, while the factual description of how sensitive content is handled is supported, the classification of req-TRAIN-002 as partially satisfied remains unsubstantiated by the provided evidence.",
+        "missing_evidence": [
+          "The specification of req-TRAIN-002, including expectations around minimisation or justification for training on sensitive content.",
+          "Design or governance documentation stating whether training on full, unredacted transcripts has been reviewed and justified against req-TRAIN-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-079",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 directly supports that the Tuning Job produces weekly tuned model artifacts, writes them to an artifact bucket by date, and that agents are served whichever artifact is most recent. This confirms that tuned artifacts exist and are served in the way the mapping describes.\n\nThe requirement req-TRAIN-003, concerning lineage information on tuned artifacts, and the statement that its satisfaction is unverified are not themselves documented in the system overview. The evidence does not say whether artifacts carry lineage metadata, so the applicability and satisfaction parts of the mapping rest on inference rather than explicit documentation.",
+        "missing_evidence": [
+          "The definition of req-TRAIN-003, including what lineage information is required on tuned artifacts.",
+          "Documentation or configuration showing what metadata (such as training run identifiers, data ranges, or configurations) is stored with each artifact in the artifact bucket."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Model artifacts\n\nThe tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-080",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-003 directly support that the system processes closed-ticket transcripts containing customer names, email addresses, and full message bodies, stored without redaction in the Training Store. This shows that logs or telemetry involving these data, if they exist, would need careful protection.\n\nHowever, the mapping's conclusion that logging-data-protection requirement req-LOG-001 is not applicable to threat thr-004 is not grounded in the evidence. The documentation does not describe any logging, log contents, or how logs relate to the training pipeline, so the applicability judgement for req-LOG-001 cannot be validated from the supplied text.",
+        "missing_evidence": [
+          "Documentation of logging for the Transcript Exporter, Training Store, Tuning Job, and Reply Service, including what data is logged and where logs are stored.",
+          "The specification of req-LOG-001 and analysis of whether logs relevant to thr-004 carry sensitive content derived from training data."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-081",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) does not describe administrative or operator user interfaces, privileged UI actions, or logging of such actions. Requirement req-LOG-002 and its applicability to threat thr-004 are absent from the documentation, so the claim that it is not applicable is unsupported.",
+        "missing_evidence": [
+          "Documentation of any administrative or operator interfaces that can affect security configuration or customer data for this system, and how actions there are audited.",
+          "The definition of req-LOG-002 and an explicit assessment of whether relevant privileged actions exist in the context of thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-082",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "None of the provided passages (evd-001\u2013evd-005) describe executing model-generated code or queries, sandboxes, or requirement req-CODEGEN-001. The assertion that this requirement is not applicable to threat thr-004 is therefore not established by the evidence.",
+        "missing_evidence": [
+          "Architecture documentation stating whether any model-generated code or queries are executed, and if so, how they are isolated.",
+          "The specification of req-CODEGEN-001 and analysis of whether any such execution surfaces intersect with the training pipeline in thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-083",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) does not mention model-generated code or configuration being merged or deployed via CI/CD, nor does it reference requirement req-CODEGEN-002. As a result, the statement that this requirement is not applicable to threat thr-004 is not supported by the available evidence.",
+        "missing_evidence": [
+          "Documentation of any use of model-generated code or configuration in this system and how such outputs are reviewed and deployed.",
+          "The definition of req-CODEGEN-002 and explicit mapping (or non-mapping) to the components involved in thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-084",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No evidence excerpt (evd-001\u2013evd-005) describes a retrieval-augmented generation (RAG) pipeline, retrieval corpora, or requirement req-RAG-001. The architecture shows direct fine-tuning on transcripts, not retrieval from an index. Therefore, the assertion that req-RAG-001 is not applicable to threat thr-004 is not directly documented, although the absence of any RAG components is suggestive.",
+        "missing_evidence": [
+          "Architecture documentation explicitly confirming whether any retrieval index or RAG pipeline exists in this system.",
+          "The specification of req-RAG-001 and a statement of whether a retrieval corpus is present and governed for this system."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-085",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) lacks any description of retrieval indices, per-request retrieval, or authorization-filtered retrieval. Requirement req-RAG-002 is not mentioned, so the claim that it is not applicable to threat thr-004 is not established by the evidence.",
+        "missing_evidence": [
+          "Documentation clarifying whether any retrieval index is queried at inference time and, if so, how retrieval is authorized and filtered.",
+          "The text of req-RAG-002 and its intended coverage relative to any retrieval components in this system."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-086",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly states that the Tuning Job fine-tunes the base reply model on the Training Store's current contents, and evd-003 states that the Training Store holds full, unfiltered transcripts. This supports the descriptive claim that the training corpus is consumed directly from the Training Store rather than from a retrieval index.\n\nRequirement req-RAG-003, about propagation of deletions or corrections into a retrieval index, and the assertion that it is not applicable to this threat are not themselves documented. While the absence of any retrieval index in the architecture suggests reduced relevance, the non-applicability judgement remains an inference rather than a documented fact.",
+        "missing_evidence": [
+          "An explicit statement in the architecture confirming that no retrieval index or embeddings-based retrieval path exists for this system.",
+          "The specification of req-RAG-003 and rationale explaining its applicability or non-applicability given the described training pipeline."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-087",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly supports that the Transcript Exporter has a distinct job identity and that this identity is the only principal with write access to the Training Store bucket via the platform's access policy. This confirms that there is at least one privileged identity used to access an external platform resource on behalf of the system.\n\nRequirement req-SECRET-001, concerning managed secret storage, and the assertion that its satisfaction is unverified are not described in the evidence. The documentation does not say how the Transcript Exporter's credentials or identity material are stored or managed (for example, secret store vs inline configuration), so the mapping from this identity to req-SECRET-001 cannot be fully validated.",
+        "missing_evidence": [
+          "The definition of req-SECRET-001, including what qualifies as a managed secret store in this context.",
+          "Implementation or configuration documentation showing where and how the Transcript Exporter's credentials or job identity configuration are stored and rotated."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-088",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly supports that the Transcript Exporter pulls closed-ticket transcripts from the helpdesk into the Training Store, implying interaction with an external helpdesk platform, and that it writes to a cloud storage bucket. This underpins the descriptive part of the mapping that the system accesses external platforms.\n\nThe rest of the mapping, concerning whether those platforms offer short-lived or installation-scoped credentials and whether requirement req-SECRET-002 is applicable and unverified, is not addressed in the evidence. The credential types available and chosen, and the exact definition of req-SECRET-002, remain undocumented here.",
+        "missing_evidence": [
+          "The specification of req-SECRET-002, including expectations around short-lived or installation-scoped credentials.",
+          "Documentation from the helpdesk and cloud platform on supported credential types, and system configuration showing which credential types the Transcript Exporter actually uses."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-089",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The excerpts (evd-001\u2013evd-005) do not mention third-party processor agreements, terms of service, or requirement req-TPI-001. Although a helpdesk is referenced as a source of tickets, there is no discussion of contractual retention or usage terms. Consequently, the assertion that req-TPI-001 is not applicable to threat thr-004 is not documented.",
+        "missing_evidence": [
+          "Documentation describing the relationship between the system owner and the external helpdesk provider, including data processing terms and retention commitments.",
+          "The definition of req-TPI-001 and analysis of whether it is engaged by the use of the external helpdesk in this pipeline."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-090",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided passage (evd-001\u2013evd-005) describes webhook-triggered or externally-triggered workloads consuming metered external services, nor does any mention requirement req-TPI-002. Thus, the claim that this requirement is not applicable to threat thr-004 is not supported by the documentation.",
+        "missing_evidence": [
+          "Architecture documentation identifying any inbound triggers from external platforms (such as webhooks) and the work they initiate.",
+          "The specification of req-TPI-002 and explicit reasoning connecting or decoupling it from such triggers and thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-091",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The system overview (evd-001\u2013evd-005) does not mention inbound webhooks, event endpoints, or verification of inbound events. Requirement req-WEBHOOK-001 and its applicability to threat thr-004 are therefore not documented, and the mapping that it is not applicable is unsupported.",
+        "missing_evidence": [
+          "Documentation stating whether the system exposes any webhook or event endpoints, and if so, how inbound events are authenticated or verified.",
+          "The text of req-WEBHOOK-001 and an assessment of whether any such endpoints, if present, are relevant to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-092",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "There is no description in the evidence (evd-001\u2013evd-005) of inbound event replay handling, idempotency, or requirement req-WEBHOOK-002. As a result, the statement that this requirement is not applicable to threat thr-004 is not established by the supplied documentation.",
+        "missing_evidence": [
+          "Design documentation describing handling of duplicate or replayed inbound events, if any webhooks or similar endpoints exist.",
+          "The definition of req-WEBHOOK-002 and mapping of its expectations to any such endpoints."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-093",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly supports that closed-ticket transcripts are exported from the helpdesk into a cloud-based Training Store bucket by the Transcript Exporter, and evd-003 directly supports that these transcripts include full message content with no redaction. This establishes that sensitive ticket data is transmitted between the Helpdesk, Transcript Exporter, and Training Store, making a data-in-transit protection requirement plausibly applicable to threat thr-005.\n\nThe evidence is silent on whether these transfers are encrypted in transit or how req-DATA-001 is defined, so the classification of the requirement as applicable and unverified rests on inference and the absence of explicit configuration details. The architecture facts are supported; the mapping to req-DATA-001's exact scope and the unverified satisfaction status are not fully documented.",
+        "missing_evidence": [
+          "The specification of req-DATA-001, including whether it covers encryption in transit for internal data flows such as Helpdesk to Transcript Exporter to Training Store.",
+          "Network and transport configuration (for example, TLS settings, private networking) for the paths used by the Transcript Exporter to move transcripts, showing whether encryption in transit is in place."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The threat describes a poisoning scenario where customer-crafted ticket content becomes training data that influences suggested replies.\n\nevd-002 and evd-003 directly support that closed-ticket transcripts are exported in full, without redaction or filtering, from the helpdesk to the Training Store, and that what the customer wrote is exactly what the model trains on. evd-005 establishes that a Customer writes the ticket messages and that Support agents are the internal users who see and edit suggested replies. evd-001 and evd-004 directly support that the system fine-tunes a suggested-reply model on closed support tickets and serves the most recent tuned artifact to agents as suggested replies.\n\nTogether, these passages establish that (1) customers control the text that becomes training data, (2) this text is used directly and unfiltered for fine-tuning, and (3) the resulting tuned model drives suggested replies shown to agents. From these facts, it is a reasonable, security-relevant inference that a malicious customer embedding adversarial or harmful content in tickets can influence the fine-tuning corpus and thereby shift model behaviour in attacker-chosen directions. The attacker motivation and specific harmful patterns are inferred, but the architectural preconditions the threat relies on are well documented.",
+        "missing_evidence": [
+          "Any documentation of safeguards against training-data poisoning, such as content filtering, sampling, or human review of transcripts before they enter the Training Store.",
+          "Monitoring or evaluation practices that might detect systematic drift in suggested replies indicative of poisoning."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Reply Tuner \u2014 System Overview\n\nThe reply tuner is an internal pipeline that fine-tunes a suggested-reply model on closed\nsupport tickets and serves the tuned model to support agents. Agents see a suggested reply\nbeside each open ticket and decide whether to use it."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Model artifacts\n\nThe tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Actors\n\n- **Support agent** \u2014 the internal user who sees and edits suggested replies.\n- **Customer** \u2014 writes the ticket messages that become training data."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The threat concerns the model memorising PII from training transcripts and regurgitating it in suggested replies.\n\nevd-002 and evd-003 directly establish that closed-ticket transcripts, including names, email addresses, and complete message bodies, are exported in full from the helpdesk to the Training Store and used without redaction or filtering for training. evd-001 and evd-004 directly support that the system fine-tunes a suggested-reply model on these closed tickets and that agents are served the most recent tuned artifact as suggested replies. evd-005 confirms the roles of Customer and Support agent.\n\nThese passages fully support the preconditions that (1) unredacted PII is present in training data and (2) tuned model outputs are shown to agents and may be reused. They do not, however, say anything about the model's propensity to memorise rare strings, about training procedures to mitigate memorisation, or about any privacy-preserving mechanisms (such as differential privacy, PII scrubbing, or output leak checking). The possibility that memorised PII is surfaced in outputs is therefore a reasonable security inference from common properties of large models and the documented data handling, but the memorisation and leakage behaviour itself is not documented.\n\nAccordingly, the threat is partially supported: the architectural and data-handling preconditions are well evidenced, while the specific memorisation and regurgitation behaviour remains inferred.",
+        "missing_evidence": [
+          "Documentation of training procedures and any techniques used to reduce memorisation of specific examples (for example, differential privacy, regularisation settings, or data sampling).",
+          "Documentation of safeguards that detect or prevent PII leakage in model outputs, such as PII scrubbing of suggestions or output leak-checking against training data."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Reply Tuner \u2014 System Overview\n\nThe reply tuner is an internal pipeline that fine-tunes a suggested-reply model on closed\nsupport tickets and serves the tuned model to support agents. Agents see a suggested reply\nbeside each open ticket and decide whether to use it."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Model artifacts\n\nThe tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Actors\n\n- **Support agent** \u2014 the internal user who sees and edits suggested replies.\n- **Customer** \u2014 writes the ticket messages that become training data."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "This threat concerns unauthorized bulk read access to training transcripts stored in the Training Store.\n\nevd-002 directly states that the Training Store is a cloud storage bucket holding exported closed-ticket transcripts, and that these include customer names, email addresses, and complete message bodies. This is direct evidence for the existence and sensitivity of the data asset an attacker might target. evd-002 also notes that the Transcript Exporter's job identity is the only writer via the platform's access policy but says nothing about which principals, if any, can read from the bucket. evd-003 provides contextual detail that the Training Store holds full transcripts with no redaction or filtering, reinforcing the sensitivity of what would be exposed by a bulk read.\n\nThe possibility that bucket read permissions are broader than intended or that a principal with read access is compromised is not described; those aspects are threat assumptions rather than documented facts. Thus, the data asset and its location are well supported, while the misconfiguration or compromise conditions remain inferred. The threat is therefore partially supported.",
+        "missing_evidence": [
+          "IAM or storage-access configuration documenting which principals have read access to the Training Store bucket.",
+          "Any security review or policy stating how access to training transcripts is restricted and monitored."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The threat describes compromise of the Transcript Exporter job identity or runtime leading to tampering with training data in the Training Store, which then propagates into tuned models and suggested replies.\n\nevd-002 directly establishes that the Transcript Exporter is a nightly job that exports closed-ticket transcripts into the Training Store, that the exporter is the only writer to the Training Store, and that its job identity is the only principal with write access to the bucket via the platform's access policy. It also shows that the Tuning Job fine-tunes the base reply model on the Training Store's current contents and writes tuned artifacts to the artifact bucket, and that the Reply Service serves the most recent tuned model to the agent console. evd-001 and evd-004 contextually reinforce the overall pipeline from closed tickets through fine-tuning to suggested replies. evd-003 adds context that the Training Store holds full, unredacted transcripts, and evd-005 identifies the Customer and Support agent roles.\n\nFrom these documented facts, it follows that any entity controlling the Transcript Exporter job identity or its runtime, and thus able to write arbitrary data into the Training Store, would effectively control the training corpus consumed by the Tuning Job, and thereby influence tuned artifacts and downstream suggested replies. The possibility that the job identity or runtime is compromised, and the absence of an independent integrity validation step before training, are not themselves documented but are standard threat-model assumptions. The architectural preconditions and propagation path the threat relies on are clearly supported by the evidence, so the threat as an integrity risk is supported.",
+        "missing_evidence": [
+          "Documentation of how the Transcript Exporter job identity and runtime environment are secured (for example, credential storage, hardening, and access controls).",
+          "Any integrity validation, review, or approval processes applied to the Training Store contents before they are used by the Tuning Job."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Reply Tuner \u2014 System Overview\n\nThe reply tuner is an internal pipeline that fine-tunes a suggested-reply model on closed\nsupport tickets and serves the tuned model to support agents. Agents see a suggested reply\nbeside each open ticket and decide whether to use it."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Model artifacts\n\nThe tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Actors\n\n- **Support agent** \u2014 the internal user who sees and edits suggested replies.\n- **Customer** \u2014 writes the ticket messages that become training data."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "This threat concerns interception of closed-ticket transcripts in transit between the Helpdesk and the Training Store.\n\nevd-002 directly supports that a nightly Transcript Exporter job exports closed-ticket transcripts from the helpdesk into the Training Store, which is a cloud storage bucket, and that transcripts include customer names, email addresses, and complete message bodies. evd-003 directly states that the Training Store holds full transcripts with no redaction or filtering. These passages establish that sensitive ticket data flows between the Helpdesk, Transcript Exporter, and Training Store, and that the contents are sensitive.\n\nThe documentation does not state whether these transfers are protected by encryption in transit or otherwise isolated on secure network paths. The threat text correctly notes this gap and then conditionally describes an attack if traffic is not strongly encrypted and an attacker can observe the relevant network segments. Those conditions (lack of encryption, attacker network position) are not documented and remain threat assumptions. Accordingly, the existence and sensitivity of the data flows are well supported, while the specific lack of encryption and interception capability are inferred, making the threat partially supported.",
+        "missing_evidence": [
+          "Network and transport security documentation for the paths used by the Transcript Exporter when communicating with the Helpdesk and the Training Store (for example, TLS usage, private networking, VPNs).",
+          "Any security review or configuration evidence confirming that these flows are protected by strong encryption in transit and limited network exposure."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Transcript Exporter\n\nA nightly job that exports closed-ticket transcripts from the helpdesk into the training\nstore. The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy.\nTranscripts are exported in full, including customer names, email addresses, and complete\nmessage bodies.\n\n### Training Store\n\nA cloud storage bucket holding the exported transcripts, organized by export date.\n\n### Tuning Job\n\nA weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket.\n\n### Reply Service\n\nServes the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Training data\n\nThe training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      }
+    ]
+  }
+}

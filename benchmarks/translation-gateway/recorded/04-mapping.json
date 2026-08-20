@@ -1,0 +1,427 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10684,
+    "output_tokens": 25705,
+    "cache_read_tokens": 11008,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.271781",
+    "duration_seconds": 242.43246066605207
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "cp-connector-helpdesk-api-token",
+        "name": "API token authentication from connector to helpdesk",
+        "description": "The Helpdesk Translate connector authenticates to the helpdesk platform using a workspace API token that allows it to read tickets and write notes in the workspace.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-002",
+        "protected_component_ids": [
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "owner": null,
+        "limitations": [
+          "The workspace API token is scoped to full workspace access rather than being limited to the minimal permissions required for the connector."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002 concerns disclosure of customer ticket content via the external translation SaaS and does not involve any administrative or operator interface; the described workflow only covers ordinary support agents using the helpdesk translation feature (evd-001, evd-002), so the requirement's administrative-interface conditions are not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002's attack path is a provider compromise exposing stored ticket text at the translation SaaS (evd-001, evd-002, evd-004). req-AI-001 addresses prompt or task injection into a model via untrusted content, which does not feature in this threat scenario, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The translation output is written back onto the same ticket as an internal note in the helpdesk (evd-002), and there is no description of automatic publication of model output to an external destination without human review, so the requirement's external-publication conditions are not met for thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Thr-002 specifically concerns sending full customer ticket bodies and extracted attachment text to an external translation SaaS over a trust boundary (evd-002), so the requirement about documenting and minimising customer content sent to an external model or processing provider directly bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "For this threat we assume ast-001 and ast-002 (customer ticket content and translated notes) are treated as confidential customer data, even though no explicit data classification is recorded."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although translated text is written back to the helpdesk as an internal note (evd-002), thr-002 concerns confidentiality loss at the external translation SaaS, not injection or rendering risks in the helpdesk UI, so the encoding requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002 does not involve user authentication or identity-provider delegation. The only authentication detail documented is the connector's workspace API token to the helpdesk (evd-003), which is a service credential rather than delegated end-user authentication, so the requirement about documenting delegated user authentication is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface is described in the workflow (evd-001, evd-002), and thr-002 concerns data sent to and stored by an external translation SaaS, so multi-factor authentication for privileged access is outside this threat's scope.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002's attack path does not involve cross-tenant data access within this system; the compromise occurs at the external translation provider where tenant separation is outside the described architecture, so the tenant-aware authorization requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the connector holds a workspace API token with broad helpdesk privileges (evd-003), thr-002 focuses on disclosure of ticket content stored at the translation provider, not over-broad use of delegated platform privileges, so this integration-privilege requirement is not engaged for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002 assumes a running connector and translation integration and focuses on provider-side data retention and compromise, with no involvement of the build or deployment pipeline, so CICD trust is outside this threat scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer ticket content and translated notes (ast-001, ast-002) are sent over HTTPS between the connector and the external translation SaaS across trust boundary tb-001 (df-001, df-002, evd-002), so the requirement for encrypting sensitive data in transit and at rest applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "For this threat we assume ast-001 and ast-002 (customer ticket content and translated notes) are treated as confidential customer data, even though no explicit data classification is recorded."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The workflow shows that customer ticket content and translated notes are retained in the helpdesk (evd-002), and evd-004 discusses the translation provider's retention of submitted text, so the requirement to define and enforce retention for sensitive working data is relevant to the impact of thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "For this threat we assume ast-001 and ast-002 (customer ticket content and translated notes) are treated as confidential customer data, even though no explicit data classification is recorded."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002 is about ticket text sent to and stored by an external translation SaaS, not about this system's own shared artifact storage layout or per-tenant separation within such storage, and the architecture excerpt does not describe any shared artifact store under this system's control, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer ticket content and translated notes are stored in at least the helpdesk platform and likely at the translation provider (ast-001, ast-002, evd-002, evd-004), so the requirement to document how customer data can be removed from all stores is relevant to limiting the impact of thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "For this threat we assume ast-001 and ast-002 (customer ticket content and translated notes) are treated as confidential customer data, even though no explicit data classification is recorded."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system clearly handles customer ticket content that is likely to be sensitive (ast-001, ast-002, evd-002). req-LOG-001 would apply to thr-002 if this content is written to logs that are then forwarded to another team's or provider's logging platform, but the documentation does not state whether ticket content is logged or where logs are sent.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "For this threat we assume ast-001 and ast-002 (customer ticket content and translated notes) are treated as confidential customer data, even though no explicit data classification is recorded."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No privileged administrative or operator interface is described; the documented interaction is ordinary agents using helpdesk tickets and the connector invoking the translation provider (evd-001, evd-002), so auditing of privileged administrative actions is outside this threat's scope.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002 involves HTTPS traffic between the connector and an external translation SaaS (df-001, df-002) rather than internal data stores, queues, or caches with weak authentication, so the internal-network placement and segmentation requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the connector uses a workspace API token to authenticate to the helpdesk (evd-003), thr-002's attack path and preconditions focus on compromise and misuse of data stored at the translation provider, not loss or misuse of long-lived credentials held by this system, so this secrets-storage requirement is not engaged for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-002 assumes compromise of data stored at the translation SaaS rather than misuse of stored access tokens to customer resources on external platforms, and the documentation does not describe use of short-lived installation-scoped credentials, so this requirement does not bear on the threat as posed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer ticket content and translated notes are sent to and processed by an external translation SaaS (evd-001, evd-002), so the requirement to document what is sent, and the provider's retention and usage terms, directly bears on the third-party compromise described in thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [
+          "For this threat we assume ast-001 and ast-002 (customer ticket content and translated notes) are treated as confidential customer data, even though no explicit data classification is recorded."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While translation requests likely consume a metered external service, thr-002 is scoped to confidentiality impact from provider-side data retention and compromise, not to unbounded cost or capacity consumption from externally triggered work, so this bounding requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The integration sends HTTPS requests from the connector to the translation SaaS and receives responses (df-001, df-002); no inbound webhook or event endpoint exposed to external platforms is described, so this webhook-authenticity requirement does not apply to thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because there is no inbound webhook or event processing described for this integration (df-001, df-002), there is no replay risk of inbound events in thr-002's attack path, so this requirement is not applicable.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Translation provider data retention and usage are undocumented",
+        "description": "The data-handling section states that no agreement covering the translation provider's retention of submitted text or its use beyond returning the translation has been established and that only the provider's standard terms apply, which have not been reviewed for this integration (evd-004). As a result, the documentation does not state whether or for how long the provider retains ticket content and translations, or whether they are used for purposes beyond serving the translation request, which prevents verification of req-TPI-001 and req-DATA-002 for thr-002.",
+        "importance": "Understanding how long the translation provider keeps submitted ticket text and how it may use it is necessary to assess the confidentiality impact of a provider compromise in thr-002 and to judge satisfaction of the external-processor data-handling and retention requirements.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-001",
+          "cmp-003",
+          "ast-001",
+          "ast-002",
+          "req-TPI-001",
+          "req-DATA-002"
+        ],
+        "requested_evidence": [
+          "A summary of the translation provider's data processing and retention terms relevant to this integration, including whether submitted text and translations are stored, for how long, and for what purposes.",
+          "Any data processing agreement or configuration (for example, options to disable retention or training) that modifies the provider's default terms for this integration."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Scope and necessity of ticket content sent to the translation provider are not justified",
+        "description": "The workflow description states that the connector sends the full ticket body, including any customer-written text and extracted attachment text, to the translation provider over HTTPS and writes the returned translation back as an internal note (evd-002). The documentation does not explain why sending the full ticket body and all extracted attachment text is necessary for the translation task, or whether any fields or attachment types are excluded. This prevents verifying whether data sent to the external provider is minimised as expected by req-AI-003 for thr-002.",
+        "importance": "Justifying why the full ticket body and attachment text must be sent to the translation provider is important to limit the volume and sensitivity of data exposed in the event of a provider compromise as described in thr-002.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-001",
+          "cmp-003",
+          "ast-001",
+          "ast-002",
+          "req-AI-003"
+        ],
+        "requested_evidence": [
+          "Documentation describing which parts of a ticket (fields, comments, and attachment content) are sent to the translation provider and which are excluded, if any.",
+          "An explanation of why the selected scope of ticket and attachment content is necessary for accurate translations, including any trade-offs considered around data minimisation."
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

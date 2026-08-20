@@ -1261,6 +1261,7 @@ tests/
   unit/
   integration/
   evaluation/
+  fixtures/
 docs/
   architecture/
   assets/

@@ -1,0 +1,508 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 22229,
+    "output_tokens": 17604,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.20382625",
+    "duration_seconds": 166.85303516697604
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctl-delegated-sso-auth",
+        "name": "Delegated SSO authentication for interactive users",
+        "description": "The Identity Service delegates all interactive sign-in for customers, drivers, and staff to the company's SSO provider over OpenID Connect and then issues short-lived internal tokens that core services verify [evd-003].",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-004",
+        "protected_component_ids": [
+          "cmp-012"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "owner": null,
+        "limitations": [
+          "Uses the same SSO accounts and sign-in path for staff operators as for customers, so the access path for administrators is not stronger than customer access [evd-003]."
+        ]
+      },
+      {
+        "key": "ctl-admin-console-is-admin-gate",
+        "name": "Admin Console restricted by is_admin flag",
+        "description": "Admin Console staff functions for refunds, address corrections, and account management are enabled only for SSO users whose user record carries an is_admin flag; the console can read and edit any customer account, order, and address [evd-003].",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-012",
+        "protected_component_ids": [
+          "cmp-014"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "owner": null,
+        "limitations": [
+          "Staff reach the Admin Console using the same SSO accounts and sign-in path as customers, so administrative access is not through a stronger access path than customer access [evd-003].",
+          "Within the Admin Console, administrators appear to have global read/write access to all customer accounts and orders without finer-grained roles or scoping [evd-003, evd-006]."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [
+          "ctl-delegated-sso-auth",
+          "ctl-admin-console-is-admin-gate"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system exposes an Admin Console used by staff operators to perform refunds, address corrections, and account management, and this console can read and edit any customer account, order, and address [evd-003, evd-006], so there is a privileged administrative interface acting on customer data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the is_admin flag reliably restricts Admin Console functionality to a defined set of staff operator accounts as described [evd-003, evd-006]. The same SSO sign-in path is used for both customers and staff, so the access path for administrators is not stronger than customer access [evd-003]."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-001 concerns compromise of a staff SSO account and abuse of the Admin Console to view and modify orders and customer records [evd-003, evd-006]. The attack path does not involve passing untrusted content to a model, so controls on treating source content as untrusted model input do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described threat path involves a compromised staff SSO account using the Admin Console over the standard web and SSO path [evd-003]; it does not publish model output externally or depend on model-generated content, so requirements about validating model output before external publication do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-001 is about abuse of an administrative web console against the Orders Database [evd-003, evd-004] and does not involve sending customer content to an external model provider, so data minimization for external model calls does not affect this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not involve model output being rendered into user interfaces or external markup; it is about interactive use of the Admin Console by a compromised staff account [evd-003, evd-006], so output encoding for model responses is not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [
+          "ctl-delegated-sso-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "User authentication for customers, drivers, and staff is delegated to the company\u2019s SSO provider over OpenID Connect [evd-003], and the threat path explicitly relies on SSO authentication, so the requirement on documenting delegated authentication applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [
+          "ctl-delegated-sso-auth",
+          "ctl-admin-console-is-admin-gate"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system exposes an Admin Console through which staff operators can act on customer accounts and orders [evd-003, evd-006], and staff reach the console via the same SSO sign-in path as customers [evd-003], so multi-factor authentication for this privileged, externally reachable access is in scope for this threat.",
+        "suppressed_conclusion": "Did not conclude that multi-factor authentication is absent for administrative SSO access solely because no MFA enrolment flow or application-side factor configuration is documented.",
+        "suppressed_by": "req-AUTH-002 common_false_positives: absent application-managed enrolment or factor-registration flow; absent application-side factor configuration setting.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume staff access the Admin Console over the same internet-exposed SSO path as customers, based on the shared sign-in description and the public API Gateway authenticating requests against the Identity Service [evd-002, evd-003]."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-001 is driven by a compromised or malicious staff operator with intended global access via the Admin Console [evd-003, evd-006]; it does not depend on a failure to constrain ordinary customer requests to their tenant, so the tenant-aware authorization requirement does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path does not involve delegated access to an external platform; it concerns direct use of the Admin Console and internal data stores [evd-003, evd-004], so requirements on limiting integration privileges to external platforms do not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the platform has a Deploy Runner for automated deployments [evd-005], threat thr-001 arises from compromise of a staff SSO account at runtime and abuse of the Admin Console [evd-003, evd-006], not from weaknesses in the build or deployment pipeline, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat describes an attacker using legitimate Admin Console access to view and modify customer and order data [evd-003]; encryption of that data in transit or at rest would not prevent misuse once the console presents it in plaintext, so this encryption requirement does not meaningfully address this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-001 concerns unauthorized viewing and tampering with live orders and customer records through the Admin Console [evd-003, evd-004], not retention of working data or intermediate artifacts, so data-retention controls do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described attack path operates via the Admin Console and the Orders Database [evd-003, evd-004]; it does not involve stored artifacts such as label PDFs or proof-of-delivery photos in shared object storage, so requirements on tenant separation of stored artifacts do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is about a compromised or malicious staff operator misusing the Admin Console to exfiltrate or tamper with customer data [evd-003, evd-006]; it is not about the system\u2019s ability to delete customer data on request, so the deletion-path requirement does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the platform does log rendered notification message bodies containing personal data [evd-003], threat thr-001 focuses on a compromised admin using the Admin Console to access and modify orders and customer records directly [evd-003, evd-006]; whether sensitive data is present in application logs does not materially affect this particular threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system exposes an Admin Console as a privileged interface [evd-003] through which staff operators can act on customer data [evd-003, evd-006], so requirements for recording security-relevant administrative actions apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Orders Database is reachable only from the core zone [evd-004], and the described threat path relies on legitimate access through the Admin Console and Identity Service [evd-003], not on direct network reachability of internal components from untrusted networks. Network segmentation of internal stores therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-001 assumes attacker control of a staff SSO account or session [evd-003, evd-006]; it does not involve compromise or misuse of long-lived signing keys or provider credentials held by the system, so this secrets-management requirement does not bear directly on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path does not involve access tokens or credentials used to reach customer resources on external platforms; it is confined to internal SSO and the Admin Console [evd-003, evd-006], so requirements on short-lived external-access credentials do not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the platform uses external providers (e.g., messaging, payments) [evd-003], threat thr-001 does not involve data sent to external processors; it is about direct access to internal orders and customer records via the Admin Console [evd-003, evd-006], so external-processor data-handling documentation does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not involve work that consumes a metered external service being triggered by inbound events; it focuses on manual or interactive misuse of the Admin Console by a compromised staff account [evd-003, evd-006], so bounding externally triggered work does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-001 does not involve endpoints that accept events from external platforms; the attack proceeds through interactive SSO sign-in and Admin Console use [evd-003, evd-006], so requirements on verifying inbound webhook authenticity do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No inbound event or webhook processing appears in the described attack path, which is driven by interactive Admin Console use after SSO authentication [evd-003, evd-006], so replay protection for inbound events does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "MFA expectations for Admin Console SSO access are undocumented",
+        "description": "The documentation states that all interactive sign-in for customers, drivers, and staff is delegated to the company\u2019s SSO provider over OpenID Connect [evd-003], and that staff reach the Admin Console with the same SSO accounts and sign-in path customers use [evd-003, evd-006]. However, it does not state whether multi-factor authentication is required for staff operators, particularly those with the is_admin flag, nor which party enforces any factor policy. For threat thr-001, where compromise of a staff SSO account enables full access via the Admin Console, knowing whether MFA is enforced and by whom would directly affect the assessed likelihood.",
+        "importance": "Clarifying MFA enforcement and responsibility for staff SSO accounts, especially Admin Console operators, is important to understand how resistant these accounts are to credential theft or phishing, which directly impacts threat thr-001.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-004",
+          "cmp-012",
+          "act-003"
+        ],
+        "requested_evidence": [
+          "Identity provider or organization-level MFA policy that applies to staff SSO accounts, especially those with is_admin access to the Admin Console.",
+          "Architecture or operations documentation stating whether MFA is required for Admin Console access, how it is enforced, and which party (identity provider, identity-aware proxy, or application) owns that control."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Administrative auditing for Admin Console actions is not described",
+        "description": "The platform overview describes the Admin Console as allowing staff to read and edit any customer account, order, and address [evd-003], but does not state whether actions taken through this console are recorded with the acting operator identity or where such records are stored. For threat thr-001, where a compromised or malicious staff operator could exfiltrate or tamper with large volumes of customer data, the presence or absence of an audit trail significantly affects detectability and post-incident investigation, but the documentation is silent.",
+        "importance": "Understanding whether privileged actions in the Admin Console are audited, and where those records are kept, is important for assessing the ability to detect and investigate misuse of administrative access such as in threat thr-001.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-012",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Operations or logging documentation describing what Admin Console actions are audited, how the operator identity is captured on each record, and where those audit logs are stored and managed."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The Admin Console grants broad read/write access to all customer accounts, orders, and addresses to any account with the is_admin flag, with no described role-based or least-privilege scoping among staff operators, so a single compromised admin can act across all customers.",
+        "suggested_category": "authorization",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "req-ADMIN-001 focuses on ensuring that administrative interfaces use a stronger access path than customer access and that their data reach is documented; it does not require that access within the administrative interface itself be minimized or partitioned by role or scope among operators."
+          },
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 addresses tenant-aware authorization for ordinary requests so that each is constrained to its tenant, derived from server-side state. It does not speak to over-broad privileges granted to internal operator roles that are intentionally cross-tenant, such as a global Admin Console role."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ]
+      }
+    ]
+  }
+}

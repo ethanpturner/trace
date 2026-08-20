@@ -19,3 +19,14 @@ the retention question the index's silence raises is the question the run itself
 Evidence coverage was 1.0. Against the truth set this scores 0 matched, 1 missed, 0 spurious:
 the strict reviewer line trades recall for a clean precision record, measured rather than
 argued. Reconciliation is #589's.
+
+## Live baselines (2026-08-20)
+
+The `baselines/` directory holds live baselines captured from `openai/gpt-5.1` through
+OpenRouter under `openrouter-economy` as part of the #484 backfill, replacing the authored
+generic and structured files and adding the single-pass one. Scored against the truth set at
+capture time: baseline-generic 0 matched, 1 missed, 4 spurious; baseline-structured 0/1/3;
+baseline-single-pass 1 matched, 0 missed, 3 spurious. The single-pass baseline is the only
+baseline in the backfill to match an expected finding, and it pays for it with three
+inventions. The envelopes record findings, not usage — three single calls at economy rates,
+cents each.

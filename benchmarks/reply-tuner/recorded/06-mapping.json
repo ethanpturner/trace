@@ -1,0 +1,717 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12595,
+    "output_tokens": 23704,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.25529575",
+    "duration_seconds": 284.14305175002664
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns compromise of the Transcript Exporter batch job identity and tampering with the Training Store bucket; no administrative or operator interface is involved in the described attack path, so the requirement about restricting privileged administrative interfaces does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AGENT-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path involves scheduled batch jobs (Transcript Exporter and Tuning Job) and a service generating per-ticket suggestions, not an autonomous multi-step or recursive agent loop triggering actions without a person initiating each one, so bounds on agent execution do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AGENT-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat describes model-generated suggested replies that agents may edit or discard before sending [evd-001][evd-002]; there is no agent executing privileged, irreversible, or outward-facing actions autonomously, so human approval gates on such actions are not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AGENT-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No tools or external services are invoked directly by the model in the described pipeline; the threat concerns training data in a storage bucket and a tuning job, so least-privilege enforcement for model-invoked tools does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AGENT-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components in the attack path (batch jobs, storage buckets, reply service, and agent UI) do not include external tool servers or MCP-like integrations; the threat is about tampering with an internal Training Store, so requirements on adopting/authenticating external tool servers are not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat targets the integrity of a fixed training corpus in a storage bucket and its use in fine-tuning, rather than prompt-time handling of untrusted content under analysis. Injection here occurs via poisoned training data, which is covered by the fine-tuning requirements, so this input-handling requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Model output (suggested replies) is shown to internal support agents, who may edit or discard them before sending responses to customers [evd-001][evd-002]; publication is not automatic, so the requirement about validating output that is published externally without human review does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "In this threat, customer transcripts are exported to an internal Training Store bucket and consumed by an internal Tuning Job [evd-002][evd-003]. The attack path does not describe sending this content to an external model provider, so minimization of data sent to an external provider does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Reply Service generates model output (suggested replies) that is rendered in the Agent Console user interface [evd-001][evd-002]. If training data is poisoned, suggested replies could carry attacker-controlled content into this UI, so the requirement that model output be encoded for its rendering context bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns compromise of a batch job identity and tampering with a storage bucket; no user sign-in flow or external identity provider appears in the attack path or referenced components, so documentation of delegated end-user authentication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described compromise is of a job identity used by the Transcript Exporter, not of an administrator authenticating through an external interface. Multi-factor authentication policy for privileged interactive access is therefore not engaged by this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path focuses on a privileged writer identity to the Training Store and its effect on model training; it does not involve per-request tenant scoping or authorization checks on end-user-facing requests, so tenant-aware authorization for serving traffic does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the Transcript Exporter reads from a helpdesk system, the modeled threat is specifically about its exclusive write access to the internal Training Store bucket and subsequent fine-tuning. The path does not involve delegated privileges on an external platform being over-broad, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat assumes compromise of the Transcript Exporter job identity or runtime as a precondition, without specifying that this occurs via the build or deployment pipeline. The requirements about how the deployment pipeline authenticates and manages dependencies would address different threats to pipeline trust, not this specific training-data poisoning path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OPS-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The scenario describes tampering with live training data in the Training Store and its propagation into tuned models; it does not involve backup storage or deletion of backups, so separation of backup deletion from creation does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OPS-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although model training and inference may consume resources, the modeled threat is about integrity of training data and model behavior, not unbounded or anomalous spend on metered infrastructure, so cost-anomaly detection does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OPS-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Environment separation between production and non-production is not part of the described attack path, which operates entirely within the production-like training pipeline (exporter job, training bucket, tuning job, artifacts). Indirect paths between environments are not invoked here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OPS-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat does not involve changes to the deployment pipeline definition or out-of-band deployments; it assumes a compromised job identity acting within its existing privileges. Visibility into pipeline changes therefore does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OPS-005",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Operational alert volume and routing are not part of the described path from job identity compromise to poisoned training data and model behavior; whether alerts are scoped to remain actionable does not directly bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Training Store holds confidential customer transcripts [evd-002][evd-003], but the threat is about an already-authorized writer identity tampering with that data. Encryption in transit or at rest would not prevent this integrity attack by a privileged writer, so this encryption requirement does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat involves poisoning of training data and its effects on tuned models, not questions of how long sensitive working copies are retained; data-retention controls would affect exposure duration but are not engaged in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Training Store bucket holds exported transcripts, but the threat concerns a single privileged writer identity altering them. Cross-tenant separation of stored artifacts is not part of the described scenario and does not mitigate the poisoning performed by that writer.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Customer data deletion on request is not part of the modeled attack path, which focuses on unauthorized modification and insertion of training data rather than failure to delete data from all stores.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The compromised principal in this threat is the Transcript Exporter job identity, which already has legitimate network reach to the Training Store via the platform\u2019s access policy [evd-002]. Network placement of internal components with respect to untrusted networks does not address this abuse of an authorized identity.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OIDC-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No browser-based delegated sign-in or redirect flow appears in the described components or data flows; the attack path involves batch jobs and storage buckets, so requirements on redirect URI registration for OIDC/OAuth clients do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OIDC-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat does not involve consumption of ID tokens or access tokens in its steps; it is driven by a compromised batch job identity granted direct platform access to a bucket [evd-002], so token validation for delegated authentication is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OIDC-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No local session established from a delegated sign-in is involved in the attack path; the compromised identity is a non-interactive job identity, so requirements about session lifetime and termination for browser sessions do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OIDC-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The authorization-code-to-token exchange in a delegated sign-in flow is not part of the described components or attack steps, which revolve around a batch job\u2019s platform identity and storage buckets; binding of an authorization code exchange therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat is explicitly about who can write to the training corpus: the Transcript Exporter is the only writer to the Training Store bucket, and its job identity is the only principal with write access via the platform\u2019s access policy [evd-002]. This directly engages the requirement that training data enter through a governed write path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data is derived from customer support transcripts that include names, email addresses, and full message bodies [evd-002][evd-003], and the Tuning Job fine-tunes a model on this corpus [evd-002], so the requirement about minimizing or explicitly justifying use of sensitive content for training bears directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [
+          "Assumes there is no separate document in scope that describes redaction, pseudonymization, or a reviewed justification for training on full transcripts beyond what is stated in system-overview.md."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Tuning Job produces tuned reply model artifacts weekly and writes them to an Artifact Bucket, from which the most recent artifact is served to agents [evd-004]; tuned artifacts are thus produced and served, so the requirement that they carry lineage information is engaged by this threat, which involves poisoning that lineage.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the system handles restricted customer data in transcripts [evd-002][evd-003], the modeled threat is about corruption of training data and downstream model behavior, not leakage of that data via logs or log forwarding, so this logging-data-protection requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface for changing security configuration or customer data is involved in the attack path; the compromise is of a non-interactive job identity, so requirements for auditing privileged UI actions are not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CODEGEN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system description does not involve executing model-generated code or queries; the threat is about using poisoned training data to influence natural-language suggested replies, so isolation of model-generated code does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CODEGEN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Model-generated artifacts here are suggested replies, not code or configuration that is merged or deployed through CI/CD, so requirements that generated changes pass the same gates as human changes do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat involves a training corpus used for fine-tuning and a reply model serving suggestions, not a retrieval-augmented generation pipeline where stored content is retrieved into prompts at answer time, so governance of a retrieval corpus\u2019s write path does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "There is no retrieval index or per-request retrieval step in the described architecture; replies are generated by a tuned model rather than by retrieving documents, so authorization-filtered retrieval does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The training corpus is consumed directly from the Training Store for fine-tuning [evd-002][evd-003]; no retrieval index or embeddings lifecycle is described, so requirements about propagating deletions or corrections into a retrieval index do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Transcript Exporter job identity is the only principal with write access to the Training Store bucket via the cloud platform\u2019s access policy [evd-002], so there is at least one credential or identity that authorizes access to an external platform resource on behalf of the system. Compromise of this identity is the starting point of the threat, so the requirement that such credentials be held in a managed secret store bears directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system accesses customer resources on an external helpdesk (closed-ticket transcripts) via the Transcript Exporter [evd-002], and it may also authenticate to cloud storage. The requirement applies if these platforms offer short-lived or installation-scoped credentials and the system could choose between those and long-lived tokens; the documentation does not state which credential type is used, so applicability is conditional on that unstated fact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Assumes the external helpdesk and/or cloud platform support short-lived or installation-scoped credentials; the documents in scope do not state what credential types are available or chosen."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the Transcript Exporter pulls data from a helpdesk, the threat focuses on tampering within the internal Training Store and subsequent fine-tuning; it does not involve questions about an external processor\u2019s retention or usage terms, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described processing that consumes external resources is the internal training job using the Training Store; no webhook-triggered or externally-triggered workload consuming metered external services appears in the attack path, so bounding work triggered by external events does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No inbound webhook or event endpoint from an external platform is involved in the threat; work begins with a scheduled internal Transcript Exporter job, so requirements for verifying the authenticity of inbound events do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Since the system does not process inbound events in this attack path, there is no notion of event replay or duplicate delivery affecting the described training-data poisoning scenario, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Lineage of tuned reply model artifacts is not documented",
+        "description": "The documentation states that the Tuning Job writes each week\u2019s tuned model artifact to an Artifact Bucket named by date and that agents are served the most recent artifact [evd-004]. It does not describe any model registry or artifact metadata that records lineage details such as the base model version or the specific training data snapshot used. Without this, it is not possible to determine from the documentation whether requirement req-TRAIN-003 (tuned artifacts carry their lineage) is fully met or to trace which artifacts would be affected by training-data poisoning.",
+        "importance": "Understanding artifact lineage is important for responding to training-data poisoning or base-model recall events, because it determines which tuned artifacts and time windows are affected and which can be safely trusted or rolled back to.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-006",
+          "cmp-004",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Documentation naming the registry or store where tuned reply model artifacts are registered, and describing what lineage metadata (e.g., base model identity/version and training-data snapshot or period) is recorded for each artifact."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Handling and justification of using full customer transcripts for training is not fully described",
+        "description": "The system overview states that transcripts are exported in full, including customer names, email addresses, and complete message bodies [evd-002], and that there is no redaction or filtering step between the helpdesk and the Training Store; what the customer wrote is what the model trains on [evd-003]. The documentation does not describe any minimization, redaction, or transformation of sensitive elements, nor does it explain the reviewed rationale for training on full transcripts. This prevents determining from documentation alone whether req-TRAIN-002 (sensitive content is minimized before training or explicitly justified) is fully satisfied.",
+        "importance": "Clarifying whether and how sensitive elements are minimized before training, or why training on full transcripts is justified, is important both for privacy risk assessment and for evaluating the impact of training-data poisoning on particularly sensitive fields.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Documentation of any redaction, pseudonymization, filtering, or field-level minimization applied to transcripts before they enter the Training Store and training pipeline, or alternatively a statement of the reviewed decision to train on full transcripts and its justification."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

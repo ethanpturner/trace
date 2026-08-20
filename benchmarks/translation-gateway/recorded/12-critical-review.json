@@ -1,0 +1,28 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 18285,
+    "output_tokens": 11162,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.13447625",
+    "duration_seconds": 111.1367078749463
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-051",
+        "critique_type": "documentation_gap_only",
+        "description": "eas-051 treats the behaviour \"send the full ticket body and extracted attachment text\" as evidence that req-AI-003\u2019s data-minimisation aspect is at least partially unmet, but evd-002 only documents what is sent, not that unnecessary data is included or that any minimisation control is absent.",
+        "rationale": "evd-002 states that the connector sends the full ticket body, including customer-written text and extracted attachment text, to the translation provider over HTTPS and writes the translation back as an internal note. This is documentation of the current data flow, not an analysis of whether this is more than the minimum necessary content or whether alternative, more-minimised designs were considered. From the evidence, we do not know, for example, whether any ticket fields, attachment types, or metadata are excluded, or whether sending the entire ticket body is required for acceptable translation quality. \n\neas-051 concludes that this behaviour is \"evidence that data minimisation is not being performed\" and that the requirement is \"at least partially not satisfied rather than simply unknown.\" That conclusion treats the absence of explicit minimisation rationale or exclusions as proof of a failed minimisation control, which is exactly the kind of documentation gap the pipeline already records in gap-003. Given the evidence, the stronger and safer reading is that minimisation cannot yet be verified, not that it is known to be absent. The mapping\u2019s current `unverified` status for req-AI-003 is therefore consistent with the evidence, and eas-051\u2019s push toward a negative satisfaction conclusion is not fully supported by evd-002.",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11352,
+    "output_tokens": 10581,
+    "cache_read_tokens": 11008,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.121376",
+    "duration_seconds": 105.6083572920179
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns replay and duplication of payment-provider callbacks through a webhook and subsequent posting to an operations channel; no administrative or operator interface is involved in the described attack path, so the applicable conditions about privileged administrative access do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat involves HTTP callbacks and message posting, not any model invocation, and there is no indication that content is passed to an AI model, so the conditions about untrusted content sent to a model do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is described in the attack path; the system processes callbacks and posts messages, so the conditions about publishing model output externally do not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture excerpts for this threat do not mention any external model provider or customer content sent for model inference, so the conditions about sending customer content to an external model provider are not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No AI model output is rendered into a UI or markup; the threat concerns plain order-status messages posted to an operations channel, so the requirement about encoding model output does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves a payment provider calling a webhook endpoint and an internal service posting to an external channel API; there is no delegated end-user authentication or user login surface in scope, so the conditions about delegating user authentication to an external identity provider do not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No privileged administrative interface is described in the components or attack path; the threat concerns webhook callback handling rather than administrative access, so the multi-factor authentication expectation for administrative or privileged external access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns repeated callbacks for the same order and their propagation to an operations channel, not cross-tenant access or tenant boundary enforcement; the requirement\u2019s conditions about serving multiple customers in shared storage are not implicated in this specific replay/duplication scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the system integrates with an external channel platform API, the described threat is about duplicate or replayed callbacks generating confusing order-status messages, not about over-broad delegated permissions on that platform; limiting integration privileges would not address this threat\u2019s replay and idempotency concerns.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path is entirely at runtime (callbacks and message posting) and does not involve the build or deployment pipeline, pipeline credentials, or third-party build components, so the deployment-path trust requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described impact is integrity and clarity of order-status information and additional processing load, not disclosure of confidential data across networks or at rest; encryption of data would not change whether duplicate or replayed callbacks create conflicting messages, so this data-protection requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns real-time processing of callbacks and posting of messages, with no mention of retained working copies or retention periods; controls on retention duration do not influence whether duplicate callbacks generate confusing live status messages, so this requirement does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "There is no description of stored artifacts shared between tenants in the attack path; the threat is about transient callbacks and channel messages for a given order rather than long-lived artifact storage, so tenant separation of stored artifacts does not bear on this threat scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The scenario focuses on how callbacks update order status and generate channel messages, not on customer-initiated data deletion or removal of data from secondary stores; the requirement about deletion on request therefore does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Logs are not mentioned in the threat description or attack path; the concern is confusing or conflicting order-status messages in an operations channel, not exposure of restricted data via logs or the destination of log streams, so this logging requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No privileged administrative interface or security-configuration changes are part of this threat; the actions are automated callback handling and message posting, so the requirement to audit security-relevant administrative actions does not apply to this scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components in the attack path that are network-exposed (the Callback Receiver and the channel platform HTTPS API) are public interfaces by design, documented as such (e.g., the Callback Receiver is an endpoint registered with the payment provider, and df-001 is internet-exposed), so the requirement about restricting reachability of internal data stores, queues, or caches does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the Channel Poster calls an external HTTPS API, the threat scenario does not involve compromise or misuse of stored credentials or signing keys; it is driven by repeated callbacks and retry behaviour, so custodianship of long-lived secrets does not affect whether the threat occurs.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path does not describe any credentials used to access customer resources on external platforms being replayed or misused; the concern is replay of inbound webhook events, not lifetimes of outbound access tokens, so this requirement does not bear directly on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although customer-related order status passes through a payment provider and a channel platform, the described threat is about duplicate or replayed callbacks confusing operators, not about the providers\u2019 retention or secondary use of customer data, so the external-processor data handling requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Payment-provider callbacks (events the system does not originate) trigger work that posts to an external channel platform HTTPS API, and the Channel Poster is documented as retrying on provider outages, so the applicable conditions about work triggered by external events and failed work being retried automatically hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Callback Receiver is a webhook endpoint registered with an external payment provider that processes callbacks affecting order status, so it matches the conditions of an endpoint that accepts events from an external platform and triggers processing or state change, making this authenticity-verification requirement directly relevant to the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Payment-provider callbacks drive processing that results in externally visible order-status messages in the operations channel, so processing is state-changing and externally visible; this matches the applicable condition for handling replay or duplicates of inbound events in this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Replay and duplicate callback handling is not documented for Order Notifier",
+        "description": "The available documentation notes that Channel posting has retried safely during provider outages and explicitly states that nothing was noted about repeated deliveries of the same callback, but it does not describe whether or how the system detects duplicate or replayed callbacks, enforces idempotency, or bounds work triggered by repeated deliveries. As a result, it is not possible to determine from the documents whether replayed or duplicate callbacks are absorbed harmlessly or cause repeated work and multiple messages, which directly affects threat thr-004.",
+        "importance": "Understanding duplicate and replay handling for payment-provider callbacks, and any bounds on work triggered by such callbacks, is necessary to assess whether repeated or maliciously replayed events can drive unbounded processing or generate confusing, conflicting order-status messages in the operations channel.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-001",
+          "cmp-002",
+          "df-001",
+          "df-002",
+          "df-003"
+        ],
+        "requested_evidence": [
+          "Documentation describing how the Callback Receiver and downstream processing handle duplicate or replayed callbacks, including any event identifiers, idempotency keys, or persistence used for deduplication.",
+          "Documentation of any rate limits, retry limits, or other bounds applied to work triggered by callbacks, including how Channel Poster retries are constrained when callbacks are repeated.",
+          "Any architecture or operations notes that state whether repeated deliveries of the same callback are expected and how they are made harmless for order-status messaging."
+        ],
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

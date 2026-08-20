@@ -1,0 +1,1374 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12773,
+    "output_tokens": 30332,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.31928625",
+    "duration_seconds": 436.10410245798994
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-005 directly document that the Callback Receiver is an endpoint registered with the payment provider that accepts and processes any well-formed, unsigned callback, including from arbitrary sources. This supports the part of the applicability reasoning that thr-001 involves abuse of an unauthenticated inbound callback endpoint to trigger normal posting work, and that the primary mechanism is spoofed callbacks rather than misuse of long-lived outbound credentials. However, the documents do not define req-SECRET-002, do not describe any credentials used to access customer resources on external platforms, and do not link thr-001 to such credentials. The conclusion that req-SECRET-002 is not applicable to thr-001 therefore rests partly on unstated requirement and threat definitions and is only partially evidenced.",
+        "missing_evidence": [
+          "Security requirements documentation defining req-SECRET-002 and the conditions under which it applies.",
+          "Threat model or design documentation for thr-001 that explicitly describes the attack path and confirms that no customer-resource credentials on external platforms are involved in the threat.",
+          "Any mapping or rationale document that explicitly records why req-SECRET-002 was judged out of scope for thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-003 directly establish that Order Notifier receives order-status callbacks from the payment provider and that the Channel Poster formats order status and posts it to an operations channel over the channel platform's HTTPS API. This supports the portion of the reasoning that thr-001 concerns the integrity of order-status messages sent via this pipeline. However, the provided excerpts do not define req-TPI-001 (about external processors' data retention and use), do not describe any retention/secondary-use properties of the payment provider or channel platform, and do not document thr-001's impact in terms that explicitly exclude those concerns. The claim that req-TPI-001 \"does not bear on this threat\" is therefore only partially supported by the available system description and remains unconfirmed.",
+        "missing_evidence": [
+          "A requirements specification defining req-TPI-001 and its scope (in particular, how it relates to documentation of external processors' retention and use of data).",
+          "Threat model documentation for thr-001 that explicitly states its impact and confirms that it does not involve questions of data retention or secondary use by the payment or channel providers.",
+          "Any mapping record or review notes that explicitly justify marking req-TPI-001 as not applicable to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 directly shows that the Channel Poster calls an external channel platform HTTPS API to post order status, and evd-006 notes that channel posting has been retried during provider outages. This supports the idea that callbacks can trigger external work and that retries occur, but the excerpts say nothing about whether this API usage is metered or represents significant externally billed resource consumption. The reasoning that thr-001 is about integrity of ordinary-cost updates rather than unbounded consumption is therefore an inference beyond the provided text. Without documentation of req-TPI-002's trigger conditions or of the metering characteristics of the channel API, the conclusion that req-TPI-002 is not applicable to thr-001 is only partially evidenced.",
+        "missing_evidence": [
+          "Definition of req-TPI-002, including its preconditions (e.g., whether it is limited to metered or capacity-limited external services).",
+          "Billing or service-description documentation for the channel platform HTTPS API indicating whether calls are metered or otherwise capacity-limited.",
+          "Threat model documentation for thr-001 clarifying whether unbounded external work or cost is in scope.",
+          "An explicit mapping rationale stating why req-TPI-002 is considered out of scope for thr-001 given the characteristics of the channel API."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-005 directly document that the Callback Receiver is an endpoint registered with the payment provider which accepts and processes any well-formed, unsigned callback from anywhere. evd-001 shows that these callbacks drive updates posted to the operations channel. Together, these passages support the claim that the system exposes a webhook-style endpoint that accepts events from an external platform and triggers further processing, which matches the stated trigger conditions for a webhook-authenticity requirement like req-WEBHOOK-001. However, the supplied excerpts do not define req-WEBHOOK-001, do not describe thr-001, and do not explicitly state that this requirement is considered applicable to that threat. The mapping \"req-WEBHOOK-001 is applicable to thr-001\" is therefore only partially established by the available documentation.",
+        "missing_evidence": [
+          "Security requirements documentation defining req-WEBHOOK-001 and the kinds of endpoints or threats it is meant to cover.",
+          "Threat model documentation for thr-001 describing the attack path and confirming that it involves forged or unauthenticated callbacks to this endpoint.",
+          "An explicit mapping table or review note that records req-WEBHOOK-001 as applicable to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-005 directly establish that callbacks are not signed, the provider's signing feature is not enabled, and the callback endpoint accepts unsigned requests from anywhere. This strongly supports the factual premise that there is currently no cryptographic origin verification for inbound callbacks. On that basis, it is reasonable to infer that a requirement focused on handling replay of already-authenticated webhook events (as req-WEBHOOK-002 is described) would not address the primary problem in thr-001, which concerns acceptance of entirely forged but unauthenticated callbacks. However, the provided material does not include the formal definition of req-WEBHOOK-002 or the detailed description of thr-001, so the conclusion that the requirement is not applicable to thr-001 cannot be fully verified from the text.",
+        "missing_evidence": [
+          "The formal definition of req-WEBHOOK-002, including whether it is explicitly scoped to replay or duplication of already-authenticated webhook events.",
+          "Threat model documentation for thr-001 clarifying that the threat is about forged (unauthenticated) callbacks rather than replay of valid ones.",
+          "A mapping or review record that explicitly documents why req-WEBHOOK-002 was judged not applicable to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "As with thr-001, evd-002 and evd-005 show that the Callback Receiver is an externally registered endpoint that accepts and processes unsigned callbacks from the payment provider (or any correctly formatted caller), and evd-001 shows that these callbacks drive updates posted to the operations channel. These passages directly support the claim that the system exposes a webhook endpoint accepting external events and triggering processing, which matches the described scope of req-WEBHOOK-001. However, the evidence set does not define req-WEBHOOK-001 or thr-002 or explicitly state that this requirement is applicable to thr-002 in particular. The mapping conclusion is therefore only partially supported by the available documentation.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-001 and its applicability criteria.",
+          "Threat model documentation for thr-002 describing the attack path and its dependence on this webhook endpoint.",
+          "An explicit mapping artefact or review record linking req-WEBHOOK-001 to thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 shows that Order Notifier receives callbacks from the payment provider and posts updates to the operations channel. evd-003 and evd-006 add that the Channel Poster posts to the external channel platform HTTPS API and that channel posting has retried safely during provider outages. Together, these provide direct evidence that work is triggered by externally originated events and that failed posting work is retried automatically, matching the preconditions described in the applicability_reason for req-TPI-002. However, the documentation does not state whether the channel platform HTTPS API usage is metered or represents significant external resource consumption, and it does not include the formal definition of req-TPI-002 or the detailed description of thr-002. The classification of req-TPI-002 as \"conditionally_applicable\" to thr-002 is thus only partially grounded in the evidence.",
+        "missing_evidence": [
+          "Formal definition of req-TPI-002, including its dependency on metered or capacity-limited external services.",
+          "Service description or billing documentation for the channel platform HTTPS API clarifying whether calls are metered/capacity-limited.",
+          "Threat model documentation for thr-002 describing how externally triggered work and retries contribute to the threat.",
+          "An explicit decision record stating that req-TPI-002 is considered conditionally applicable to thr-002 based on these characteristics."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 2. Posting\n\nChannel posting has retried safely during provider outages. Nothing was noted about\nrepeated deliveries of the same callback."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001, evd-002, and evd-003 together describe Order Notifier as a pipeline in which a Callback Receiver endpoint registered with the payment provider accepts callbacks and the Channel Poster then posts status updates to an operations channel over an HTTPS API. This directly supports the characterization of the relevant functionality as an automated webhook pipeline, not an interactive administrative interface used by human operators. However, the evidence set does not define req-ADMIN-001, does not describe any administrative interfaces that might exist elsewhere in the system, and does not provide the formal description of thr-003. The conclusion that req-ADMIN-001 is not applicable to thr-003 is therefore only partially supported by the documentation.",
+        "missing_evidence": [
+          "Documentation defining req-ADMIN-001 and the types of administrative or operator interfaces it covers.",
+          "Threat model documentation for thr-003 that explicitly identifies the components and interfaces involved in the threat.",
+          "Architecture or design documentation enumerating administrative interfaces, if any, and clarifying that thr-003 does not involve them.",
+          "A mapping record confirming that req-ADMIN-001 was considered and explicitly judged not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-003 show that Order Notifier's documented functionality is to receive payment-provider callbacks and post status updates to an operations channel over an HTTPS API. These passages directly support the part of the applicability_reason that the threat involves an HTTP callback and message-posting pipeline. However, the claim that \"there is no model or AI component receiving untrusted content\" is not stated anywhere in the provided excerpts, and there is no definition of req-AI-001 or formal description of thr-003 here. The non-applicability of req-AI-001 to thr-003 is therefore only partially supported by the available documentation and remains unconfirmed.",
+        "missing_evidence": [
+          "Architecture documentation or component inventory that explicitly states whether any AI/model components exist in the Order Notifier path relevant to thr-003.",
+          "Formal definition of req-AI-001, including its precise trigger conditions.",
+          "Threat model documentation for thr-003 clarifying whether any AI-related processing is in scope.",
+          "An explicit mapping decision documenting why req-AI-001 is out of scope for thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The available documentation (evd-001 and evd-003) depicts Order Notifier as receiving callbacks and posting textual status messages to an operations channel via an HTTPS API, with no mention of model generation or AI-produced output. This supports the idea that the described threat path is about forwarding payment status rather than publishing model output. However, there is no explicit statement that no AI component is involved, no definition of req-AI-002, and no detailed description of thr-003 in the excerpts. As a result, the assertion that req-AI-002 is not applicable to thr-003 is only partially supported.",
+        "missing_evidence": [
+          "Architecture or design documentation confirming whether any AI or model components exist in or near the Order Notifier pipeline and whether their outputs are ever published externally.",
+          "Definition of req-AI-002 and its trigger conditions for validating model output before publication.",
+          "Threat model documentation for thr-003 clarifying that no model output is involved in the described threat.",
+          "An explicit mapping record explaining why req-AI-002 is considered not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-003 describe the data flow as callbacks from a payment provider and postings to an operations channel over an HTTPS API. There is no mention of sending customer content to an external model provider. This supports the reasoning that the core Order Notifier pipeline, as documented here, is not an AI-inference integration. However, the excerpts do not explicitly state that no model provider is involved anywhere in the system, nor do they define req-AI-003 or fully describe thr-003. Therefore, the conclusion that req-AI-003 is not applicable to thr-003 is only partially supported.",
+        "missing_evidence": [
+          "System architecture documentation that explicitly identifies any external model providers and the data sent to them, or confirms their absence for this service.",
+          "Formal definition of req-AI-003 and the conditions under which it applies.",
+          "Threat model documentation for thr-003 establishing that no AI or model provider is involved in the threat path.",
+          "An explicit mapping statement documenting why req-AI-003 is considered not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 presents Order Notifier as directly posting order-status updates to an operations channel, with no mention of AI models or model-rendered UI content. This is consistent with the statement that operations staff receive textual status messages rather than model-generated markup. However, the documentation does not explicitly rule out AI components, does not define req-AI-004, and does not provide the full description of thr-003. Thus, the non-applicability of req-AI-004 to thr-003 is only partially supported by the available evidence.",
+        "missing_evidence": [
+          "Documentation specifying whether any AI model output is rendered into UI or markup within the Order Notifier context.",
+          "Formal definition of req-AI-004 and the scenarios it covers.",
+          "Threat model documentation for thr-003 confirming that AI outputs are not part of the threat path.",
+          "An explicit mapping rationale that records why req-AI-004 was deemed out of scope for thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 show that the Order Notifier surface relevant to these threats is a callback endpoint registered with a payment provider that receives callbacks and drives automated posting to an operations channel. There is no mention of end-user login, identity providers, or delegated user authentication. This supports the idea that the described functionality is a machine-to-machine webhook, not an end-user authentication flow. However, the excerpts do not explicitly state that no delegated user authentication exists elsewhere in the system, nor do they define req-AUTH-001 or thr-003. Therefore, the conclusion that req-AUTH-001 is not applicable to thr-003 is only partially supported by the documentation.",
+        "missing_evidence": [
+          "System authentication architecture documentation describing any delegated user authentication flows and confirming they are out of scope for Order Notifier and thr-003.",
+          "Formal definition of req-AUTH-001 and its applicability criteria.",
+          "Threat model documentation for thr-003 showing that only machine-to-machine webhook interactions are involved.",
+          "An explicit mapping record documenting why req-AUTH-001 is not considered applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The provided excerpts (evd-001, evd-002) portray the relevant surface as a payment-provider callback endpoint that processes callbacks and drives automated postings to an operations channel. No privileged administrative UI or operator-facing configuration interface is described. This supports the portion of the reasoning that the threat concerns automated webhook handling rather than administrative access. However, there is no explicit inventory of administrative interfaces, no definition of req-AUTH-002, and no full description of thr-003 in the evidence set. As such, the assertion that req-AUTH-002 is not applicable to thr-003 is only partially supported.",
+        "missing_evidence": [
+          "Architecture or operations documentation enumerating privileged administrative interfaces, if any, and confirming they are not involved in thr-003.",
+          "Definition of req-AUTH-002 and the administrative access scenarios it governs.",
+          "Threat model documentation for thr-003 confirming that no privileged administrative access is part of the attack path.",
+          "An explicit mapping decision explaining why req-AUTH-002 is considered out of scope for thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 provides high-level context that Order Notifier processes order-status callbacks and posts updates to an operations channel. It does not mention multi-tenancy, tenant identifiers, or cross-tenant data access. This is weak, contextual support for the idea that the described threat focuses on per-order status integrity rather than cross-tenant authorization. However, because tenancy properties are not discussed at all, the evidence does not establish that tenant-aware authorization controls are irrelevant to thr-003. The conclusion that req-AUTHZ-001 is not applicable is therefore only partially supported and rests significantly on unstated assumptions about tenancy.",
+        "missing_evidence": [
+          "Architecture documentation describing the tenancy model for Order Notifier (single-tenant vs multi-tenant, tenant identifiers, and isolation mechanisms).",
+          "Definition of req-AUTHZ-001 and the multi-tenant scenarios it is intended to cover.",
+          "Threat model documentation for thr-003 clarifying whether cross-tenant data access is in or out of scope.",
+          "A mapping decision explicitly stating why req-AUTHZ-001 does not apply to thr-003 given the tenancy model."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 directly confirms that the Channel Poster calls an external channel platform HTTPS API. This supports the premise that there is an integration with an external platform that likely uses some form of delegated privileges. However, the excerpt does not describe what privileges or scopes are granted, and it does not define req-AUTHZ-002 or the detailed scope of thr-003. The statement that limiting integration scopes \"does not mitigate this threat path\" is therefore an architectural judgment not established by the provided documentation and only partially supported by the general description of the integration.",
+        "missing_evidence": [
+          "Documentation of the permissions/scopes used by the integration with the channel platform HTTPS API.",
+          "Formal definition of req-AUTHZ-002 and its intended application to external integrations.",
+          "Threat model documentation for thr-003 clarifying whether over-broad channel platform privileges contribute to the risk.",
+          "An explicit mapping or risk analysis explaining why scope limitation on the channel platform is not considered relevant to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 gives a runtime description of Order Notifier's behavior (callbacks from a payment provider leading to status updates in an operations channel). It does not mention build pipelines, deployment mechanisms, or dependency management. This is contextual support for the idea that thr-003 concerns runtime webhook handling rather than CICD compromise, but the absence of CICD information in this excerpt is not evidence that CICD-related controls are irrelevant. Since req-CICD-001 and thr-003 are not defined in the provided material, the conclusion that req-CICD-001 is not applicable to thr-003 is only partially supported.",
+        "missing_evidence": [
+          "Documentation of the build and deployment pipeline for Order Notifier and any associated security controls.",
+          "Definition of req-CICD-001 and the threats it is meant to mitigate.",
+          "Threat model documentation for thr-003 clarifying whether supply-chain or pipeline compromise is in scope.",
+          "An explicit mapping or risk analysis explaining why req-CICD-001 was considered out of scope for thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 establishes that Order Notifier receives order-status callbacks from a payment provider and posts updates to an operations channel. This supports the characterization of thr-003 as focusing on the integrity of callbacks and resulting messages. However, the excerpt does not address encryption of data at rest or in transit, nor does it define req-DATA-001. The inference that encryption requirements \"do not bear\" on this threat path is an architectural judgment not directly supported by the documentation and thus only partially evidenced.",
+        "missing_evidence": [
+          "Security architecture documentation describing how data in this pipeline is protected in transit and at rest.",
+          "Definition of req-DATA-001 and the specific encryption controls it requires.",
+          "Threat model documentation for thr-003 clarifying whether confidentiality or encryption weaknesses contribute to the risk.",
+          "A mapping or review record explicitly stating why req-DATA-001 was judged not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 describes a real-time pipeline: receiving callbacks and posting updates. It does not mention storage of working copies, logs, or artifacts, nor data retention policies. This provides limited contextual support for the claim that the immediate threat focuses on transient message integrity, but it does not establish that no retention-related issues exist. Without definitions of req-DATA-002 or a detailed description of thr-003, the conclusion that data retention controls are not applicable is only partially supported.",
+        "missing_evidence": [
+          "Documentation of any storage or buffering used by Order Notifier (e.g., queues, logs, databases) and their retention characteristics.",
+          "Formal definition of req-DATA-002, including what constitutes in-scope working copies or artifacts.",
+          "Threat model documentation for thr-003 clarifying whether long-term retention plays any role in the threat.",
+          "An explicit mapping decision explaining why req-DATA-002 is considered not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 provides a brief description of the Order Notifier data flow but does not discuss storage of artifacts or how multiple customers' data are held. This is only contextual support for the idea that thr-003 is about transient callbacks and messages rather than stored multi-tenant artifacts. The documentation does not describe the tenancy model or storage layout, nor does it define req-DATA-003. Accordingly, the conclusion that tenant separation for stored artifacts is not engaged by thr-003 is only partially supported.",
+        "missing_evidence": [
+          "Architecture and storage design documentation clarifying how artifacts (if any) are stored and whether they are shared across tenants.",
+          "Definition of req-DATA-003 and its applicability to shared storage scenarios.",
+          "Threat model documentation for thr-003 clarifying whether cross-tenant artifact access is in scope.",
+          "An explicit mapping or review note stating why req-DATA-003 was judged out of scope for thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 focuses on the immediate processing of callbacks into channel updates and says nothing about deletion of customer data from primary or derived stores. This omission gives some contextual support to the idea that thr-003 is a real-time integrity issue, but it is not evidence that deletion controls are irrelevant. Without definitions of req-DATA-004 and thr-003, or documentation of data lifecycle and deletion behavior, the claim that deletion controls \"do not bear\" on this threat is only partially supported.",
+        "missing_evidence": [
+          "Data lifecycle and deletion policy for Order Notifier, including how callback and channel data are retained and deleted.",
+          "Formal definition of req-DATA-004 and its scope.",
+          "Threat model documentation for thr-003 clarifying whether improper deletion or retention contributes to the risk.",
+          "An explicit mapping rationale explaining why req-DATA-004 was considered not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 identifies the operations-notes document as notes from an incident review, but contains no information about log content, destinations, or controls. It also does not describe thr-003 or req-LOG-001. As a result, there is no direct evidence here that log-content controls are irrelevant to the threat; the mapping rests on the characterization of thr-003 as primarily about misleading channel messages rather than sensitive log leakage, which is not established in these excerpts. The conclusion that req-LOG-001 is not applicable is therefore only partially supported at best.",
+        "missing_evidence": [
+          "Logging design documentation for Order Notifier, including what is logged and where logs are sent.",
+          "Formal definition of req-LOG-001 and what it requires of log contents and destinations.",
+          "Threat model documentation for thr-003 clarifying whether logs play any role in the threat impact.",
+          "A mapping or review note explicitly stating why req-LOG-001 was judged out of scope for thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "# Order Notifier \u2014 Operations Notes\n\nNotes from the March incident review, kept current by the operations team."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 only identifies the operations-notes document and does not discuss administrative actions, audit logging, or req-LOG-002. The applicability_reason asserts that thr-003 does not involve administrative actions, but this is not established by the excerpted documentation. Consequently, the statement that auditing of administrative actions is out of scope for this scenario is only partially supported, relying largely on assumptions about the threat path and administrative surfaces.",
+        "missing_evidence": [
+          "Description of any administrative or configuration interfaces for Order Notifier and whether their actions are audited.",
+          "Formal definition of req-LOG-002 and what constitutes in-scope administrative actions.",
+          "Threat model documentation for thr-003 confirming that administrative actions are not part of the described threat.",
+          "An explicit mapping record indicating why req-LOG-002 was judged not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "# Order Notifier \u2014 Operations Notes\n\nNotes from the March incident review, kept current by the operations team."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 show that the Callback Receiver is an endpoint registered with an external payment provider that receives callbacks, implying an externally reachable webhook endpoint. This supports the idea that this interface is intentionally exposed for external access, distinguishing it from internal data stores or queues that typically should not be publicly reachable. However, the provided material does not define req-NET-001 or its exact scope, nor does it enumerate all network-exposed components of the system. The conclusion that req-NET-001 \"does not apply\" because the Callback Receiver is deliberately public is therefore only partially supported.",
+        "missing_evidence": [
+          "Network architecture documentation listing internal versus externally exposed endpoints for Order Notifier.",
+          "Formal definition of req-NET-001 and how it treats deliberately public integration endpoints versus internal services.",
+          "Threat model documentation for thr-003 clarifying which network surfaces are implicated.",
+          "An explicit mapping or review that states why req-NET-001 is not considered relevant to this specific public webhook endpoint."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-005 clearly document that callbacks are not signed, the provider's signing feature is not enabled, and the endpoint accepts unsigned requests from anywhere. This supports the premise that the described threat arises from accepting unsigned callbacks as authoritative, rather than from compromise of stored long-lived signing keys or provider credentials held by the system. However, the excerpts do not describe how any signing keys or provider credentials (if present) are stored or managed, nor do they define req-SECRET-001. The statement that managed secret storage \"does not address this scenario\" is therefore an architectural judgment only partially supported by the documentation.",
+        "missing_evidence": [
+          "Documentation of any secrets (API keys, signing keys, tokens) used by Order Notifier, including where and how they are stored.",
+          "Formal definition of req-SECRET-001 and the types of secrets and misuse it is meant to mitigate.",
+          "Threat model documentation for thr-003 clarifying whether credential compromise plays any role in the threat.",
+          "An explicit mapping record explaining why req-SECRET-001 is considered not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 describes Order Notifier as receiving callbacks from a payment provider and posting updates to an operations channel; it does not mention the system using tokens to access customer resources on an external platform. This supports the idea that the described threat path centers on inbound callbacks rather than outbound access to customer resources. However, the documentation does not explicitly state that no such outbound credentials exist, nor does it define req-SECRET-002 or thr-003. The conclusion that the choice between short-lived and long-lived outbound credentials does not bear on this threat is therefore only partially supported.",
+        "missing_evidence": [
+          "Documentation of any outbound integrations from Order Notifier that access customer resources on external platforms, including the credentials they use.",
+          "Formal definition of req-SECRET-002 and its applicability criteria.",
+          "Threat model documentation for thr-003 clarifying whether outbound access to customer resources is part of the threat.",
+          "A mapping or review note stating why req-SECRET-002 was deemed not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 confirm that the payment provider is an external service sending order-status callbacks that Order Notifier trusts and forwards to an operations channel. These support the premise that the threat is about incorrect status values in callbacks being trusted. However, the excerpts do not discuss how the provider retains or uses customer data, nor do they define req-TPI-001 or thr-003. The conclusion that documenting provider retention and usage terms does not mitigate this scenario is therefore only partially supported from the available documentation.",
+        "missing_evidence": [
+          "Third-party risk or data-processing documentation describing the payment provider's retention and use of customer data.",
+          "Definition of req-TPI-001 and the obligations it imposes regarding external processor documentation.",
+          "Threat model documentation for thr-003 clarifying the impact and whether provider data handling contributes to it.",
+          "An explicit mapping decision documenting why req-TPI-001 is considered not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 and evd-006 show that the Channel Poster calls a channel platform HTTPS API and that channel posting has been retried during provider outages, but \"nothing was noted about repeated deliveries of the same callback.\" This supports part of the picture: externally triggered work and retries exist, and there is some concern about duplicate deliveries. However, the excerpts do not mention whether the API usage is metered or capacity-limited, nor do they define req-TPI-002 or provide a detailed description of thr-003. The assertion that bounding externally triggered work is \"not engaged\" by this threat, despite retries and possible duplicates, is therefore only partially supported.",
+        "missing_evidence": [
+          "Service and billing documentation for the channel platform HTTPS API clarifying metering and capacity constraints.",
+          "Formal definition of req-TPI-002 and its trigger conditions.",
+          "Threat model documentation for thr-003 clarifying whether unbounded retries or duplicates contribute materially to the threat.",
+          "An explicit mapping record explaining why req-TPI-002 is judged not applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 2. Posting\n\nChannel posting has retried safely during provider outages. Nothing was noted about\nrepeated deliveries of the same callback."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001, evd-002, and evd-005 together show that Order Notifier exposes a Callback Receiver endpoint registered with the payment provider, that this endpoint accepts and processes unsigned callbacks from anywhere, and that these callbacks trigger order-status processing that leads to postings in an operations channel. This directly supports the notion that the system exposes an endpoint accepting external events that trigger processing or state change, matching the described scope of req-WEBHOOK-001. However, the excerpts do not define req-WEBHOOK-001 or thr-003, nor do they explicitly state that this requirement is considered applicable to thr-003. Thus, the mapping conclusion is only partially supported.",
+        "missing_evidence": [
+          "Formal definition of req-WEBHOOK-001 and its applicability criteria.",
+          "Threat model documentation for thr-003 confirming that its scenario involves this Callback Receiver and the resulting processing.",
+          "A mapping or review artefact explicitly recording req-WEBHOOK-001 as applicable to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-005 establish that callbacks are not signed and the endpoint accepts unsigned requests from anywhere, so there is no current authenticity verification of inbound events. evd-003 and evd-006 confirm that callbacks ultimately drive postings via a channel platform HTTPS API with retry behavior, and that nothing specific was noted about repeated deliveries of the same callback. These passages support the premise that the system currently lacks origin verification and has some retry/duplication behavior. The applicability_reason's conclusion\u2014that a requirement focused on replay/duplicate handling of otherwise authenticated events (req-WEBHOOK-002) is not applicable because authenticity is never established\u2014is reasonable but depends on the precise definition of req-WEBHOOK-002, which is not provided. The mapping is therefore only partially supported.",
+        "missing_evidence": [
+          "Formal definition of req-WEBHOOK-002, including whether it explicitly assumes that inbound events are already authenticated.",
+          "Threat model documentation for thr-003 clarifying whether replay or duplication of genuine callbacks is a concern distinct from unauthenticated spoofing.",
+          "An explicit mapping record stating why req-WEBHOOK-002 was judged not applicable to thr-003 despite the retry/duplication observations."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001, evd-002, and evd-003 depict thr-004's context as involving a payment-provider callback endpoint and an internal posting service that forwards messages to an operations channel. No privileged administrative interface or operator-driven configuration change is described in these excerpts. This supports the reasoning that the attack path operates through automated webhook handling and message posting, not administrative access. However, the documentation does not enumerate all administrative interfaces, does not define req-ADMIN-001, and does not provide the formal description of thr-004. The non-applicability of req-ADMIN-001 to thr-004 is therefore only partially supported.",
+        "missing_evidence": [
+          "Inventory of administrative and operator interfaces for the system and confirmation of whether any are involved in thr-004.",
+          "Formal definition of req-ADMIN-001 and its scope.",
+          "Threat model documentation for thr-004 describing the components and interfaces used in the replay/duplication scenario.",
+          "An explicit mapping record explaining why req-ADMIN-001 is judged not applicable to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-003 show that Order Notifier receives HTTP callbacks and posts messages to an operations channel over an HTTPS API. No AI models or model invocations are mentioned. This supports the view that the path relevant to thr-004 is an HTTP callback and posting pipeline, not content being sent to an AI model. However, the documentation does not explicitly state that no AI component exists or is involved, nor does it define req-AI-001 or threat thr-004. The mapping that req-AI-001 is not applicable to thr-004 is thus only partially evidenced.",
+        "missing_evidence": [
+          "Architecture documentation stating whether any AI/model components are present and whether untrusted content is ever sent to them.",
+          "Formal definition of req-AI-001 and its applicability criteria.",
+          "Threat model documentation for thr-004 showing that no model invocation is involved in the replay/duplication scenario.",
+          "An explicit mapping decision that records why req-AI-001 was judged out of scope for thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-003 describe a pipeline that forwards payment status callbacks into textual status messages posted to an operations channel, with no indication of model-generated output. This supports the part of the reasoning that no model output is published in this scenario. However, the excerpts do not affirmatively rule out AI components, do not define req-AI-002, and do not provide the formal description of thr-004. The conclusion that req-AI-002 is not applicable to thr-004 is therefore only partially supported.",
+        "missing_evidence": [
+          "Documentation specifying whether any AI model produces output that is published externally by this system.",
+          "Formal definition of req-AI-002 and its scope.",
+          "Threat model documentation for thr-004 confirming that no model output is part of the threat path.",
+          "An explicit mapping record explaining why req-AI-002 was judged not applicable to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The integration guide excerpts (evd-001 and evd-003) describe callbacks from a payment provider and postings to an operations channel over an HTTPS API, with no mention of sending customer content to an external model provider. This supports the notion that the key data flow here is not an AI-inference integration. However, the documentation does not definitively rule out any external model providers, nor does it define req-AI-003 or thr-004. The assertion that req-AI-003 is not applicable to thr-004 is therefore only partially supported.",
+        "missing_evidence": [
+          "Architectural documentation of any integrations with external model providers and the data sent to them, or confirmation that none exist for this service.",
+          "Formal definition of req-AI-003 and its intended scope.",
+          "Threat model documentation for thr-004 clarifying that external model providers are not involved.",
+          "An explicit mapping note documenting why req-AI-003 was judged not applicable to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 indicates that operations staff receive updates to an operations channel generated directly from payment-provider callbacks, with no mention of AI output being rendered into UI or markup. This supports the view that the threat concerns plain textual messages, not encoded model output. However, the evidence does not categorically rule out AI components, nor does it define req-AI-004 or thr-004. Thus, the statement that AI output encoding controls do not bear on this threat is only partially supported.",
+        "missing_evidence": [
+          "Documentation clarifying whether any AI model output is rendered to users in this system and, if so, how it is encoded.",
+          "Definition of req-AI-004 and its applicability.",
+          "Threat model documentation for thr-004 confirming that AI output is not part of the scenario.",
+          "An explicit mapping record stating why req-AI-004 is not considered applicable to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 document Order Notifier as a webhook endpoint registered with a payment provider that processes callbacks and posts updates, with no mention of delegated end-user authentication or user login flows. This supports the characterization of the thr-004 path as machine-to-machine rather than user-authentication-related. However, there is no explicit statement that no delegated authentication is present elsewhere in the system, nor are req-AUTH-001 or thr-004 defined in the supplied material. The conclusion that req-AUTH-001 is not applicable to thr-004 is therefore only partially supported.",
+        "missing_evidence": [
+          "Authentication architecture documentation describing any delegated user authentication flows and confirming they are not involved in thr-004.",
+          "Formal definition of req-AUTH-001 and its applicability.",
+          "Threat model documentation for thr-004 specifying which components and interfaces are in scope.",
+          "An explicit mapping artefact explaining why req-AUTH-001 is out of scope for thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-055",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The integration guide excerpts (evd-001, evd-002) describe a callback-driven pipeline without mentioning any privileged administrative interface. This supports the idea that thr-004 involves webhook callback handling rather than administrative access. Nevertheless, there is no explicit inventory of administrative entry points, no formal definition of req-AUTH-002, and no detailed threat description for thr-004 in the provided material. The mapping that req-AUTH-002 is not applicable to thr-004 is therefore only partially evidenced.",
+        "missing_evidence": [
+          "Documentation listing administrative or privileged operator interfaces for this system and clarifying whether any participate in thr-004.",
+          "Formal definition of req-AUTH-002 and its scope.",
+          "Threat model documentation for thr-004 showing that no administrative access is part of the attack path.",
+          "An explicit mapping decision explaining why req-AUTH-002 is considered not applicable to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-056",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 describes Order Notifier's purpose but does not address whether it serves multiple tenants or how tenant boundaries are enforced. The applicability_reason asserts that thr-004 concerns repeated callbacks for the same order, not cross-tenant access, but this is not documented in the excerpts. As a result, the conclusion that req-AUTHZ-001 is not applicable to thr-004 is only partially supported and depends on unstated assumptions about the system's tenancy model and the threat's scope.",
+        "missing_evidence": [
+          "Documentation describing the system's tenancy model and any tenant-aware authorization mechanisms.",
+          "Formal definition of req-AUTHZ-001 and the multi-tenant scenarios it targets.",
+          "Threat model documentation for thr-004 clarifying whether cross-tenant issues are out of scope.",
+          "A mapping or review note explicitly stating why req-AUTHZ-001 does not apply to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 confirms that the system integrates with an external channel platform HTTPS API, which likely involves some form of delegated permissions on that platform. The applicability_reason argues that the threat in thr-004 is about duplicate or replayed callbacks rather than over-broad delegated permissions. While evd-003 supports the existence of the integration, it does not define its privileges, req-AUTHZ-002, or thr-004. Therefore, the conclusion that limiting integration scopes would not address the threat is only partially supported.",
+        "missing_evidence": [
+          "Documentation of the privileges/scopes granted to the channel platform integration.",
+          "Formal definition of req-AUTHZ-002 and its applicability to external integrations.",
+          "Threat model documentation for thr-004 clarifying whether over-broad permissions on the channel platform contribute to the impact.",
+          "An explicit mapping record explaining why req-AUTHZ-002 was judged not applicable to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 focuses on how Order Notifier behaves at runtime (receiving callbacks and posting updates) and does not mention build pipelines, deployment mechanisms, or third-party components in the pipeline. This offers some contextual support to the claim that thr-004 is a runtime callback/posting issue rather than a CICD compromise, but it is not direct evidence about the deployment path. Since req-CICD-001 and thr-004 are not defined in the excerpts, and no CICD documentation is provided, the conclusion that req-CICD-001 is not applicable to thr-004 is only partially supported.",
+        "missing_evidence": [
+          "Documentation of the build and deployment pipeline for this service, including security measures and dependencies.",
+          "Formal definition of req-CICD-001 and what threats it is intended to mitigate.",
+          "Threat model documentation for thr-004 clarifying whether supply-chain or pipeline compromise is in or out of scope.",
+          "An explicit mapping note explaining why req-CICD-001 was considered out of scope for thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      }
+    ]
+  }
+}

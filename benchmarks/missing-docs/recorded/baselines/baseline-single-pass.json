@@ -1,0 +1,196 @@
+{
+  "components": [
+    {
+      "name": "Kiosk Sync Service",
+      "component_type": "application service"
+    },
+    {
+      "name": "kiosks",
+      "component_type": "client device"
+    },
+    {
+      "name": "fulfillment system",
+      "component_type": "backend system"
+    },
+    {
+      "name": "virtual machine in the operations subnet",
+      "component_type": "infrastructure - VM"
+    },
+    {
+      "name": "operations subnet",
+      "component_type": "network subnet"
+    },
+    {
+      "name": "store network",
+      "component_type": "internal network"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Exposure or tampering of customer order data in transit",
+      "affected_components": [
+        "kiosks",
+        "Kiosk Sync Service",
+        "store network"
+      ],
+      "rationale": "The kiosks send customer order records (including name, delivery address, and order contents) over the store network to the Kiosk Sync Service [service-note.md]. If network protections or transport encryption are weak or absent, an attacker with access to the store network could eavesdrop on or modify orders in transit."
+    },
+    {
+      "title": "Compromise of sync service host exposing stored customer data",
+      "affected_components": [
+        "Kiosk Sync Service",
+        "virtual machine in the operations subnet",
+        "operations subnet"
+      ],
+      "rationale": "The Kiosk Sync Service runs on a virtual machine in the operations subnet and stores customer order records for the fulfillment system to read [service-note.md]. If the VM or subnet are compromised, an attacker could access or exfiltrate stored customer names, addresses, and order contents, and potentially pivot to other systems in the operations subnet."
+    },
+    {
+      "title": "Unbounded retention of customer order records",
+      "affected_components": [
+        "Kiosk Sync Service"
+      ],
+      "rationale": "The service stores customer order records containing personal data, and the fulfillment system polls it hourly [service-note.md], but no retention or deletion behavior is described. If records are kept indefinitely, this increases privacy and regulatory risk in the event of compromise or misuse."
+    },
+    {
+      "title": "Unauthorized devices sending fraudulent orders",
+      "affected_components": [
+        "kiosks",
+        "Kiosk Sync Service",
+        "store network"
+      ],
+      "rationale": "Kiosks \"call\" the sync service over the store network [service-note.md], but no mechanism is described for authenticating kiosks or validating the origin of requests. If request origin is not strongly authenticated, a rogue or compromised device on the store network could inject fraudulent or malformed orders."
+    }
+  ],
+  "findings": [],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "Whether customer order records are encrypted in transit between kiosks and the Kiosk Sync Service, and whether stored order data is encrypted at rest on the virtual machine or any backing storage."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "What retention period applies to stored customer order records, and whether this retention behavior is documented and aligned with what customers are told about data handling."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "Whether there is a mechanism to delete a given customer's order records on request (e.g., for privacy regulations) and how such deletions are propagated to downstream systems like the fulfillment system."
+    },
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "virtual machine in the operations subnet",
+      "what_cannot_be_determined": "Who has privileged administrative access to the VM and the Kiosk Sync Service, how that access is restricted, and whether the scope of that access is documented."
+    },
+    {
+      "requirement_id": "req-AUTH-001",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "Whether and how the Kiosk Sync Service authenticates calling kiosks and the fulfillment system (e.g., certificates, API keys, network controls), and if any authentication is delegated to another service or platform."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "virtual machine in the operations subnet",
+      "what_cannot_be_determined": "Whether multi-factor authentication is required for administrative or console access to the VM and any management interfaces for the Kiosk Sync Service, and who is responsible for enforcing it."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "What privileges the fulfillment system has when reading stored order records, and whether its access is limited to only the data and operations required for fulfillment."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "How the Kiosk Sync Service is built and deployed to the VM, what the CI/CD pipeline looks like, and how the deployment path and its dependencies are trusted and protected from tampering."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "store network",
+      "what_cannot_be_determined": "Whether network-level protections (e.g., TLS, VPN, or other secure transport mechanisms) are used when kiosks call the Kiosk Sync Service over the store network."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "operations subnet",
+      "what_cannot_be_determined": "From which networks or systems the virtual machine in the operations subnet is reachable, and whether it is restricted to only the kiosks and the fulfillment system workloads that need access."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "Whether any long-lived credentials or signing keys used by the Kiosk Sync Service (e.g., database credentials, API keys) are stored in a managed secret store rather than on the VM filesystem or in code."
+    },
+    {
+      "requirement_id": "req-SECRET-002",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "Whether any credentials the Kiosk Sync Service uses to access other customer-related resources (if any) are short-lived and rotated, rather than long-lived static secrets."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Kiosk Sync Service",
+      "what_cannot_be_determined": "What the service logs about incoming orders and whether customer names, addresses, or full order contents are excluded or redacted from logs."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "virtual machine in the operations subnet",
+      "what_cannot_be_determined": "Whether security-relevant administrative actions on the VM and the Kiosk Sync Service (e.g., configuration changes, restarts, access attempts) are recorded and attributable."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "fulfillment system",
+      "what_cannot_be_determined": "Whether the fulfillment system is an internal or third-party processor, and if third-party, how its handling of customer order data received from the Kiosk Sync Service is documented."
+    }
+  ],
+  "questions": [
+    {
+      "question": "Are connections from kiosks to the Kiosk Sync Service, and from the service to any backing storage, protected with strong encryption in transit and encryption at rest?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What retention policy applies to stored customer order records in the Kiosk Sync Service, and how is this communicated to customers (if at all)?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "How can a specific customer’s order records be deleted on request, and how are such deletions propagated to the fulfillment system and any other downstream consumers?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "How is privileged administrative access to the virtual machine in the operations subnet and the Kiosk Sync Service controlled, and where is the scope of such access documented?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "How do kiosks and the fulfillment system authenticate to the Kiosk Sync Service (e.g., mutual TLS, API keys, network-based controls), and is any of this authentication delegated to a central identity or API gateway service?",
+      "requirement_id": "req-AUTH-001"
+    },
+    {
+      "question": "Is multi-factor authentication required for administrative access to the VM hosting the Kiosk Sync Service and any related management consoles, and which team is responsible for enforcing it?",
+      "requirement_id": "req-AUTH-002"
+    },
+    {
+      "question": "What level of access does the fulfillment system have to the data stored by the Kiosk Sync Service, and how is its access limited to only what is required for order fulfillment?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "How is the Kiosk Sync Service built and deployed to the virtual machine (e.g., CI/CD pipeline, manual deployment), and what controls ensure the deployment artifacts and path are trusted and free from unauthorized changes?",
+      "requirement_id": "req-CICD-001"
+    },
+    {
+      "question": "From which networks or hosts can the Kiosk Sync Service (on the VM in the operations subnet) be reached, and how is the operations subnet restricted so that only the kiosks and fulfillment system can access the service?",
+      "requirement_id": "req-NET-001"
+    },
+    {
+      "question": "Where are any long-lived credentials or signing keys used by the Kiosk Sync Service stored, and are any credentials used to access customer-related resources short-lived and automatically rotated?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "What information about orders and system behavior does the Kiosk Sync Service log, and what measures ensure that sensitive customer data (names, addresses, full order contents) are kept out of application and infrastructure logs?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "Are administrative and other security-relevant actions on the VM and the Kiosk Sync Service logged in a way that supports audit and incident response (e.g., who made which change and when)?",
+      "requirement_id": "req-LOG-002"
+    },
+    {
+      "question": "Is the fulfillment system operated internally or by a third-party provider, and if third-party, where is its handling of customer order data documented (e.g., data flow, storage, retention, and security controls)?",
+      "requirement_id": "req-TPI-001"
+    }
+  ]
+}

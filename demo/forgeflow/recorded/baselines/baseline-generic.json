@@ -1,0 +1,11 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Managed Object Storage (analysis artifacts)",
+      "title": "Customer-facing description of source-file deletion conflicts with 30-day artifact retention",
+      "rationale": "Product documentation tells customers that source files are deleted after analysis completes, but the operations guide states that selected repository files and related artifacts are retained for about 30 days for troubleshooting. This inconsistency means the documented retention of sensitive working data does not match actual operational practice, violating the requirement that retention be defined and aligned with what customers are told.",
+      "evidence_quote": "From product-overview.md, section 7 (Source-Content Processing):\n\"Source files are treated as temporary processing data and are deleted after analysis completes.\"\n\nFrom operations-guide.md, sections 5–6 (Artifact Storage and Artifact Retention):\n\"During analysis, ForgeFlow creates several temporary artifacts.\nExamples include:\n- Pull-request metadata\n- Repository diffs\n- Selected repository files\n- Prompt construction artifacts\n- Structured AI responses\n- Diagnostic information\n\nArtifacts are stored in managed object storage.\"\n\n\"Artifacts remain available for operational troubleshooting and customer support.\nThe current retention target is **30 days**.\nAfter the retention window expires, scheduled cleanup jobs remove eligible artifacts.\""
+    }
+  ]
+}

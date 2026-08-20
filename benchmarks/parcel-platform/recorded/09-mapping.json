@@ -1,0 +1,450 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11910,
+    "output_tokens": 17274,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1889875",
+    "duration_seconds": 158.698507291032
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 concerns fraudulent status updates flowing from Carrier Partner APIs through Carrier Link into the Tracking Service [evd-003, evd-005]. No administrative or operator interface participates in this attack path, so the requirement about restricting and documenting privileged administrative access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components in thr-007 (Carrier Link, Carrier Partner APIs, Tracking Service) are described purely as API integration and stateful services with no mention of any model or AI processing of untrusted content [evd-003, evd-005]. The requirement about treating untrusted model input therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 does not involve any model output being published externally; it only concerns parcel status data derived from carrier API responses and stored in the Tracking Store [evd-003, evd-005]. The requirement about validating model output before external publication is therefore not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Carrier Link sends and receives structured logistics data (manifests and status updates) over carrier APIs [evd-005]; there is no indication that customer content is sent to an external model provider. The requirement about minimizing customer data sent to external model providers does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 does not involve rendering model output into any user interface; parcel tracking views are served from the Tracking Service\u2019s stored state [evd-003]. The requirement about encoding model output for its rendering context is therefore not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path is a machine-to-machine integration between Carrier Link and Carrier Partner APIs that ultimately updates tracking data [evd-003, evd-005]. It does not involve interactive end-user authentication or the delegated SSO login path described for customers, drivers, or staff [evd-003], so the requirement about documenting delegated user authentication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 involves compromised or malicious carrier APIs sending falsified status updates via Carrier Link [evd-005]; no administrative or privileged human sign-in is part of this flow. The requirement about establishing responsibility for multi-factor authentication on privileged access therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat targets the correctness of parcel status updates ingesting from external carriers into a central tracking state [evd-003, evd-005]. While the platform is multi-tenant at the customer level, the described attack does not turn on per-request tenant scoping or cross-tenant access; it assumes an attacker can influence the status associated with particular parcels, not bypass tenant-aware authorization. The requirement on tenant-aware authorization is therefore not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Carrier Link integrates with carrier partners\u2019 APIs for manifests and status updates [evd-005], but thr-007 focuses on those carrier APIs or credentials being compromised so that falsified statuses are returned to Parcelworks. That scenario does not depend on what delegated privileges Parcelworks itself holds on the external platform; instead, it assumes the carrier side is already compromised. The requirement to document and limit integration privileges therefore does not directly bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described attack path does not involve the deployment pipeline or third-party components entering the build; it assumes a running system whose Carrier Link is already deployed and then receives falsified carrier status updates [evd-005]. The requirement about trusting the deployment path and its dependencies is therefore not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 is an integrity threat: incorrect parcel tracking states are recorded due to falsified carrier updates [evd-003, evd-005]. The requirement concerns encryption of sensitive data in transit and at rest, which addresses confidentiality rather than the correctness of status updates, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat describes incorrect parcel statuses being recorded and shown to users [evd-003, evd-005]; it does not depend on how long working copies of customer data or intermediate artifacts are retained. The requirement about defining and enforcing retention for sensitive working data therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 concerns falsified status updates influencing parcel tracking records, not unauthorized cross-tenant access to stored artifacts such as labels or proofs-of-delivery [evd-003, evd-004, evd-005]. The requirement about separating stored artifacts by tenant does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described impact is that customers and staff see incorrect parcel statuses and histories due to fraudulent updates [evd-003, evd-005]; it does not involve customer-initiated deletion of data or operator deletion procedures. The requirement about documenting how customer data can be deleted is therefore not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 is concerned with incorrect tracking state being recorded and displayed, not with sensitive data leaking via logs. Although logs exist in the platform [evd-003], the requirement about excluding restricted data from application logs and documenting log destinations does not address this integrity-focused threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path does not involve actions taken through a privileged administrative interface; it involves automated ingestion of carrier status updates via Carrier Link into the Tracking Service [evd-003, evd-005]. The requirement to audit security-relevant administrative actions therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Carrier Link connects outbound over HTTPS to Carrier Partner APIs for manifests and status updates [evd-005, df-016]. The integrity issue in thr-007 arises from a compromised or malicious carrier API returning falsified statuses, not from an internal store, queue, or cache being directly reachable from an untrusted network. The requirement about restricting network reachability of internal components does not address this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-007 explicitly assumes that a carrier partner\u2019s API or its credentials are compromised, or that a malicious insider at the carrier sends falsified updates [evd-005, evd-006]. It does not rely on Parcelworks\u2019 own outbound credentials or signing keys being mishandled. The requirement about storing long-lived signing keys and provider credentials in a managed secret store therefore does not bear directly on this threat as stated.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario turns on a carrier partner\u2019s API or credentials being compromised so that the partner (or an attacker using their access) can send falsified status updates [evd-005, evd-006]. It does not depend on whether Parcelworks uses short-lived or long-lived credentials when accessing customer resources on external platforms. The requirement about using short-lived credentials for such access therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Carrier partners receive manifests and process shipments on Parcelworks\u2019 behalf [evd-005, evd-006], but thr-007 focuses on those partners (or their credentials) being compromised and returning falsified status updates, affecting the integrity of tracking data [evd-003]. The requirement about documenting what customer data is sent to external processors and their retention/usage terms addresses confidentiality and data-handling obligations rather than the integrity of returned status data, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although Carrier Link consumes external carrier APIs [evd-005], thr-007 describes harm from incorrect statuses being believed, not from unbounded consumption of metered services or compute. The requirement about bounding work triggered by external events to control cost and availability impact therefore does not bear on this specific integrity threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Carrier Link calls out to carrier partners\u2019 HTTPS APIs for manifests and receives status updates in response [evd-005, df-016]; Parcelworks does not expose an inbound webhook endpoint that accepts events from an external platform in this flow. The requirement about cryptographically verifying the authenticity of inbound webhook events therefore does not apply to this client-initiated integration pattern.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because Carrier Link consumes carrier status updates via outbound calls to carrier APIs rather than running an inbound event receiver [evd-005, df-016], there is no webhook-style endpoint whose replay behavior this requirement would govern. The requirement about preventing or making harmless replay of inbound events is therefore not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Validation of carrier status updates before updating tracking state is undocumented",
+        "description": "The platform overview describes Carrier Link as exchanging manifests and status updates with carrier partners\u2019 HTTPS APIs [evd-005] and the Tracking Service as consuming events to maintain per-parcel tracking state [evd-003], but it does not state whether incoming carrier status updates are authenticated beyond TLS, validated for plausibility or schema, or reconciled against other signals before they change tracking records. For thr-007, where a compromised or malicious carrier partner can send fraudulent but syntactically valid statuses [evd-005, evd-006], knowing what validation or reconciliation (if any) occurs would materially change the assessment of integrity risk to Parcel tracking data (ast-002).",
+        "importance": "Without documentation of how Carrier Link and the Tracking Service validate, attribute, or reconcile carrier-sourced status updates, it is impossible to determine whether any existing controls limit or detect the impact of fraudulent updates as described in thr-007.",
+        "related_object_ids": [
+          "thr-007",
+          "cmp-019",
+          "cmp-008",
+          "cmp-024",
+          "ast-002",
+          "df-016"
+        ],
+        "requested_evidence": [
+          "Integration or interface documentation for Carrier Link describing how carrier status updates are authenticated, authorized, and validated before being accepted.",
+          "Documentation of any schema, business-rule, or anomaly validation applied to carrier status events before updating the Tracking Store.",
+          "Any description of reconciliation between carrier status updates and internal scan events or other sources in the Tracking Service."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement governing the integrity validation or reconciliation of business-level status updates received from an otherwise authenticated external partner, such as carrier status responses consumed by Carrier Link and written into parcel tracking state. In thr-007, a compromised carrier API or its credentials can send syntactically valid but fraudulent status updates that Parcelworks accepts as truth [evd-003, evd-005, evd-006]; there is no requirement that the system document or implement independent checks, cross-source reconciliation, or anomaly detection on such third-party business events once origin/authentication assumptions hold.",
+        "suggested_category": "third_party_integration",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "req-WEBHOOK-001 governs cryptographic authenticity verification for inbound webhook endpoints; in this scenario Parcelworks is a client of carrier APIs rather than exposing an event endpoint [evd-005, df-016], and the threat assumes the carrier API or its credentials are already compromised. The missing concern is validation of the correctness or plausibility of business-level status content from a partner that is legitimately authenticated, which req-WEBHOOK-001 does not cover."
+          },
+          {
+            "requirement_id": "req-TPI-001",
+            "why_not": "req-TPI-001 addresses documenting what customer data is sent to external processors and their retention and usage terms, focusing on confidentiality and data-handling obligations. It does not speak to the integrity or independent verification of status or result data returned by that processor, which is the core of thr-007."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ]
+      }
+    ]
+  }
+}

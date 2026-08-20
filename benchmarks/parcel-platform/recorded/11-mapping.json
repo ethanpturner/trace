@@ -1,0 +1,175 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11834,
+    "output_tokens": 13742,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1535725",
+    "duration_seconds": 122.95305116602685
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The platform exposes an Admin Console as a privileged interface for staff operators, who can read and edit any customer account, order, and address [evd-003]. Because tampering with payment-related order data (including stored payment provider references) can be performed through such privileged access, the requirement that administrative access be restricted and its reach documented bears directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-002"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system exposes a privileged Admin Console for staff operators [evd-003]. This requirement applies if privileged access to that console crosses an untrusted network (for example, staff reaching it over the same internet-facing SSO path customers use), which is plausible but not explicitly documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "Staff operators reach the Admin Console over the same internet-facing SSO path as customers, so privileged access crosses an untrusted network."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Admin Console is a privileged interface through which staff can perform refunds and edit customer accounts and orders [evd-003]. Because this threat involves potential fraudulent changes to payment-related order data, recording administrative actions that affect such data is relevant for detecting and investigating tampering.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-006"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Orders Database is an internal data store that holds customer orders and related records [evd-004], which participate in this threat when tampered payment references are associated with orders. Because it is not a public interface, the requirement to restrict such internal components from untrusted networks is relevant to limiting how an attacker could gain direct database access for tampering.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Multi-factor authentication responsibility for Admin Console access is undocumented",
+        "description": "The documentation states that all interactive sign-in, including for staff operators, is delegated to the company's SSO provider over OpenID Connect and that staff reach the Admin Console using the same SSO accounts and sign-in path as customers [evd-003]. It does not state whether multi-factor authentication is enforced for these privileged accounts or which party (the SSO provider, an identity-aware proxy, or another control) is responsible for enforcing factor policy, so compliance with req-AUTH-002 for this threat cannot be determined.",
+        "importance": "Needed to understand how well privileged operator access is protected against credential compromise or phishing that could enable tampering with payment-related order data.",
+        "related_object_ids": [
+          "thr-009",
+          "req-AUTH-002",
+          "cmp-012",
+          "cmp-014"
+        ],
+        "requested_evidence": [
+          "Identity provider or organization policy documentation describing multi-factor authentication requirements for staff and administrator accounts.",
+          "Architecture or operations documentation stating whether the Admin Console requires MFA and which party enforces it."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Audit logging of Admin Console actions affecting orders and payments is undocumented",
+        "description": "The Admin Console allows staff operators to read and edit any customer account, order, and address, and to perform refunds and account management [evd-003]. The available documentation does not describe whether actions taken through this privileged interface are recorded with the acting operator identity, nor where such audit records are stored, so it is unclear whether tampering with payment-related order data would be detectable and attributable, as expected by req-LOG-002.",
+        "importance": "Needed to determine whether fraudulent or erroneous changes to orders and payment-related data made through the Admin Console can be traced to an operator for investigation and response.",
+        "related_object_ids": [
+          "thr-009",
+          "req-LOG-002",
+          "cmp-014",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Operations or architecture documentation describing audit logging for Admin Console actions that affect customer accounts, orders, refunds, or payment references.",
+          "Documentation of the destination and retention of administrative audit records, and how operator identity is associated with each action."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Integrity controls for stored payment provider references are undocumented",
+        "description": "Billing Service documentation states that card payments are processed entirely by an external payment provider and that the platform stores only the provider's payment reference for each transaction [evd-003]. There is no description of where these references are stored, how they are protected against unauthorized modification (for example through immutability, referential integrity constraints, or checksums), or whether reconciliation and refund workflows validate references against the payment provider. As a result, it is unclear what architectural controls, if any, exist to prevent or detect the tampering with payment provider references described in threat thr-009.",
+        "importance": "Clarifies whether there are any technical or process controls that would prevent or detect fraudulent modification of payment provider references, which would directly affect the likelihood and detectability of the described billing and reconciliation fraud.",
+        "related_object_ids": [
+          "thr-009",
+          "cmp-011",
+          "ast-007",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or data model documentation specifying where payment provider references are stored and what authorization or integrity constraints apply to updates.",
+          "Design or operations documentation describing reconciliation and refund workflows, including any cross-checks of stored payment references against the external payment provider."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The architecture stores only external payment provider references for each card transaction, with no documented requirement that these identifiers be integrity-protected (for example, made immutable, signed, or consistently cross-checked against the payment provider) even though they are the sole linkage between internal orders and external payments. Tampering with these references can enable misapplied refunds, unrecognized payments, or fraud as in threat thr-009, but the catalog does not appear to require controls specifically for the integrity of such externally referenced payment identifiers.",
+        "suggested_category": "data_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "req-DATA-001 focuses on encryption of sensitive data in transit and at rest and on documenting who provides that protection; it does not address integrity or tamper-evident storage of business identifiers such as payment provider references."
+          },
+          {
+            "requirement_id": "req-TPI-001",
+            "why_not": "req-TPI-001 covers documenting what customer data is sent to an external processor and the processor's retention and usage terms; it does not cover how locally stored references to those external transactions are protected against unauthorized modification."
+          },
+          {
+            "requirement_id": "req-AUTHZ-002",
+            "why_not": "req-AUTHZ-002 limits the scope of delegated privileges to external platforms; it does not speak to protecting the integrity of identifiers or references that link internal records to actions taken via those external privileges."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ]
+  }
+}

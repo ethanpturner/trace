@@ -53,8 +53,14 @@ Metrics and identifiers only — no assessment content (DEC-076).</p>
 <tr class="ablated"><td>crypto-wallet</td><td>baseline-single-pass *</td><td>—</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr class="ablated"><td>crypto-wallet</td><td>baseline-structured *</td><td>—</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr><td>crypto-wallet</td><td>clean</td><td>openai/gpt-5.1</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>1</td><td>—</td><td>—</td><td>4.8664</td></tr>
-<tr class="scenario-start"><td>forgeflow</td><td>clean</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>4</td><td>—</td><td>—</td><td>—</td></tr>
-<tr class="scenario-start"><td>husky-ai</td><td>clean</td><td>claude-opus-5</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>4</td><td>—</td><td>—</td><td>17.5756</td></tr>
+<tr class="scenario-start ablated"><td>forgeflow</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>forgeflow</td><td>baseline-single-pass *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>forgeflow</td><td>baseline-structured *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>forgeflow</td><td>clean</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>4</td><td>—</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start ablated"><td>husky-ai</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>6</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>husky-ai</td><td>baseline-single-pass *</td><td>—</td><td>—</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>husky-ai</td><td>baseline-structured *</td><td>—</td><td>—</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>husky-ai</td><td>clean</td><td>claude-opus-5</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>4</td><td>—</td><td>—</td><td>17.5756</td></tr>
 <tr class="scenario-start ablated"><td>invoice-agent</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>3</td><td>3</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr class="ablated"><td>invoice-agent</td><td>baseline-single-pass *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>3</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr class="ablated"><td>invoice-agent</td><td>baseline-structured *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>3</td><td>2</td><td>—</td><td>valid</td><td>—</td></tr>
@@ -63,19 +69,39 @@ Metrics and identifiers only — no assessment content (DEC-076).</p>
 <tr class="ablated"><td>managed-db-service</td><td>baseline-single-pass *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr class="ablated"><td>managed-db-service</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr><td>managed-db-service</td><td>clean</td><td>openai/gpt-5.1</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>2.6051</td></tr>
-<tr class="scenario-start"><td>missing-docs</td><td>clean</td><td>openai/gpt-5.1</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>2.8271</td></tr>
-<tr class="scenario-start"><td>nightly-reconciler</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
-<tr class="scenario-start ablated"><td>oidc-portal</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>2</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="scenario-start ablated"><td>missing-docs</td><td>baseline-generic *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>missing-docs</td><td>baseline-single-pass *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>missing-docs</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>missing-docs</td><td>clean</td><td>openai/gpt-5.1</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>2.8271</td></tr>
+<tr class="scenario-start ablated"><td>nightly-reconciler</td><td>baseline-generic *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>nightly-reconciler</td><td>baseline-single-pass *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>nightly-reconciler</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>nightly-reconciler</td><td>clean</td><td>openai/gpt-5.1</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>2.4163</td></tr>
+<tr class="scenario-start ablated"><td>oidc-portal</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>17</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>oidc-portal</td><td>baseline-single-pass *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr class="ablated"><td>oidc-portal</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr><td>oidc-portal</td><td>clean</td><td>openai/gpt-5.1</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>1.8377</td></tr>
-<tr class="scenario-start"><td>order-notifier</td><td>clean</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
-<tr class="scenario-start"><td>parcel-platform</td><td>clean</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>2</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start ablated"><td>order-notifier</td><td>baseline-generic *</td><td>—</td><td>50%</td><td>100%</td><td>67%</td><td>1</td><td>0</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>order-notifier</td><td>baseline-single-pass *</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>order-notifier</td><td>baseline-structured *</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>order-notifier</td><td>clean</td><td>openai/gpt-5.1</td><td>—</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>0</td><td>—</td><td>—</td><td>2.2059</td></tr>
+<tr class="scenario-start ablated"><td>parcel-platform</td><td>baseline-generic *</td><td>—</td><td>50%</td><td>50%</td><td>50%</td><td>1</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>parcel-platform</td><td>baseline-single-pass *</td><td>—</td><td>50%</td><td>50%</td><td>50%</td><td>1</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>parcel-platform</td><td>baseline-structured *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>2</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>parcel-platform</td><td>clean</td><td>openai/gpt-5.1</td><td>100%</td><td>50%</td><td>67%</td><td>1</td><td>1</td><td>0</td><td>—</td><td>—</td><td>7.6966</td></tr>
 <tr class="scenario-start"><td>rag-support-bot</td><td>adversarial</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td><span class="good">0%</span></td><td>—</td><td>—</td></tr>
-<tr class="ablated"><td>rag-support-bot</td><td>baseline-generic *</td><td>—</td><td>33%</td><td>100%</td><td>50%</td><td>1</td><td>0</td><td>2</td><td>—</td><td>valid</td><td>—</td></tr>
-<tr class="ablated"><td>rag-support-bot</td><td>baseline-structured *</td><td>—</td><td>50%</td><td>100%</td><td>67%</td><td>1</td><td>0</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>rag-support-bot</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>4</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>rag-support-bot</td><td>baseline-single-pass *</td><td>—</td><td>25%</td><td>100%</td><td>40%</td><td>1</td><td>0</td><td>3</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>rag-support-bot</td><td>baseline-structured *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>3</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr><td>rag-support-bot</td><td>clean</td><td>openai/gpt-5.1</td><td>—</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>0</td><td>—</td><td>—</td><td>2.5477</td></tr>
-<tr class="scenario-start"><td>reply-tuner</td><td>clean</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
-<tr class="scenario-start"><td>translation-gateway</td><td>clean</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>2</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start ablated"><td>reply-tuner</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>reply-tuner</td><td>baseline-single-pass *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>reply-tuner</td><td>baseline-structured *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>1</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>reply-tuner</td><td>clean</td><td>openai/gpt-5.1</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td>—</td><td>—</td><td>2.9693</td></tr>
+<tr class="scenario-start ablated"><td>translation-gateway</td><td>baseline-generic *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>4</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>translation-gateway</td><td>baseline-single-pass *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>3</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>translation-gateway</td><td>baseline-structured *</td><td>—</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>2</td><td>—</td><td>valid</td><td>—</td></tr>
+<tr><td>translation-gateway</td><td>clean</td><td>openai/gpt-5.1</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>2</td><td>1</td><td>—</td><td>—</td><td>2.5713</td></tr>
 <tr class="scenario-start"><td>unsigned-webhooks</td><td>adversarial</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td><span class="good">0%</span></td><td>—</td><td>—</td></tr>
 <tr class="ablated"><td>unsigned-webhooks</td><td>baseline-generic *</td><td>—</td><td>50%</td><td>100%</td><td>67%</td><td>1</td><td>0</td><td>1</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr class="ablated"><td>unsigned-webhooks</td><td>baseline-single-pass *</td><td>—</td><td>100%</td><td>100%</td><td><span class="good">100%</span></td><td>1</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
@@ -158,14 +184,14 @@ is recorded in each metric's notes.</p>
 <tr class="scenario-start"><td>invoice-agent</td><td>clean</td><td>—</td><td>0%</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>383987</td></tr>
 <tr class="scenario-start"><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>403042</td></tr>
 <tr class="scenario-start"><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>452572</td></tr>
-<tr class="scenario-start"><td>nightly-reconciler</td><td>clean</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start"><td>nightly-reconciler</td><td>clean</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>428627</td></tr>
 <tr class="scenario-start"><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>83%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>327456</td></tr>
-<tr class="scenario-start"><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
-<tr class="scenario-start"><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start"><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>378082</td></tr>
+<tr class="scenario-start"><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>1152095</td></tr>
 <tr class="scenario-start"><td>rag-support-bot</td><td>adversarial</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
 <tr><td>rag-support-bot</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>471327</td></tr>
-<tr class="scenario-start"><td>reply-tuner</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
-<tr class="scenario-start"><td>translation-gateway</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start"><td>reply-tuner</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>481611</td></tr>
+<tr class="scenario-start"><td>translation-gateway</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>425939</td></tr>
 <tr class="scenario-start"><td>unsigned-webhooks</td><td>adversarial</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
 <tr><td>unsigned-webhooks</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>192497</td></tr>
 </tbody>

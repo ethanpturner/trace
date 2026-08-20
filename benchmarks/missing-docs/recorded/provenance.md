@@ -17,3 +17,13 @@ undetermined field `unknown` and asserted nothing the note does not say. The run
 with zero candidate findings at full evidence coverage, scoring 0 matched, 0 missed,
 0 spurious against a truth set that expects exactly this: questions and gaps, no findings
 manufactured from silence. The central claim's cheapest demonstration, now live-captured.
+
+## Live baselines (2026-08-20)
+
+The `baselines/` directory holds live baselines captured from `openai/gpt-5.1` through
+OpenRouter under `openrouter-economy` as part of the #484 backfill. Scored against the truth
+set at capture time: all three — generic, structured, single-pass — 0 matched, 0 missed,
+0 spurious. On the scenario built around absent documentation, none of the one-call baselines
+invents a finding from the silence; the DEC-009 differential this scenario measures shows up
+in the gap-versus-finding layer, not the finding counts. The envelopes record findings, not
+usage — three single calls at economy rates, cents each.

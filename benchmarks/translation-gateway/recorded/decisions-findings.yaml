@@ -1,11 +1,22 @@
 assessment_id: asm-001
 reviewer: recorded-reviewer
 findings:
-- id: fnd-001
+- id: fnd-002
   severity: high
   decision: approve
-  rationale: The document itself states that no agreement governs retention or secondary use and that the standard terms are unreviewed, while full customer content is sent. The shortfall is documented, not inferred.
-- id: fnd-002
-  severity: medium
-  decision: approve
-  rationale: The over-scoped token is documented as a convenience choice against a stated narrower need; the blast radius of a token theft is the workspace.
+  rationale: The evidenced deficiency is the one the document itself states - full ticket content,
+    customer text and attachment text included, is sent to the provider while no agreement covering
+    retention or secondary use has been established and the standard terms are unreviewed (section 3,
+    ctx-019/ctx-020). req-TPI-001's documentation duty is unmet on the document's own affirmative
+    statements. Severity high per the reviewer guidance - full customer content is in scope. The
+    approval asserts the missing agreement, never anything about what the provider actually does
+    with the text; the minted title's breach framing is read as the consequence scenario, and the
+    description's evidenced basis is what is approved.
+- id: fnd-001
+  decision: reject
+  rationale: No evidenced deficiency. Encryption in transit is documented (HTTPS, ctx-013, with the
+    TLS inference ctx-014 approved at checkpoint 1), and the provider's at-rest handling is exactly
+    the undetermined territory the approved context records as unknown (ctx-021). Asserting
+    req-DATA-001 against the provider's internals would convert documented silence into a weakness,
+    which DEC-009 forbids and REJ-TG-01 names for this scenario. The unknown stays with the open
+    questions and the token-custody documentation gap.

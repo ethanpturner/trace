@@ -2,24 +2,31 @@
   "findings": [
     {
       "requirement_id": "req-RAG-002",
-      "affected_component": "Retrieval index",
-      "title": "Shared index serves all workspaces without entitlement filtering",
-      "rationale": "The overview states relevance alone selects passages from one shared index.",
-      "evidence_quote": "all workspaces are served from one shared index; relevance alone selects the passages"
+      "affected_component": "Retrieval index / Answer service",
+      "title": "Retrieval from shared index is not filtered by workspace, risking cross-tenant data disclosure",
+      "rationale": "The retrieval index is shared across all workspaces, and the passages included in the model prompt are chosen purely by relevance. There is no mention of filtering retrieved passages by the requesting workspace or tenant, so support-ticket content from one workspace can be returned in answers to another, violating tenant-aware retrieval authorization.",
+      "evidence_quote": "\"Retrieval index — a managed vector database holding embeddings of the help-center articles and of resolved support tickets. All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.\""
     },
     {
-      "requirement_id": "req-AI-001",
-      "affected_component": "Answer service",
-      "title": "Prompt injection through retrieved ticket text",
-      "rationale": "Customer-authored tickets reach the prompt, so injection is possible.",
-      "evidence_quote": "embeddings of the help-center articles and of resolved support tickets"
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Retrieval index",
+      "title": "Support-ticket embeddings from all workspaces stored in a single shared index without documented tenant separation",
+      "rationale": "Embeddings for resolved support tickets across all workspaces are stored together in one managed vector database. The documentation does not describe any logical or physical separation of stored artifacts by tenant, only that all workspaces share the same index and that relevance alone drives selection, which conflicts with the requirement to separate stored artifacts by tenant.",
+      "evidence_quote": "\"Retrieval index — a managed vector database holding embeddings of the help-center articles and of resolved support tickets. All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.\"\n\n\"The index is the only copy of the embeddings; the vector database is the managed offering's standard tier, reachable only from the answer service's network segment.\""
     },
     {
       "requirement_id": "req-RAG-003",
-      "affected_component": "Retrieval index",
-      "title": "The index violates the two-year ticket retention schedule",
-      "rationale": "Nothing says deletions reach the index, so retained embeddings violate the schedule.",
-      "evidence_quote": "the index is the only copy of the embeddings"
+      "affected_component": "Retrieval index / Ingestion pipeline",
+      "title": "Lifecycle of retrieval index entries is not tied to the source tickets’ retention schedule",
+      "rationale": "The documentation specifies a two-year retention and deletion schedule for resolved support tickets in the support platform, but only describes the ingestion job as replacing changed chunks in the retrieval index. There is no described process for removing embeddings from the index when the underlying tickets are deleted, so the index may retain derived customer data beyond the lifecycle of its sources.",
+      "evidence_quote": "\"The nightly ingestion run replaces changed chunks by source reference. Tickets arrive in the resolved-tickets export with customer email addresses masked by the support platform before export. The index is the only copy of the embeddings...\"\n\n\"Resolved support tickets are retained on the support platform for two years and then deleted under the retention schedule agreed with customers.\""
+    },
+    {
+      "requirement_id": "req-AI-002",
+      "affected_component": "Answer service / Help panel",
+      "title": "Model answers are returned directly to users without per-response validation",
+      "rationale": "Each user question triggers a single model call whose answer is returned directly to the help panel and shown as plain text. The only review mechanism described is a weekly manual sample of twenty answers, which is not validation of outputs before they are published to users. This does not satisfy the requirement that model output be validated prior to external publication.",
+      "evidence_quote": "\"The answer service runs as a single deployment beside the main Relay API. Each answer makes one model call; there is no multi-step agent loop, and the assistant takes no actions beyond returning text.\"\n\n\"The answer service ... calls the model provider, and returns the answer with its citations.\"\n\n\"Answers are rendered in the help panel as plain text; the panel does not execute or interpret model output.\"\n\n\"Answer quality review is a weekly manual sample of twenty answers by the support team.\""
     }
   ]
 }

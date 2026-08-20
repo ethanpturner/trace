@@ -95,6 +95,7 @@ def run_ablation_set(
     results_root: Path | None = None,
     profile_name: str = _OFFLINE_PROFILE,
     ablations: Sequence[str] = ABLATION_SET,
+    registry_path: Path | None = None,
 ) -> AblationComparison:
     """Run the authoritative pipeline and each ablation for a scenario, and read them together.
 
@@ -109,6 +110,7 @@ def run_ablation_set(
         label=label,
         condition="authoritative",
         profile_name=profile_name,
+        registry_path=registry_path,
         results_root=results_root,
         stop_after_findings=True,
     )
@@ -122,6 +124,7 @@ def run_ablation_set(
             condition=ablation,
             ablations=[ablation],
             profile_name=profile_name,
+            registry_path=registry_path,
             results_root=results_root,
             stop_after_findings=True,
         )

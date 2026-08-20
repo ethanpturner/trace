@@ -149,20 +149,21 @@ def test_forgeflow_replays_through_the_harness_offline(
 
 
 @pytest.mark.parametrize(
-    ("slug", "expected_key", "expected_requirement"),
+    ("slug", "expected_key", "outcome_bucket"),
     [
-        ("order-notifier", "FND-ON-01", "req-WEBHOOK-001"),
-        # contradictory-docs held this slot until its live capture (#484) recorded the missed
-        # retention finding as the measurement; the test pins harness behaviour, not one
-        # recording's outcome, so it targets an untouched authored scenario.
-        ("reply-tuner", "FND-RT-01", "req-TRAIN-002"),
+        # The buckets pin the harness's classification of each committed recording against its
+        # truth set — matched and missed alike. A live capture that changes a scenario's honest
+        # score moves its row here rather than evicting the scenario from the test (the
+        # contradictory-docs eviction was this test's last retarget; the buckets end that).
+        ("order-notifier", "FND-ON-01", "missed"),
+        ("reply-tuner", "FND-RT-01", "matched"),
     ],
 )
 def test_a_second_scenario_replays_and_scores_its_finding(
-    tmp_path: Path, slug: str, expected_key: str, expected_requirement: str
+    tmp_path: Path, slug: str, expected_key: str, outcome_bucket: str
 ) -> None:
-    """The multi-scenario harness: two authored #268 scenarios replay offline and their one
-    finding matches its truth entry with nothing spurious."""
+    """The multi-scenario harness: authored #268 scenarios replay offline and the one truth-set
+    finding lands in exactly the bucket the committed recording earns, with nothing spurious."""
     outcome = run_scenario(
         slug, data_root=tmp_path / "work", label="test", results_root=tmp_path / "results"
     )
@@ -170,10 +171,15 @@ def test_a_second_scenario_replays_and_scores_its_finding(
     assert outcome.feed_path is not None
     feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
     findings = feed["items"]["findings"]
-    assert list(findings["matched"]) == [expected_key]
-    assert findings["missed"] == []
+    if outcome_bucket == "matched":
+        assert list(findings["matched"]) == [expected_key]
+        assert findings["missed"] == []
+        assert feed["metrics"]["false_negative_rate"]["value"] == 0.0
+    else:
+        assert findings["missed"] == [expected_key]
+        assert findings["matched"] == {}
+        assert feed["metrics"]["false_negative_rate"]["value"] == 1.0
     assert findings["spurious"] == []
-    assert feed["metrics"]["false_negative_rate"]["value"] == 0.0
 
 
 def test_the_adversarial_condition_loads_the_poisoned_doc_and_the_finding_survives(
@@ -480,13 +486,19 @@ def test_a_pinned_scenario_verifies_its_replayed_report_hash(tmp_path: Path) -> 
     assert outcome.report_hash_verified is True
 
 
-def test_a_scenario_without_a_pin_reports_none_not_a_pass(tmp_path: Path) -> None:
+def test_a_scenario_without_a_pin_reports_none_not_a_pass(
+    tmp_path: Path, authored_scenario_registry: Path
+) -> None:
+    """Probed against the frozen authored fixture, which carries no offline pin by
+    construction — every registered scenario now does, and a re-capture must not turn this
+    test's `None` into a pass or a drift."""
     from trace_ai.services.evaluation.harness import run_scenario
 
     outcome = run_scenario(
-        "translation-gateway",
+        "authored-fixture",
         data_root=tmp_path / "work",
         label="pin-test",
+        registry_path=authored_scenario_registry,
         results_root=tmp_path / "feeds",
     )
     assert outcome.completed

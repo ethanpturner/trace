@@ -1,0 +1,1257 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12168,
+    "output_tokens": 24537,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.26058",
+    "duration_seconds": 173.89496429089922
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that Helpdesk Translate lets support agents translate customer tickets in place and that it is a connector service between the helpdesk and an external translation SaaS, directly matching this purpose statement. evd-002 describes the agent workflow and the connector sending ticket content to a translation provider and writing back translations, reinforcing that role.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 explicitly describes Helpdesk Translate as a connector service between the helpdesk and an external translation SaaS, which is exactly the role asserted.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 establishes that there is a helpdesk connected to the connector service. evd-002 directly describes an agent opening a ticket and selecting translate, and the existence of tickets and an internal note on the ticket, matching the description of the helpdesk where agents operate on tickets and internal notes exist.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 calls Helpdesk Translate a connector service between the helpdesk and an external translation SaaS. evd-002 describes the connector sending the full ticket body to the translation provider and writing the returned translation back as an internal note, matching the send-and-write-back behavior. evd-003 shows the connector integrating with the helpdesk via a workspace API token, reinforcing that it connects to the helpdesk.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 identifies an external translation SaaS. evd-002 describes a translation provider that receives the full ticket body and returns a translation that is written back onto the ticket, matching the description of an external translation SaaS that receives ticket content and returns translated text.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 refers to the translation service explicitly as an external translation SaaS, directly supporting that cmp-003 is an external SaaS.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that Helpdesk Translate lets support agents translate customer tickets in place, identifying the actor as a support agent. evd-002 states that an agent opens a ticket and selects translate, which triggers the connector workflow. Together these passages support the description of a support agent who opens a ticket in the helpdesk and triggers translation.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the connector sends the full ticket body, including any customer-written text and the extracted text of customer attachments, which directly matches the definition of ast-001.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the connector writes the returned translation back onto the ticket as an internal note, directly supporting the definition of ast-002 as translated ticket content written back as internal notes.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the connector authenticates to the helpdesk with a workspace API token, directly supporting the definition of ast-003 as that workspace API token used for authentication to the helpdesk.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 explicitly states that the connector sends the full ticket body, including customer-written text and extracted attachment text, to the translation provider, directly supporting that cmp-001 sends the full ticket body to the translation provider.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the connector sends the full ticket body, including customer-written text and extracted attachment text, to the translation provider, which corresponds to ast-001 being sent. evd-001 characterises that provider as an external translation SaaS, supporting the identification of the destination component as the translation SaaS provider.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the connector sends the full ticket body to the translation provider over HTTPS, directly supporting the claim that the protocol used on that data flow is HTTPS.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 documents that the connector sends the full ticket body to the translation provider over HTTPS. HTTPS conventionally denotes HTTP over TLS or an equivalent encrypted transport, so it is a reasonable inference that the data is encrypted in transit with TLS or TLS-equivalent mechanisms. The documentation does not name TLS explicitly, but it does establish encrypted transport via HTTPS.",
+        "missing_evidence": [
+          "Network or security documentation that explicitly states the use of TLS for this HTTPS connection, including supported protocol versions and cipher configurations."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the connector writes the returned translation back onto the ticket as an internal note, directly supporting that cmp-001 writes translated text back as an internal note in the helpdesk.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the connector authenticates to the helpdesk with a workspace API token, directly supporting that cmp-001 authenticates to the helpdesk using a workspace API token.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the workspace API token grants full workspace access, directly supporting the claim that ast-003 grants full workspace access.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 explicitly states that the integration only reads tickets and writes notes, which directly supports the claim that cmp-001's effective use of the helpdesk API is limited to reading tickets and writing notes, even though the token itself is more broadly scoped.",
+        "missing_evidence": [
+          "More detailed integration documentation or code references confirming that no other helpdesk API operations are invoked by the connector."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-019",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states that no agreement covering the translation provider's retention of submitted text, or its use of submitted text beyond returning the translation, has been established. This directly supports the claim that no specific retention agreement has been established for cmp-003.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-020",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states that the provider's standard terms apply and that they have not been reviewed for this integration, directly supporting the claim that the standard terms have not been reviewed for this integration.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-021",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states that no specific agreement on retention or use has been established and that the provider's standard terms apply but have not been reviewed for this integration. This establishes that, from the perspective of the system documentation, the permitted uses of submitted text under those standard terms are not known or specified, supporting the classification of permitted_use as unknown.",
+        "missing_evidence": [
+          "A copy of the translation provider's standard terms and an analysis or summary documenting what they permit regarding retention and secondary use of submitted text."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-022",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 directly states that the connector authenticates to the helpdesk with a workspace API token and that the integration only reads tickets and writes notes, supporting the parts of the claim about reading tickets and writing notes using that token. evd-002 provides context that the connector reads ticket content and writes back internal notes. However, no passage explicitly names a helpdesk API or states that these operations occur \"via the helpdesk API\"; that mechanism is a reasonable inference from the presence of an API token but is not documented. Thus the operations and use of the token are supported, but the specific reference to the helpdesk API remains unverified.",
+        "missing_evidence": [
+          "Integration or API documentation that explicitly states that the connector uses the helpdesk API with the workspace API token to read tickets and write notes."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 documents that the connector sends the full ticket body, including customer text and extracted attachment text, to the translation provider over HTTPS, and that this provider returns a translation. evd-001 identifies the provider as an external translation SaaS, so this flow crosses an external boundary. While the documents do not name TLS explicitly, using HTTPS implies an encrypted transport such as TLS, so treating this as encryption in transit between the connector and the external provider is a reasonable inference.",
+        "missing_evidence": [
+          "Network or security configuration showing TLS settings (protocol versions, cipher suites) for the HTTPS connection between the connector and the translation provider."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 clearly states that the connector authenticates to the helpdesk with a workspace API token and that this token grants full workspace access while the integration only reads tickets and writes notes. This directly supports the description of API token authentication from the connector to the helpdesk and the effective permissions used.",
+        "missing_evidence": [
+          "Documentation or configuration showing how the workspace API token is managed (rotation, storage, and revocation), to fully characterise the control."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping asserts that req-ADMIN-001 is not applicable to thr-001, but no evidence is cited and the provided source documents do not define req-ADMIN-001, thr-001, or describe any administrative interfaces relevant to this threat. Without authoritative descriptions of the requirement and the threat, the non-applicability determination is not established by the documentation.",
+        "missing_evidence": [
+          "Authoritative specification of req-ADMIN-001, including its scope and the types of interfaces it covers.",
+          "Threat modeling documentation for thr-001 that describes the attack path, involved components, and whether any privileged administrative or operator interfaces are in scope.",
+          "Architecture documentation showing which administrative interfaces exist for the helpdesk and connector, and whether they participate in the thr-001 path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping concludes that req-AI-001 is not applicable to thr-001, citing evd-002 to describe ticket content being sent to an external translation provider. evd-002 does establish that content flows to an external translation provider over HTTPS, but it says nothing about models, prompt construction, or the detailed scope of req-AI-001. The applicability_reason text summarises an interpretation of the requirement and threat, but that reasoning is not backed by any source document in the evidence set. As a result, the non-applicability of req-AI-001 to thr-001 is not established by the available documentation.",
+        "missing_evidence": [
+          "Authoritative specification of req-AI-001, describing its scope (including what qualifies as a model and relevant prompt/instruction injection scenarios).",
+          "Threat modeling documentation for thr-001 that clearly defines the threat scenario and whether any model under this system's control is involved.",
+          "Design or architecture documentation confirming whether the translation SaaS is treated as a model provider for the purposes of req-AI-001 and whether any prompts or instructions are constructed and passed to it."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping states that req-AI-002 is not applicable to thr-001 because translations are written back as internal notes and not published externally. evd-002 does support the factual point that translations are written to the ticket as an internal note, but there is no evidence in the provided documents that defines req-AI-002, its applicability conditions, or the full definition of thr-001. Without those, the conclusion that the requirement is not applicable is not established by the documentation.",
+        "missing_evidence": [
+          "Authoritative specification of req-AI-002, including what counts as publication to external destinations and when human review is required.",
+          "Threat modeling documentation for thr-001 clarifying whether any automatic external publication of translated content is in scope.",
+          "Architecture or product documentation confirming that translated notes are never automatically propagated to external systems in ways that might trigger req-AI-002."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping asserts that req-AI-003 is conditionally applicable to thr-001, based on assumptions about whether the translation SaaS uses machine translation models. evd-002 establishes that ticket content is sent to a translation provider over HTTPS but does not state that the provider uses models, nor does any evidence define req-AI-003 or its applicability criteria. The conditional applicability conclusion therefore rests on unstated assumptions rather than documented requirements or threat definitions.",
+        "missing_evidence": [
+          "Authoritative specification of req-AI-003 describing when it applies (for example, to external model providers processing customer content).",
+          "Documentation from the translation SaaS confirming whether it uses machine translation models and whether it qualifies as an external model provider under req-AI-003.",
+          "Threat modeling documentation for thr-001 tying the use of such models, if any, to the described attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping claims that req-AI-004 is not applicable to thr-001, but no evidence is cited and the available documents do not define req-AI-004, thr-001, or any rendering paths where model output might introduce active content. Without those references, the non-applicability decision is not grounded in documented requirements or threat descriptions.",
+        "missing_evidence": [
+          "Specification of req-AI-004, including the types of user interfaces and active-content risks it is intended to address.",
+          "Threat modeling documentation for thr-001 that clarifies whether any rendering of model output or translation output into potentially active contexts is part of the attack path.",
+          "UI or integration documentation describing how translated text is rendered and whether any encoding controls are in place."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping states that req-AUTH-001 is not applicable to thr-001 because the threat concerns ticket content sent to an external translation SaaS rather than delegated user authentication. evd-001 and evd-002 describe the connector, helpdesk, and translation provider workflow but do not define req-AUTH-001 or thr-001, nor do they rule out delegated authentication mechanisms. The non-applicability conclusion therefore is not established by the cited documentation.",
+        "missing_evidence": [
+          "Authoritative specification of req-AUTH-001, including what forms of delegated user authentication it covers.",
+          "Threat modeling documentation for thr-001 that clearly states which authentication mechanisms, if any, are involved in the attack path.",
+          "Architecture documentation detailing authentication flows between users, the helpdesk, and the connector to confirm whether delegated authentication is relevant to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping concludes that req-AUTH-002 is not applicable to thr-001 because the threat does not involve privileged administrative interfaces or MFA policy. evd-001 and evd-002 describe the basic workflow of agents translating tickets but do not mention MFA, privileged admin access, or define req-AUTH-002 or thr-001. As such, the decision that the requirement is not applicable is not supported by the provided documentation.",
+        "missing_evidence": [
+          "Specification of req-AUTH-002, including its focus on MFA for privileged or externally reachable administrative access.",
+          "Threat modeling documentation for thr-001 that clarifies whether any privileged administrative interfaces are in scope.",
+          "Architecture or access-control documentation describing which roles and interfaces are considered privileged and how they relate to the thr-001 path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping claims that req-AUTHZ-001 is not applicable to thr-001 because the threat concerns external retention and reuse of ticket content rather than cross-tenant access within the helpdesk. evd-002 and evd-004 describe data being sent to an external translation provider and the absence of a retention agreement, but they do not define req-AUTHZ-001, describe tenant boundaries, or fully define thr-001. Since there is no documentation here about multi-tenant behavior or the requirement's precise scope, the non-applicability conclusion is not established.",
+        "missing_evidence": [
+          "Specification of req-AUTHZ-001, including how tenant-aware authorization and tenant boundary enforcement are defined.",
+          "Architecture documentation describing whether the helpdesk and connector are multi-tenant and how tenant boundaries are enforced.",
+          "Threat modeling documentation for thr-001 clarifying whether cross-tenant access is explicitly out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping states that req-AUTHZ-002 is not applicable to thr-001, noting that the workspace API token is broadly scoped but that the threat is about external provider data handling. evd-003 establishes the broad scope of the workspace API token and the limited operations the integration performs, but it does not define req-AUTHZ-002, nor does any evidence define thr-001. Without the requirement specification and a detailed threat description, the conclusion that the requirement is not applicable to this threat is not established.",
+        "missing_evidence": [
+          "Specification of req-AUTHZ-002, including its focus on limiting delegated integration privileges and app scopes.",
+          "Threat modeling documentation for thr-001 clarifying whether over-broad delegated privileges in the helpdesk are considered part of the threat.",
+          "Documentation of connector app registration or scopes, if any, to relate the broad workspace API token to req-AUTHZ-002's criteria."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Integration\n\nThe connector authenticates to the helpdesk with a workspace API token. The token grants\nfull workspace access; it was scoped that way during setup because it was convenient, and\nthe integration only reads tickets and writes notes."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping claims that req-CICD-001 is not applicable to thr-001 because the threat concerns runtime behavior and external retention rather than build and deployment pipelines. evd-001, evd-002, and evd-004 describe the connector, its runtime ticket translation workflow, and the lack of a retention agreement with the translation provider, but they do not define req-CICD-001 or thr-001. Without the requirement specification and a detailed threat description, the assertion that this requirement is not engaged by thr-001 is not established by the evidence.",
+        "missing_evidence": [
+          "Specification of req-CICD-001, including the kinds of CI/CD and third-party component risks it addresses.",
+          "Threat modeling documentation for thr-001 describing whether compromised build artifacts or pipeline supply-chain risks are in scope.",
+          "Build and deployment pipeline documentation for the connector to determine whether any aspects of req-CICD-001 intersect with the threat."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping asserts that req-DATA-001 is not applicable to thr-001 because the threat focuses on provider retention and secondary use rather than encryption of data in transit and at rest. evd-002 and evd-004 show that ticket content is sent over HTTPS to an external translation provider and that no specific retention/use agreement exists, but they do not define req-DATA-001 or thr-001. Without the requirement text, it is not possible to confirm from documentation alone that this encryption-focused requirement is out of scope for the described threat.",
+        "missing_evidence": [
+          "Specification of req-DATA-001, clearly describing its focus on encryption in transit and at rest and any conditions under which it applies.",
+          "Threat modeling documentation for thr-001 explaining whether deficiencies in encryption controls are explicitly out of scope.",
+          "Security architecture documentation identifying which data flows and stores inherit encryption controls and how that relates, if at all, to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping concludes that req-DATA-002 is not applicable to thr-001 because the threat focuses on the external provider's retention and secondary use rather than on retention periods for the system's own working data. evd-004 establishes that there is no specific agreement on the provider's retention and that its standard terms have not been reviewed, but it does not define req-DATA-002 or thr-001, nor does it describe how long the system itself retains working copies of data. Therefore the claim that the requirement does not apply to this threat is not established by the documentation.",
+        "missing_evidence": [
+          "Specification of req-DATA-002, including how it defines working data and required retention-period controls.",
+          "Threat modeling documentation for thr-001, clarifying whether retention of working data inside the system is out of scope.",
+          "Data retention and deletion policies for internal stores used by the helpdesk and connector to see whether they intersect with the thr-001 scenario."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping claims that req-DATA-003 is not applicable to thr-001 because the threat is about data sent to and retained by an external provider rather than tenant separation in internal storage. evd-002 and evd-004 show that ticket content is sent to an external translation provider and that there is no specific retention/use agreement, but they do not mention tenants, shared storage, or define req-DATA-003. Without those, the non-applicability of this tenant-separation requirement to thr-001 is not established by the evidence.",
+        "missing_evidence": [
+          "Specification of req-DATA-003, describing its requirements for tenant separation in shared storage.",
+          "Architecture documentation explaining how customer data is partitioned by tenant in any internal stores used by the helpdesk and connector.",
+          "Threat modeling documentation for thr-001 clarifying whether cross-tenant data exposure in internal storage is explicitly in or out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping asserts that req-DATA-004 is applicable to thr-001 and unverified, arguing that the external provider's retained copies act as secondary stores. evd-001 and evd-002 show that ticket content originates in the helpdesk and is sent to an external translation SaaS, and evd-004 shows there is no specific agreement governing the provider's retention or use of that data. These passages do support the existence of data in more than one location, but there is no evidence here that defines req-DATA-004 or thr-001. Without the requirement's formal scope, the documented facts about data flows are insufficient to establish that req-DATA-004 is definitively applicable to thr-001.",
+        "missing_evidence": [
+          "Specification of req-DATA-004, including its criteria for when multiple data stores and deletion paths must be documented.",
+          "Threat modeling documentation for thr-001 that ties the existence of secondary copies at the translation provider to the threat scenario.",
+          "Data lifecycle documentation describing where customer ticket content is stored (helpdesk, connector, provider) and how deletion requests are propagated, if at all."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping concludes that req-LOG-001 is not applicable to thr-001 because the threat concerns provider retention and reuse of ticket content rather than log handling. evd-002 and evd-004 describe the ticket translation workflow and the absence of a retention/use agreement with the provider but do not define req-LOG-001, nor do they mention logging behavior at all. Absence of logging detail in these excerpts is not evidence that log-related requirements are irrelevant to thr-001, so the non-applicability conclusion is not established.",
+        "missing_evidence": [
+          "Specification of req-LOG-001, including its requirements for excluding restricted data from logs and documenting log destinations.",
+          "Threat modeling documentation for thr-001 indicating whether log leakage or log-based exposure of ticket content is in or out of scope.",
+          "Logging architecture documentation for the connector and helpdesk, describing what is logged from translation operations and where those logs are stored."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping states that req-LOG-002 is not applicable to thr-001 because the threat does not involve privileged administrative actions but rather normal ticket translation and provider data handling. evd-001, evd-002, and evd-004 describe the connector, the workflow of translating tickets, and the lack of a data-retention agreement, but they do not define req-LOG-002 or thr-001, nor do they discuss administrative actions or related logging requirements. Consequently, the decision that this logging requirement is not applicable to thr-001 is not established by the available documentation.",
+        "missing_evidence": [
+          "Specification of req-LOG-002, including its focus on recording security-relevant administrative actions.",
+          "Threat modeling documentation for thr-001 clarifying whether any administrative operations are involved in setting up or operating the translation integration.",
+          "Operational documentation describing what administrative activities exist around the connector and whether their logging is relevant to mitigating thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Helpdesk Translate \u2014 System Overview\n\nHelpdesk Translate lets support agents translate customer tickets in place. It is a\nconnector service between the helpdesk and an external translation SaaS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nAn agent opens a ticket and selects translate. The connector sends the full ticket body \u2014\nincluding any customer-written text and the extracted text of customer attachments \u2014 to the\ntranslation provider over HTTPS, and writes the returned translation back onto the ticket\nas an internal note."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data handling\n\nNo agreement covering the translation provider's retention of submitted text, or its use of\nsubmitted text for any purpose beyond returning the translation, has been established. The\nprovider's standard terms apply; they have not been reviewed for this integration."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Helpdesk Translate connector service",
+      "title": "Helpdesk API token is significantly over-privileged relative to integration needs",
+      "rationale": "The connector uses a workspace API token that grants full workspace access even though the integration only needs to read tickets and write notes. This violates the principle of least privilege and increases the impact of token compromise or connector bugs.",
+      "evidence_quote": "\"The connector authenticates to the helpdesk with a workspace API token. The token grants full workspace access; it was scoped that way during setup because it was convenient, and the integration only reads tickets and writes notes.\""
+    },
+    {
+      "requirement_id": "req-AI-003",
+      "affected_component": "Helpdesk Translate connector service",
+      "title": "Full ticket bodies and attachments are sent to the translation provider instead of minimizing shared data",
+      "rationale": "For a translation feature, only the specific text the agent needs translated should be sent. Sending the entire ticket body and all extracted attachment text to the external provider exceeds what is strictly necessary, increasing exposure of potentially sensitive customer data and not aligning with data minimization for external model providers.",
+      "evidence_quote": "\"An agent opens a ticket and selects translate. The connector sends the full ticket body — including any customer-written text and the extracted text of customer attachments — to the translation provider over HTTPS, and writes the returned translation back onto the ticket as an internal note.\""
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Helpdesk Translate connector service",
+      "title": "External translation provider’s data handling and retention are not defined or reviewed for this integration",
+      "rationale": "The system relies on an external translation SaaS but has no specific agreement or reviewed terms governing how submitted ticket data is retained or used. This means the external processor’s handling of customer data is not documented or assured for this integration.",
+      "evidence_quote": "\"No agreement covering the translation provider's retention of submitted text, or its use of submitted text for any purpose beyond returning the translation, has been established. The provider's standard terms apply; they have not been reviewed for this integration.\""
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Helpdesk Translate connector service",
+      "title": "Retention of customer ticket data at the translation provider is undefined for this integration",
+      "rationale": "The documentation states there is no agreement covering how long the translation provider keeps submitted text, meaning retention of sensitive working data (customer tickets and attachment text) at the processor is not defined. Without defined retention, the service cannot ensure its practices align with any commitments made to customers.",
+      "evidence_quote": "\"No agreement covering the translation provider's retention of submitted text, or its use of submitted text for any purpose beyond returning the translation, has been established.\""
+    }
+  ]
+}

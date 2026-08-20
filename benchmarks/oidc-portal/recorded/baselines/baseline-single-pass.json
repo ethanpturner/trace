@@ -1,0 +1,272 @@
+{
+  "components": [
+    {
+      "name": "Support Portal",
+      "component_type": "internal web application system"
+    },
+    {
+      "name": "Portal Web Application",
+      "component_type": "server-rendered web application"
+    },
+    {
+      "name": "Ticket Service",
+      "component_type": "internal HTTP service"
+    },
+    {
+      "name": "Managed relational database",
+      "component_type": "managed relational database"
+    },
+    {
+      "name": "Enterprise identity provider",
+      "component_type": "OpenID Connect identity provider"
+    },
+    {
+      "name": "Corporate network and company VPN",
+      "component_type": "network boundary"
+    },
+    {
+      "name": "Application subnet",
+      "component_type": "network segment"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Compromise of an employee identity provider account exposes all accessible tickets",
+      "affected_components": [
+        "Portal Web Application",
+        "Ticket Service",
+        "Managed relational database",
+        "Enterprise identity provider"
+      ],
+      "rationale": "The support portal is an internal web application that lets employees view and comment on customer support tickets, which are persisted in a managed relational database. All access is authenticated through the enterprise OpenID Connect identity provider, which enforces factor policy. If an employee IdP account is compromised, an attacker could authenticate to the portal and access any tickets that account is authorized to see, including historical correspondence."
+    },
+    {
+      "title": "OIDC integration weaknesses (redirects, token validation details, session handling)",
+      "affected_components": [
+        "Portal Web Application",
+        "Enterprise identity provider"
+      ],
+      "rationale": "The portal delegates authentication to the enterprise OpenID Connect provider and validates the returned ID token, but the documentation does not describe redirect URI restrictions, how tokens are validated in detail, or how the application session is bounded. Misconfiguration in any of these areas (e.g., overly broad redirects, insufficient verification of token claims, long-lived sessions) could allow account impersonation or session hijacking."
+    },
+    {
+      "title": "Broad internal reach and insider misuse of ticket data",
+      "affected_components": [
+        "Support Portal",
+        "Corporate network and company VPN",
+        "Managed relational database"
+      ],
+      "rationale": "The portal is served over HTTPS and is reachable from the corporate network and company VPN, and it lets employees view and comment on tickets containing customer support correspondence. If authorization is not tightly scoped (for example, if most employees can see many or all tickets), an insider or a compromised internal workstation could access more customer data than necessary for their role."
+    },
+    {
+      "title": "Insufficiently governed protection of ticket data at rest and in backups",
+      "affected_components": [
+        "Ticket Service",
+        "Managed relational database"
+      ],
+      "rationale": "Tickets containing customer support correspondence are persisted in a managed relational database, but the documentation does not cover encryption at rest, backup practices, retention periods, or secure deletion. Weaknesses in these areas could lead to disclosure of historical ticket data via storage compromise, mishandled backups, or over-retention."
+    },
+    {
+      "title": "Lack of documented fine-grained authorization between portal and ticket service",
+      "affected_components": [
+        "Portal Web Application",
+        "Ticket Service"
+      ],
+      "rationale": "The portal web application calls the internal ticket service for data, and the ticket service is reachable only from the portal inside the application subnet. However, there is no description of how the ticket service authorizes individual requests (e.g., based on user identity, roles, or least-privilege service credentials). Overly broad or missing authorization at the service layer could allow the portal to access or modify more data than intended if it is compromised."
+    },
+    {
+      "title": "Inadequate logging and monitoring for access to sensitive ticket data",
+      "affected_components": [
+        "Portal Web Application",
+        "Ticket Service"
+      ],
+      "rationale": "Employees access customer support correspondence through the portal and ticket service, but there is no documentation of how access, administrative actions, or unusual usage patterns are logged and monitored. Without appropriate logging and alerting, malicious or compromised use of the portal to exfiltrate or tamper with tickets may go undetected."
+    },
+    {
+      "title": "Unclear controls on third-party cloud database provider handling of ticket data",
+      "affected_components": [
+        "Managed relational database"
+      ],
+      "rationale": "Tickets are stored in a managed relational database provided by the cloud platform, making the platform a third-party processor of customer-related content. The documentation does not describe what data protection, access, or regional controls are in place at this provider, so there is a risk that provider-side configuration or policy may not match organizational expectations."
+    }
+  ],
+  "findings": [],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "Whether there are privileged administrative interfaces (for configuration, ticket management beyond normal use, or database access), who can reach them, and how that access is restricted and documented."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Portal Web Application",
+      "what_cannot_be_determined": "How authorization is enforced for employees viewing and commenting on tickets (e.g., whether all employees can see all tickets or access is limited by role, team, or customer) and whether any tenant- or customer-level segmentation is implemented and documented."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Ticket Service",
+      "what_cannot_be_determined": "What privileges the portal has when calling the ticket service (e.g., whether it uses a shared high-privilege identity or scoped credentials) and whether the ticket service enforces least-privilege access based on the caller or end-user context."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "How the portal and ticket service are built and deployed (CI/CD pipeline, artifact integrity, approvals) and what controls ensure the deployment path and its dependencies are trusted."
+    },
+    {
+      "requirement_id": "req-OPS-001",
+      "affected_component": "Managed relational database",
+      "what_cannot_be_determined": "How database and ticket-service backups are created, who can restore or delete them, and whether backup deletion capabilities are separated from backup creation and restore permissions."
+    },
+    {
+      "requirement_id": "req-OPS-002",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "Whether there is any monitoring for cost or usage anomalies (e.g., unexpected increases in traffic, storage, or database usage) and how such anomalies are surfaced to operators."
+    },
+    {
+      "requirement_id": "req-OPS-003",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "How production environments for the portal, ticket service, and database are separated from development and test environments, including controls on indirect access (e.g., shared credentials, networks, or data copies)."
+    },
+    {
+      "requirement_id": "req-OPS-004",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "Whether changes to the deployment pipeline (build scripts, infrastructure-as-code, deployment tooling) are tracked, reviewed, and visible to appropriate personnel."
+    },
+    {
+      "requirement_id": "req-OPS-005",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "What alerting exists for failures, security-relevant events, or performance issues in the portal and ticket service, and whether alerts are tuned to remain actionable without excessive noise."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Ticket Service",
+      "what_cannot_be_determined": "Whether connections between the portal and ticket service, and between the ticket service and the managed relational database, are encrypted in transit (e.g., HTTPS/TLS) and whether the managed database encrypts ticket data at rest under managed keys."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Managed relational database",
+      "what_cannot_be_determined": "The specific encryption-at-rest configuration for stored tickets and any backups, including key management responsibilities."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Managed relational database",
+      "what_cannot_be_determined": "Defined retention periods for ticket data and associated backups, and whether these match what customers are told about how long their support correspondence is kept."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Managed relational database",
+      "what_cannot_be_determined": "Whether ticket records for different customers (or other logical tenants) are separated logically or physically, and how that separation is enforced in the schema or database configuration."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "Whether there is a defined process and technical capability to delete or anonymize a customer's ticket data on request, including any related records in the database and backups."
+    },
+    {
+      "requirement_id": "req-OIDC-001",
+      "affected_component": "Portal Web Application",
+      "what_cannot_be_determined": "How the portal restricts OpenID Connect redirect URIs to registered and vetted destinations to prevent open redirect or callback manipulation."
+    },
+    {
+      "requirement_id": "req-OIDC-003",
+      "affected_component": "Portal Web Application",
+      "what_cannot_be_determined": "How the application session created after OIDC sign-in is bounded (session timeout, idle timeout, re-authentication requirements) and how session cookies or tokens are protected."
+    },
+    {
+      "requirement_id": "req-OIDC-004",
+      "affected_component": "Portal Web Application",
+      "what_cannot_be_determined": "Whether the OIDC authorization code exchange is bound to its initiator using mechanisms such as state, nonce, and PKCE, and how these values are generated and verified."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Portal Web Application",
+      "what_cannot_be_determined": "What is logged by the portal (e.g., request parameters, ticket content, user identifiers) and whether sensitive customer correspondence or personal data is excluded or minimized in logs."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Ticket Service",
+      "what_cannot_be_determined": "What the ticket service logs about ticket operations and whether sensitive ticket content is kept out of logs or appropriately redacted."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "Whether security-relevant administrative or high-privilege actions (e.g., bulk ticket export, permission changes, configuration changes) are recorded in tamper-resistant audit logs."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Application subnet",
+      "what_cannot_be_determined": "While the ticket service is stated to be reachable only from the portal web application inside the application subnet, the documentation does not describe network controls for the managed relational database or whether any other internal components can reach it."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Support Portal",
+      "what_cannot_be_determined": "Where long-lived secrets such as the OIDC client credentials and database connection strings are stored, and whether a managed secret store is used with appropriate access controls and rotation."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Managed relational database",
+      "what_cannot_be_determined": "What contractual and technical controls govern the cloud platform's handling of ticket data stored in the managed relational database (e.g., data residency, access by cloud operators, encryption guarantees) and how this is documented for stakeholders."
+    }
+  ],
+  "questions": [
+    {
+      "question": "What administrative interfaces or privileged capabilities exist for the Support Portal (including the ticket service and database), who can access them, and how is that access restricted and documented?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "How is authorization implemented in the portal for viewing and commenting on tickets—for example, can all authenticated employees see all tickets, or is access limited by role, team, or customer/tenant?",
+      "requirement_id": "req-AUTHZ-001"
+    },
+    {
+      "question": "What identity or credential does the portal use to call the ticket service, and how does the ticket service enforce least-privilege authorization on those calls (e.g., per-user context vs. shared service account)?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "What does the build and deployment pipeline for the portal and ticket service look like (tools, environments, approvals), and what controls ensure only trusted artifacts are deployed to production?",
+      "requirement_id": "req-CICD-001"
+    },
+    {
+      "question": "Are connections between the portal and ticket service, and between the ticket service and the managed relational database, protected with TLS, and is the database configured to encrypt ticket data at rest (including backups)?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What are the defined retention periods for ticket data and backups, and how do these compare to what customers are told about how long their support correspondence is stored?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "How are customer requests for deletion of their support data handled technically—can ticket data (and any associated artifacts) be deleted or anonymized in the primary database and in backups?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "How are OIDC redirect URIs configured for the portal, and what controls ensure that the identity provider will only redirect back to registered, trusted endpoints?",
+      "requirement_id": "req-OIDC-001"
+    },
+    {
+      "question": "How is the application session established after OIDC sign-in implemented and bounded (session duration, idle timeout, cookie flags), and are there re-authentication requirements for sensitive operations?",
+      "requirement_id": "req-OIDC-003"
+    },
+    {
+      "question": "Does the OIDC implementation use state, nonce, and PKCE (where applicable) to bind the authorization code exchange to the initiating client, and how are these values generated and validated?",
+      "requirement_id": "req-OIDC-004"
+    },
+    {
+      "question": "What data is written to application and service logs for the portal and ticket service, and what measures are in place to prevent sensitive customer correspondence or personal data from being logged?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "Which administrative or high-impact actions in the portal (e.g., configuration changes, bulk exports, permission changes) are logged, and how are these audit logs protected and reviewed?",
+      "requirement_id": "req-LOG-002"
+    },
+    {
+      "question": "Where are long-lived secrets such as OIDC client credentials and database passwords stored, and is a managed secret store used with access controls, auditing, and regular rotation?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "What data protection and residency guarantees does the cloud platform provide for the managed relational database storing tickets, and how are these documented (e.g., in a DPIA, data processing agreement, or internal register)?",
+      "requirement_id": "req-TPI-001"
+    },
+    {
+      "question": "How are production environments for the portal, ticket service, and database separated from development and test (including networks, credentials, and data copies), and who can access each?",
+      "requirement_id": "req-OPS-003"
+    }
+  ]
+}

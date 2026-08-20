@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-WEBHOOK-001",
+      "affected_component": "Callback Receiver",
+      "title": "Callback Receiver does not verify authenticity of inbound callbacks",
+      "rationale": "The callback endpoint accepts any well-formed request from anywhere and does not use the payment provider’s available signing feature. This means inbound events are processed without authenticating the sender or verifying message integrity, so attackers can forge callbacks and inject arbitrary order-status updates.",
+      "evidence_quote": "\"The Callback Receiver is the endpoint registered with the payment provider. It processes any well-formed callback it receives: callbacks are not signed, and the provider's optional callback-signing feature is not enabled for this integration.\"\n\n\"The review confirmed the callback endpoint accepts unsigned requests from anywhere; any caller that formats a callback correctly is processed as though it came from the payment provider. Enabling the provider's signing feature is tracked in the backlog and not yet scheduled.\""
+    },
+    {
+      "requirement_id": "req-WEBHOOK-002",
+      "affected_component": "Callback Receiver / Channel Poster",
+      "title": "No documented protection against replayed callbacks",
+      "rationale": "Operations notes explicitly state that nothing was noted regarding repeated deliveries of the same callback. This suggests the system may process the same event multiple times without idempotency or replay safeguards, making replay attacks or duplicate processing possible and potentially harmful.",
+      "evidence_quote": "\"Channel posting has retried safely during provider outages. Nothing was noted about repeated deliveries of the same callback.\""
+    }
+  ]
+}

@@ -29,13 +29,20 @@ if TYPE_CHECKING:
 # ------------------------------------------------------------------------------------------
 
 
-def test_removing_evidence_validation_loses_the_finding(tmp_path: Path) -> None:
+def test_removing_evidence_validation_loses_the_finding(
+    tmp_path: Path, authored_scenario_registry: Path
+) -> None:
     """The DEC-012 decision gate, measured: without evidence validation the finding is not
-    produced, so the truth-set finding is missed and the false-negative rate goes to 1."""
+    produced, so the truth-set finding is missed and the false-negative rate goes to 1.
+
+    Probed against the frozen authored fixture rather than a registered scenario: live
+    recordings' scores move on re-capture, and this test pins harness behaviour, not one
+    recording's outcome."""
     comparison = run_ablation_set(
-        "order-notifier",
+        "authored-fixture",
         data_root=tmp_path / "work",
         label="test",
+        registry_path=authored_scenario_registry,
         results_root=tmp_path / "results",
     )
     assert comparison.authoritative["false_negative_rate"] == 0.0
@@ -44,13 +51,16 @@ def test_removing_evidence_validation_loses_the_finding(tmp_path: Path) -> None:
     assert comparison.delta("no-evidence-validation", "false_negative_rate") == 1.0
 
 
-def test_the_ablation_set_stops_before_the_report(tmp_path: Path) -> None:
+def test_the_ablation_set_stops_before_the_report(
+    tmp_path: Path, authored_scenario_registry: Path
+) -> None:
     """An ablation that changes the finding set is measured on the findings, not the report whose
     recorded sections were authored for the authoritative findings."""
     comparison = run_ablation_set(
-        "order-notifier",
+        "authored-fixture",
         data_root=tmp_path / "work",
         label="test",
+        registry_path=authored_scenario_registry,
         results_root=tmp_path / "results",
     )
     # model_call_count is a finding-level run measure and drops when a model stage is removed.

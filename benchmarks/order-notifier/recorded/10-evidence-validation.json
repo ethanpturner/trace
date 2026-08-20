@@ -1,0 +1,412 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 365,
+    "output_tokens": 15060,
+    "cache_read_tokens": 10112,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.15232025",
+    "duration_seconds": 219.84892820892856
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided document mentions req-DATA-001, its scope, or any decision that it is not applicable to threat thr-004. The mapping and its applicability_reason are analysis artefacts, not supported by cited passages, so the non-applicability conclusion is not established by the available evidence.",
+        "missing_evidence": [
+          "Security-requirements documentation defining req-DATA-001 and stating whether and why it is considered in or out of scope for threat thr-004 (e.g. a requirement\u2013threat traceability matrix or risk assessment)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The supplied evidence does not refer to req-DATA-002, data-retention controls, or any determination that such controls are not applicable to thr-004. The mapping is therefore not grounded in the provided documentation.",
+        "missing_evidence": [
+          "Documentation that defines req-DATA-002 and records the rationale for treating it as in scope or out of scope for thr-004 (for example, data-retention policies mapped to threats)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "None of the available passages discuss req-DATA-003, tenant separation of stored artifacts, or any explicit non-applicability decision for thr-004. The conclusion that req-DATA-003 is not applicable is not documented.",
+        "missing_evidence": [
+          "Architecture or requirements documentation explaining req-DATA-003 and explicitly stating whether tenant separation of stored artifacts is considered relevant to the Order Notifier pipeline and to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The provided evidence does not mention req-DATA-004, deletion-on-request behaviour, or its applicability to threat thr-004. The non-applicability mapping is based on analysis rather than on any cited passage.",
+        "missing_evidence": [
+          "Requirements or privacy documentation defining req-DATA-004 and recording any analysis that it is (or is not) applicable to threats involving Order Notifier callbacks, including thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No passage in the supplied evidence discusses logging requirements, log destinations, or req-LOG-001, nor any reasoning that logging is irrelevant to thr-004. The mapping that req-LOG-001 is not applicable is therefore not supported by documentation.",
+        "missing_evidence": [
+          "Logging and monitoring requirements defining req-LOG-001 and any mapping or rationale that classifies it as applicable or not applicable to threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The available documents do not mention administrative auditing, security-relevant administrative actions, or req-LOG-002, and they do not record an explicit decision that the requirement does not apply to thr-004. The non-applicability claim is not documented.",
+        "missing_evidence": [
+          "Security logging requirements describing req-LOG-002 and project documentation that decides whether it applies to Order Notifier and threat thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "While the evidence describes callback and channel APIs, it does not mention req-NET-001, internal network reachability restrictions, or an explicit determination that this requirement is not relevant to thr-004. Therefore the non-applicability conclusion is not established by the documents.",
+        "missing_evidence": [
+          "Network security or segmentation documentation that defines req-NET-001 and states whether and why it is considered applicable or not applicable to the Order Notifier components and thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The supplied passages do not describe storage or handling of long-lived secrets or signing keys, do not mention req-SECRET-001, and do not record a non-applicability decision for thr-004. The mapping is not supported by the available documentation.",
+        "missing_evidence": [
+          "Secrets-management or key-management documentation covering req-SECRET-001 and any analysis that maps it (or explicitly does not map it) to the Order Notifier and thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-067",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No evidence discusses outbound access tokens, their lifetimes, or misuse in relation to external customer resources, nor does any passage reference req-SECRET-002. The statement that this requirement is not applicable to thr-004 is therefore not documented.",
+        "missing_evidence": [
+          "Documentation defining req-SECRET-002 (e.g. on access-token lifetime or reuse) and an explicit mapping analysis indicating whether it is relevant to Order Notifier and thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-068",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "Although the integration involves a payment provider and a channel platform, none of the provided passages describe external-processor data-handling requirements, req-TPI-001, or a decision that such a requirement does not apply to thr-004. The non-applicability conclusion is not based on the cited evidence.",
+        "missing_evidence": [
+          "Third-party-processor or data-processing agreements/requirements defining req-TPI-001 and documentation that evaluates its applicability to the Order Notifier and thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-069",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 states that the Order Notifier receives callbacks from the payment provider and posts updates to the operations channel, and evd-003 states that the Channel Poster sends these via the channel platform\u2019s HTTPS API. Together, these directly document that work is triggered by external events and results in outbound calls to an external platform. evd-006 documents that channel posting has been retried safely during provider outages, directly supporting the claim that failed work is automatically retried. These passages provide a solid basis for inferring that any requirement concerning work triggered by external events and automatic retry (such as req-TPI-002) is relevant to this flow and thus to thr-004. However, none of the evidence mentions req-TPI-002 by identifier, maps it explicitly to thr-004, or states that the requirement is currently \"unverified\". Those parts of the conclusion remain analysis-only rather than documented, so the mapping is only partially supported by the available evidence.",
+        "missing_evidence": [
+          "Security-requirements documentation that defines req-TPI-002, including its triggering conditions, and explicitly maps it to the Order Notifier callback and posting flow and to thr-004.",
+          "Design or verification records indicating the current implementation and verification status of the controls required by req-TPI-002 for this integration."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-070",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 documents that the Callback Receiver is the endpoint registered with the payment provider and that it processes any well-formed callback it receives. evd-005 further records that the callback endpoint accepts unsigned requests from anywhere and processes any correctly formatted callback as though it came from the payment provider, and that enabling the provider\u2019s signing feature is merely a backlog item. These passages directly support the characterization of this component as a webhook endpoint that accepts events from an external platform and triggers processing or state change, making a webhook-authenticity requirement (such as req-WEBHOOK-001) relevant to the threat surface. They also document that the provider\u2019s signing feature is not enabled today. However, none of the provided documents mention req-WEBHOOK-001 by name, explicitly map it to thr-004, or describe its implementation status as \"unverified\". The \"applicable\" and \"unverified\" labels therefore go beyond what the evidence states, so the mapping is only partially supported.",
+        "missing_evidence": [
+          "Security-requirements documentation that defines req-WEBHOOK-001 and explicitly associates it with the Callback Receiver and with threats including thr-004.",
+          "Design, configuration, or test records that state the current implementation and verification status of the authenticity-verification controls required by req-WEBHOOK-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-071",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-003 describe that Order Notifier receives callbacks from the payment provider and posts order-status updates to the operations channel via the channel platform\u2019s HTTPS API, establishing that callback processing is state-changing and externally visible. evd-006 notes that channel posting has been retried safely during provider outages and that nothing was noted about repeated deliveries of the same callback. None of these passages, however, mention req-WEBHOOK-002, replay or duplicate-handling requirements by that name, or an explicit statement that such a requirement is considered applicable to thr-004 or that its implementation is \"unverified\". Inferring that req-WEBHOOK-002 is the specific requirement governing replay or duplicate handling relies on information not present in the supplied evidence. As a result, the conclusion that \"req-WEBHOOK-002 is applicable to thr-004 and unverified\" is not established by the available documentation.",
+        "missing_evidence": [
+          "Requirements documentation defining req-WEBHOOK-002, including its scope (e.g. replay or duplicate handling for inbound events), and explicitly mapping it to the Order Notifier callback flow and to thr-004.",
+          "Design or verification artefacts that describe how duplicates or replays of callbacks are handled and whether compliance with req-WEBHOOK-002 has been verified."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the Callback Receiver is the endpoint registered with the payment provider and that it processes any well-formed callback it receives; callbacks are not signed and the provider\u2019s optional signing feature is not enabled. evd-005 further confirms that the callback endpoint accepts unsigned requests from anywhere and processes any correctly formatted callback as though it came from the payment provider. Together, these directly establish that any external party who can reach the endpoint and construct a syntactically valid callback can have it processed as if it were genuine. evd-001 and evd-003 document that these callbacks drive updates which are formatted by the Channel Poster and posted to the operations channel over the channel platform\u2019s HTTPS API. From these documented behaviours, it follows directly that forged callbacks with arbitrary order identifiers and statuses can be injected and will be propagated to the operations channel as legitimate-looking updates. The threat description is therefore well supported by the available evidence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-005 directly establish that the Callback Receiver is an internet-reachable endpoint registered with the payment provider, that it accepts unsigned requests from anywhere, and that any correctly formatted callback is processed as though it came from the provider. This supports the characterisation of the endpoint as unauthenticated and accepting arbitrary well-formed callbacks. evd-001 and evd-003 document that callbacks result in formatted order-status updates being posted to the operations channel over the external channel platform\u2019s HTTPS API, so each processed callback produces externally visible work. These facts together support the core of the threat: an attacker can send large numbers of synthetic callbacks which will be processed and posted, creating noise in the operations channel and consuming processing resources. evd-006, which notes successful retry behaviour during provider outages, is contextual in showing that the system already handles certain failure modes with retries but does not address high-volume abuse directly. However, the evidence does not describe rate limiting, throttling, or capacity and resilience characteristics of the callback receiver and Channel Poster, nor does it state that existing controls are insufficient to withstand high-volume forged traffic. Those aspects of the threat remain inferred rather than documented, so the conclusion is only partially supported.",
+        "missing_evidence": [
+          "Design or configuration documentation describing rate limiting, throttling, and abuse-detection controls on the callback endpoint and channel-posting components.",
+          "Capacity or resilience testing results showing how the system behaves under sustained high volumes of callbacks, including from untrusted sources."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the Order Notifier receives order-status callbacks from the payment provider and posts updates to the operations channel. evd-002 describes the Callback Receiver as the endpoint registered with the payment provider, indicating that the provider is treated as the authoritative source for these callbacks. evd-003 states that the Channel Poster formats the order status and posts it to the operations channel over the channel platform\u2019s HTTPS API. Together, these passages directly support the documented dependency chain: whatever status information the payment provider sends in callbacks is taken as authoritative and propagated directly to the operations channel without mention of independent cross-checking. From this architecture, it is a reasonable and straightforward inference that if the payment provider\u2019s callback service is compromised, misconfigured, or buggy and emits incorrect or malicious statuses, those would be forwarded to the operations channel and could mislead operations staff. The threat description accurately reflects this dependency and is supported by the evidence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-003 directly describe the basic pipeline: Order Notifier receives order-status callbacks from the payment provider and posts formatted updates to the operations channel over the channel platform\u2019s HTTPS API. evd-002 states that the Callback Receiver processes any well-formed callback it receives and that callbacks are not signed, with the provider\u2019s optional signing feature not enabled. evd-005 confirms that the callback endpoint accepts unsigned requests from anywhere and processes any correctly formatted callback as though it came from the payment provider. Together, these passages establish that each received callback is treated as a fresh event that drives state-visible work in the operations channel, and that an attacker can resend a previously observed payload to the endpoint, making replay technically possible. evd-006 notes that channel posting has retried safely during provider outages and that nothing was noted about repeated deliveries of the same callback, which is contextual but does not positively state how duplicates are handled. The threat\u2019s core assertion\u2014that duplicate or replayed callbacks can lead to multiple, potentially confusing order-status messages if repeated deliveries are not detected and handled idempotently\u2014is therefore only partly established: the architecture and the feasibility of replay are documented, but there is no explicit evidence about whether the system currently detects and de-duplicates repeated callback deliveries or about the payment provider\u2019s actual retry or redelivery behaviour. Those aspects are inferred from typical patterns rather than documented here, so the conclusion is partially supported.",
+        "missing_evidence": [
+          "Design or implementation documentation describing how the Order Notifier identifies and handles duplicate or replayed callbacks (e.g. idempotency keys, event IDs, or de-duplication logic).",
+          "Documentation from the payment provider on its callback delivery and retry semantics, including when and how retries or duplicate deliveries occur.",
+          "Operational or test evidence showing the system\u2019s behaviour when the same callback payload is delivered multiple times."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      }
+    ]
+  }
+}

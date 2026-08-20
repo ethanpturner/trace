@@ -1,0 +1,230 @@
+{
+  "components": [
+    {
+      "name": "Reconciler Job",
+      "component_type": "scheduled batch workload"
+    },
+    {
+      "name": "Billing Database",
+      "component_type": "managed relational database"
+    },
+    {
+      "name": "Payment Processor",
+      "component_type": "external payment platform"
+    },
+    {
+      "name": "Finance analyst",
+      "component_type": "internal human actor"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Compromise or misuse of payment processor service credential",
+      "affected_components": [
+        "Reconciler Job",
+        "Payment Processor",
+        "Billing Database"
+      ],
+      "rationale": "The reconciler authenticates to the payment processor's reporting API with a service credential issued for this integration [system-overview.md]. If this credential is stolen or over-privileged, an attacker could pull or potentially manipulate settlement data, leading the reconciler to produce incorrect discrepancy summaries that affect downstream billing records and finance decisions."
+    },
+    {
+      "title": "Tampering with discrepancy summaries in the Billing Database",
+      "affected_components": [
+        "Billing Database",
+        "Finance analyst"
+      ],
+      "rationale": "Discrepancy summaries are written back to the Billing Database and then reviewed by a finance analyst [system-overview.md]. If an attacker or overly privileged operator can modify these summaries, they can influence financial reconciliation outcomes without directly touching source billing records."
+    },
+    {
+      "title": "Exposure of sensitive billing data over internal network links",
+      "affected_components": [
+        "Reconciler Job",
+        "Billing Database"
+      ],
+      "rationale": "The reconciler reads billing records from the Billing Database and writes discrepancy summaries back [system-overview.md]. The documentation confirms HTTPS to the external payment processor but does not state whether traffic between the Reconciler Job and Billing Database is encrypted. If these connections are unencrypted, an attacker with access to the application subnet could eavesdrop on or tamper with sensitive financial data in transit."
+    },
+    {
+      "title": "Unavailability or degradation of payment processor reporting API",
+      "affected_components": [
+        "Reconciler Job",
+        "Payment Processor"
+      ],
+      "rationale": "Each night the reconciler pulls the day's settlement report from the payment processor's reporting API served over HTTPS [system-overview.md]. If that API is unavailable, slow, or returns incomplete data, the reconciler may fail or produce incomplete discrepancy summaries, delaying or degrading financial reconciliation."
+    },
+    {
+      "title": "Failure of the nightly schedule for the Reconciler Job",
+      "affected_components": [
+        "Reconciler Job",
+        "Billing Database",
+        "Finance analyst"
+      ],
+      "rationale": "The reconciler \"runs once per night on the platform's standard workload deployment\" [system-overview.md]. If the scheduler or deployment fails and the job does not run, discrepancy summaries will not be produced, leaving finance analysts without expected daily reconciliation information."
+    },
+    {
+      "title": "Over-broad access from the application subnet to the Billing Database",
+      "affected_components": [
+        "Billing Database",
+        "Reconciler Job"
+      ],
+      "rationale": "The Billing Database \"is reachable only from the reconciler job inside the application subnet\" [system-overview.md]. While this is positive network restriction, the documentation does not describe database-level privileges or whether other workloads in the same subnet could be misconfigured to reach it. A compromised workload in the subnet or overly broad subnet rules could allow unauthorized access to all billing and discrepancy data."
+    }
+  ],
+  "findings": [],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Reconciler Job",
+      "what_cannot_be_determined": "Who has privileged administrative access to configure, deploy, or operate the nightly Reconciler Job (including its schedule and runtime configuration), how that access is restricted, and where its reach is documented are not described in the materials provided [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "The documentation does not state who has administrative access (e.g., DBAs, cloud admins) to the managed Billing Database, what privileges they have over billing records and discrepancy summaries, or how this access is documented and restricted [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Payment Processor",
+      "what_cannot_be_determined": "While the reconciler uses a \"service credential issued by the processor for this integration\" [system-overview.md], the effective permissions of this credential (e.g., limited to read-only reporting API vs. broader payment or account access) are not documented."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Reconciler Job",
+      "what_cannot_be_determined": "The deployment path for the Reconciler Job on the platform's standard workload deployment, including build pipeline, artifact signing, dependency management, and how that path is trusted and controlled, is not described [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-OPS-001",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "The documentation does not state how backups for the managed Billing Database are handled (creation, retention, and deletion) or whether the ability to delete backups is separated from the ability to create them [system-overview.md; workspace-org-controls.yaml]."
+    },
+    {
+      "requirement_id": "req-OPS-002",
+      "affected_component": "Reconciler Job",
+      "what_cannot_be_determined": "There is no description of monitoring or alerting for anomalous costs related to the Reconciler Job (e.g., unexpected increases in payment processor API usage or database resource consumption) or how such anomalies would reach an operator [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-OPS-003",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "Although the Billing Database is described as reachable only from the reconciler job inside the application subnet [system-overview.md], the documentation does not clarify how production data is separated from non-production environments (e.g., separate instances, VPCs, or accounts) or how indirect access between environments is prevented."
+    },
+    {
+      "requirement_id": "req-OPS-004",
+      "affected_component": "Reconciler Job",
+      "what_cannot_be_determined": "The materials do not describe how changes to the deployment pipeline for the Reconciler Job are managed and whether such changes are visible and auditable to appropriate stakeholders [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-OPS-005",
+      "affected_component": "Reconciler Job",
+      "what_cannot_be_determined": "There is no documentation of any alerting related to the nightly reconciler (e.g., job failures, data mismatches beyond a threshold) or how alerts are tuned to remain actionable rather than noisy [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "The documentation confirms that the payment processor reporting API is served over HTTPS [system-overview.md] and asserts an organizational control of managed database encryption [workspace-org-controls.yaml], but it does not explicitly state whether connections between the Reconciler Job and the Billing Database use TLS or another form of encryption in transit."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "Retention periods and deletion policies for billing records and discrepancy summaries, and whether they align with what customers are told about data retention, are not documented [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "The Billing Database \"holds billing records\" that contain per-customer charge entries and discrepancy summaries [system-overview.md], but there is no description of how stored data is separated by tenant (e.g., separate schemas, databases, or row-level access controls)."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "The process and technical capability to delete or anonymize a given customer's billing records and discrepancy summaries on request are not described [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Reconciler Job",
+      "what_cannot_be_determined": "The documentation does not mention what, if any, logging the Reconciler Job performs, or whether logs are scrubbed to avoid including sensitive customer billing data or amounts [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Billing Database",
+      "what_cannot_be_determined": "There is no information on whether security-relevant administrative actions involving the Billing Database (e.g., privilege changes, direct data access, backup operations) are logged in a way that supports security monitoring and auditing [system-overview.md]."
+    },
+    {
+      "requirement_id": "req-SECRET-002",
+      "affected_component": "Payment Processor",
+      "what_cannot_be_determined": "The materials state that the reconciler uses a service credential issued by the payment processor and that it is provisioned through the standard workload deployment [system-overview.md], but they do not specify whether this credential is short-lived, how it is rotated, or whether any long-lived secrets remain in use."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Payment Processor",
+      "what_cannot_be_determined": "While the Payment Processor is identified as the external platform that captures payments and publishes settlement reports over HTTPS [system-overview.md], the documentation does not describe in detail what categories of customer data it processes on behalf of this system, where that data is stored, and what contractual or policy assurances exist for its protection."
+    }
+  ],
+  "questions": [
+    {
+      "question": "Who has privileged administrative access to the Reconciler Job (e.g., to change its schedule, code, or runtime configuration), how is that access technically enforced, and where is its scope documented?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "Who administers the Billing Database (cloud account admins, DBAs, service owners), what roles and permissions do they have over billing records and discrepancy summaries, and how is this access restricted and audited?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "What permissions does the payment processor service credential used by the Reconciler Job have (e.g., is it limited to read-only access to the reporting API for this account, or can it perform other payment or account operations)?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "What is the CI/CD and deployment pipeline for the Reconciler Job (including build, test, artifact storage, and deployment steps), and how are the tools and dependencies in that path vetted and trusted?",
+      "requirement_id": "req-CICD-001"
+    },
+    {
+      "question": "How are backups for the Billing Database configured (frequency, retention, storage location), and is the ability to delete or alter backups separated and more tightly controlled than the ability to create them?",
+      "requirement_id": "req-OPS-001"
+    },
+    {
+      "question": "Are there alerts or reports for unusual cost patterns related to the Reconciler Job (e.g., spikes in payment processor API calls or database usage), and how do those alerts reach an on-call engineer or owner?",
+      "requirement_id": "req-OPS-002"
+    },
+    {
+      "question": "How is production separated from staging, test, and development for both the Reconciler Job and the Billing Database (e.g., separate projects/accounts, VPCs, databases), and how is indirect access between environments prevented?",
+      "requirement_id": "req-OPS-003"
+    },
+    {
+      "question": "How are changes to the Reconciler Job's deployment pipeline (e.g., new build steps, credential changes, environment modifications) tracked and reviewed, and who can approve such changes?",
+      "requirement_id": "req-OPS-004"
+    },
+    {
+      "question": "What alerts exist for the nightly reconciliation process (job failures, missing settlement reports, unusually large discrepancies), and how have thresholds and routing been set to ensure these alerts are actionable rather than noisy?",
+      "requirement_id": "req-OPS-005"
+    },
+    {
+      "question": "Do connections from the Reconciler Job to the Billing Database enforce encryption in transit (e.g., TLS with certificate validation and a minimum protocol version), and if so, how is this configured?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What are the defined retention periods for billing records and discrepancy summaries in the Billing Database, and how do these compare to what customers are told in terms of data retention and deletion policies?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "How is tenant or customer separation implemented within the Billing Database (e.g., separate schemas, row-level security, per-tenant databases), and what prevents one tenant’s data from being accessed inappropriately via this system?",
+      "requirement_id": "req-DATA-003"
+    },
+    {
+      "question": "If a customer requests deletion of their data, what technical and operational steps are taken to delete or anonymize their billing records and discrepancy summaries in the Billing Database, and how is completeness of deletion verified?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "What does the Reconciler Job log (e.g., counts of records processed vs. detailed record contents), and what safeguards exist to ensure sensitive customer or payment data is not written to logs?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "Which administrative and security-relevant actions related to the Billing Database (such as privilege changes, direct data queries, or backup operations) are logged, and where are those logs stored and monitored?",
+      "requirement_id": "req-LOG-002"
+    },
+    {
+      "question": "What is the lifetime and rotation policy for the payment processor service credential used by the Reconciler Job, and are there any long-lived credentials that could access customer-related payment data?",
+      "requirement_id": "req-SECRET-002"
+    },
+    {
+      "question": "What formal documentation exists for the Payment Processor’s handling of this system’s customer data (data categories processed, storage locations, retention, and security controls), and how is this captured in your third-party risk or data-processing records?",
+      "requirement_id": "req-TPI-001"
+    }
+  ]
+}

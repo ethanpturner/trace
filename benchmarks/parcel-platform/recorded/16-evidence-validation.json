@@ -1,0 +1,1431 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 320,
+    "output_tokens": 33073,
+    "cache_read_tokens": 14080,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.33289",
+    "duration_seconds": 298.7395304579986
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Identity Service description states that authentication for customers, drivers, and staff is delegated to the company's SSO provider over OpenID Connect and that the service issues short-lived internal tokens which core services verify, directly supporting the control's main assertion about delegated SSO authentication and internal tokens. The Admin Console description states that staff reach the console with the same SSO accounts and sign\u2011in path as customers and that an `is_admin` flag enables console functions, which supports the noted limitation that administrator access uses the same SSO path as customers and is not via a stronger access path. The conclusion matches the documented behaviour without extending beyond it.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Admin Console description directly supports that it is the staff interface for refunds, address corrections, and account management, that staff reach it using the same SSO accounts and sign-in path as customers, that an `is_admin` flag on the user record enables the console's functions, and that the console can read and edit any customer account, order, and address. This backs the existence of an `is_admin` flag gating console functions and the global read/write capability. However, the stronger claim that these functions are enabled *only* for users whose record carries `is_admin` is an inference from \"enables the console's functions\" rather than an explicit exclusivity statement, and the limitation that administrators have global access \"without finer-grained roles or scoping\" goes beyond what is written (the documentation is silent on whether any additional role model exists). The staff-operator actor entry is consistent with this but does not add detail on authorization granularity. Therefore the control and its first limitation are supported, but the stronger exclusivity and \"no finer-grained roles\" aspects are not fully established by the text.",
+        "missing_evidence": [
+          "Documentation of the full authorization and role model for the Admin Console, including whether any roles or scopes beyond a single `is_admin` flag exist and whether non-`is_admin` accounts can access any console functionality."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Staff operator** \u2014 uses the Admin Console."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Identity Service description directly states that all interactive sign-in for customers, drivers, and staff is delegated to the company's SSO provider over OpenID Connect, and that the service issues short-lived internal tokens that core services verify. The API Gateway description states that it authenticates every request against the Identity Service. Together these passages support the claim that authentication is delegated to the SSO via the Identity Service and that the API Gateway validates each request with that service. The control is marked as inherited, which is consistent with delegation to an external SSO provider, although inheritance itself is not explicitly named in the document. The stated limitation\u2014that this does not prevent misuse when an attacker has already obtained valid SSO credentials or a session\u2014is reasonable security reasoning but is not described in the source text. As a result, the positive description of delegated authentication is supported, but the limitation is an inferred property rather than a documented one.",
+        "missing_evidence": [
+          "Documentation that explicitly describes the security assumptions and limitations of delegated SSO authentication, including the impact of credential or session compromise."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-004",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The API Gateway description directly supports that it is the single public entry point, that it terminates TLS, authenticates every request against the Identity Service, applies per-client rate limits, and routes to the core services. The Mobile Gateway description shows that driver mobile traffic is served over HTTPS behind the API Gateway, so it is reasonable to say that driver traffic also passes through the gateway. However, the limitation claiming that this \"only\" protects traffic up to the API Gateway and that downstream encryption and at-rest protection are not present or are weaker goes beyond the documentation: the source material is silent on internal hop encryption and at-rest protections, and silence cannot be taken as evidence they are absent. The control's positive behaviour is supported, but the exclusivity implied in the limitation is not.",
+        "missing_evidence": [
+          "Documentation of encryption and other protections on internal service-to-service traffic behind the API Gateway.",
+          "Documentation of encryption and protection for data at rest in the core and data zones relevant to gateway-terminated traffic."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Mobile Gateway\n\nThe endpoint for the driver mobile application: route assignments down, scan events and\nproof-of-delivery photos up. Served over HTTPS behind the API Gateway."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-005",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Message Bus description explicitly states that services authenticate to the bus with per-service credentials issued at deploy time, which directly supports the claim that core services authenticate to the Message Bus using per-service credentials issued at deploy time. It is a reasonable and closely connected inference that publishing and consuming events requires a valid credential, though the text does not spell out publish/consume semantics or access control lists. The limitation noting that storage, rotation, and scoping of these credentials are not described is accurate: the excerpt mentions only that credentials are issued at deploy time and nothing more.",
+        "missing_evidence": [
+          "Documentation describing how Message Bus service credentials are stored, rotated, and scoped (e.g., per-environment, per-service permissions) beyond being issued at deploy time."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Message Bus\n\nThe event backbone connecting the core services. Services authenticate to the bus with\ntheir per-service credentials issued at deploy time."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-006",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Orders Database and Tracking Store descriptions both state that these stores are \"reachable only from the core zone,\" which directly supports the claim of network segmentation between the core and data zones: data-zone stores cannot be directly reached from outside the core zone. From this, it is a straightforward inference that they are not directly accessible from the public internet or other zones, since routing must pass through the core zone. The control as written matches what is documented.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Tracking Store\n\nThe store for per-parcel scan history and tracking state. Reachable only from the core\nzone."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Admin Console description directly supports that there is a privileged administrative interface for refunds, address corrections, and account management, that staff reach it via SSO, and that it can read and edit any customer account, order, and address. The actors list confirms the \"Staff operator\" role uses the Admin Console, reinforcing that this is a privileged staff interface. These passages support the claim that a requirement governing administrative interfaces (req-ADMIN-001) is relevant to the system and that there is at least some control in place (the `is_admin` flag gating console functions), which is consistent with describing the requirement as partially satisfied. However, the assertion that req-ADMIN-001 is applicable specifically to threat thr-001 relies on the definition and path of thr-001, which are not present in the supplied source content, and the degree of partial satisfaction is tied to that requirement's exact wording, which we also do not see. Therefore the system-level aspects are supported by documentation, but the threat-specific applicability and exact partial-satisfaction judgement cannot be fully validated.",
+        "missing_evidence": [
+          "The definition of req-ADMIN-001 and criteria for partial vs full satisfaction.",
+          "The threat-model description of thr-001 showing how it exercises the Admin Console.",
+          "Any documentation of additional controls (e.g., network restrictions, MFA, approvals) applied to Admin Console access beyond the `is_admin` flag."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Staff operator** \u2014 uses the Admin Console."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The platform overview describes Parcelworks as a parcel-logistics platform composed of conventional web, mobile, messaging, and storage services, and the core-zone description lists specific services (Identity, Order, Routing, Dispatch, Tracking, Notification, Label, Billing, Admin Console) with no mention of any AI or ML model. This is contextual support for the idea that the documented system does not involve model-based processing. However, by policy, silence in the documentation is not proof that no AI/ML components exist, and the threat definition for thr-001 is not part of the source content. As a result, the claim that req-AI-001 is not applicable to thr-001 because no content is passed to a model cannot be confirmed from the supplied evidence alone.",
+        "missing_evidence": [
+          "An explicit statement in the architecture or threat documentation confirming whether any AI/ML or model-based components are used anywhere in the system.",
+          "If models are used, documentation clarifying whether thr-001 involves passing content to such a model."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider. For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The platform overview lists the main zones and components of Parcelworks but does not mention any AI/ML or model-based component. This suggests that model output is not a first-class architectural element, but absence of mention is not sufficient to prove that no model-generated content is ever produced or published. The reasoning that req-AI-002 is not applicable to thr-001 because no model output is published therefore rests on an assumption rather than on explicit documentation of model non-use or of the threat path.",
+        "missing_evidence": [
+          "Documentation clearly stating whether the system uses any AI/ML models whose outputs are rendered or published to users.",
+          "Threat-model material for thr-001 indicating whether any model-generated content appears on the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview describes conventional application components and data stores and omits any explicit reference to model providers or AI/ML processing, which is contextual support for the idea that data is not sent to external models. However, the claim that req-AI-003 (data minimisation for external models) is not applicable to thr-001 depends on there being no external model integration on that threat path, something the provided documentation does not definitively establish.",
+        "missing_evidence": [
+          "An explicit statement about whether customer content is ever sent to an external AI/ML or model provider.",
+          "Confirmation from the threat model that thr-001 does not involve any such external model integration."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The supplied architecture documentation names no model components whose outputs are rendered into user interfaces, which is contextual support for treating model-output encoding requirements as potentially out of scope. Nonetheless, the conclusion that req-AI-004 is not applicable to thr-001 assumes that no such model output exists on that path, an assumption that the excerpts alone cannot confirm.",
+        "missing_evidence": [
+          "Architecture or design documentation confirming whether any UI surfaces render responses from AI/ML models.",
+          "Threat documentation for thr-001 indicating whether any such UI surfaces are involved in the described attack."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Identity Service description directly documents that all interactive sign-in is delegated to the company's SSO provider over OpenID Connect, and that the service issues short-lived internal tokens which core services verify. The API Gateway description shows that it authenticates every request against the Identity Service. These passages support the claim that the system relies on an external SSO provider for user authentication and that delegated authentication is clearly documented, which aligns with treating req-AUTH-001 as satisfied at the system level. The assertion that req-AUTH-001 is applicable to threat thr-001 specifically, however, depends on the detailed threat description (e.g., that thr-001 explicitly relies on SSO authentication), which is not present in the source content. Thus the satisfaction of a delegated-authentication requirement is supported, but the threat-specific applicability portion cannot be fully validated.",
+        "missing_evidence": [
+          "The full text of req-AUTH-001 to confirm what constitutes satisfaction.",
+          "Threat-model documentation for thr-001 confirming that it explicitly relies on SSO authentication.",
+          "Any additional documentation describing where the delegated-authentication coverage stops (e.g., boundaries of trust with the SSO provider)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Admin Console description shows that it is a staff interface for sensitive functions on customer data and that staff reach it with the same SSO accounts and sign-in path customers use, which makes it a privileged, externally reachable interface. The API Gateway excerpt establishes that it is the single public entry point over HTTPS, and the actors list confirms the presence of staff operators as a distinct role. Together, these passages support treating a multi-factor authentication requirement for privileged external access (req-AUTH-002) as applicable to the system. The mapping also asserts that req-AUTH-002 is currently unverified for thr-001, which is consistent with the documentation being silent on MFA or second factors anywhere: no passage mentions multi-factor mechanisms. However, whether the requirement is applicable specifically to thr-001 depends on the threat description, which is not in the supplied evidence. Therefore, the system-level applicability and \"unverified\" satisfaction status are supported, while the threat-specific applicability remains unconfirmed.",
+        "missing_evidence": [
+          "The full definition of req-AUTH-002, including what counts as privileged external access.",
+          "Threat documentation for thr-001 confirming that it involves use of the Admin Console over an external path.",
+          "SSO or IdP configuration or design documents specifying whether MFA is enforced for staff or `is_admin` accounts."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### Customer Portal\n\nThe public web application where customers book shipments, print labels, and track parcels.\nServed over HTTPS behind the API Gateway."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Staff operator** \u2014 uses the Admin Console."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The Admin Console description shows that administrators can read and edit any customer account, order, and address, implying global scope rather than tenant-scoped access, and the actors list confirms that staff operators use this console. This context helps explain why a tenant-aware authorization requirement might not mitigate a threat driven by fully privileged admin misuse. However, the assertion that req-AUTHZ-001 is not applicable to thr-001 depends on the detailed threat model (how thr-001 unfolds and what the requirement intends to cover) and not solely on the architecture excerpts. Without the threat description or the exact requirement text, the mapping's non-applicability claim cannot be confirmed from the documentation alone.",
+        "missing_evidence": [
+          "The full text of req-AUTHZ-001, especially its scope regarding administrative interfaces and global vs tenant-scoped access.",
+          "Threat documentation for thr-001 clarifying the role of tenant boundaries in that scenario.",
+          "Any design notes on whether the Admin Console is intentionally global or can be scoped per customer/tenant."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Staff operator** \u2014 uses the Admin Console."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The platform overview indicates that the system uses external providers such as a messaging provider and an external payment provider, and the operations zone mentions Carrier Link for carrier partner APIs. This shows that integrations with external platforms do exist. The mapping asserts that req-AUTHZ-002 (limiting integration privileges to external platforms) is not applicable to thr-001 because the threat path does not involve delegated access to such platforms. That non-applicability conclusion depends on the specifics of thr-001, which are not present in the evidence, and on the detailed scope of req-AUTHZ-002. The available documentation does not by itself establish that the threat cannot involve external integrations or that the requirement is irrelevant.",
+        "missing_evidence": [
+          "The full text and scope of req-AUTHZ-002 regarding delegated access to external platforms.",
+          "Threat documentation for thr-001 confirming whether any external platform integrations are exercised by the attack path.",
+          "Design documentation on how privileges to external platforms are granted and constrained."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider. For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The Deploy Runner description shows that there is a deployment pipeline that builds and releases the core services, which is the sort of component req-CICD-001 would typically address. The mapping claims this requirement is not applicable to thr-001 because the threat arises from staff SSO account compromise at runtime rather than from weaknesses in the build or deployment pipeline. Without the actual definition of thr-001 and req-CICD-001, the non-applicability judgement cannot be validated from the architecture excerpt alone; the evidence neither confirms nor contradicts that the deployment pipeline could be part of the threat surface.",
+        "missing_evidence": [
+          "The full text of req-CICD-001 and the aspects of the deployment pipeline it covers.",
+          "Threat-model documentation for thr-001 clarifying whether supply-chain or pipeline compromise is in scope.",
+          "Any analysis that explicitly rules out CICD-related paths for thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Deploy Runner\n\nRuns the deployment pipeline that builds and releases the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The evidence shows that traffic to the Customer Portal and Mobile Gateway is served over HTTPS behind the API Gateway, that sensitive customer and order data is stored in the Orders Database and Tracking Store, and that a Data Warehouse holds nightly copies including personal data. This strongly suggests that encryption in transit and at rest is a relevant concern for protecting that data. The mapping asserts that req-DATA-001 is not applicable to thr-001 because once an admin console presents data in plaintext, encryption would not prevent misuse. That is a threat-analysis argument about residual risk, not a statement about the system's controls, and the supplied documentation does not show whether encryption requirements are considered part of the mitigation strategy for thr-001. Without the threat description and requirement definition, the non-applicability claim cannot be confirmed.",
+        "missing_evidence": [
+          "The full text of req-DATA-001, including whether it is intended to mitigate insider or admin-console threats.",
+          "Threat-model documentation for thr-001 clarifying the role, if any, of encryption in mitigating the described attack.",
+          "Documentation of actual encryption-in-transit and at-rest measures for the Orders Database, Tracking Store, and Data Warehouse."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Customer Portal\n\nThe public web application where customers book shipments, print labels, and track parcels.\nServed over HTTPS behind the API Gateway."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Data Warehouse\n\nReceives a nightly copy of the Orders Database \u2014 including customer names and full delivery\naddresses \u2014 for analytics. How long the copies are kept has not been written down anywhere\nthe team could point to."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation shows that the Orders Database and Data Warehouse store customer names, addresses, and booking data, and that the Data Warehouse retains nightly copies for analytics with an explicitly unknown retention period. This indicates that data retention is a meaningful concern for the platform overall. The mapping's claim that req-DATA-002 is not applicable to thr-001 because the threat focuses on live misuse of data through the Admin Console is a threat-scope judgement. The source material does not provide the threat definition for thr-001 or the detailed intent of req-DATA-002, so it cannot confirm that retention controls are irrelevant to the threat.",
+        "missing_evidence": [
+          "The definition of req-DATA-002, especially how it relates to live vs retained data.",
+          "Threat documentation for thr-001 confirming that retention of working data or artifacts is outside its scope.",
+          "Any design notes on retention periods and their role in mitigating abuse of admin access."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Data Warehouse\n\nReceives a nightly copy of the Orders Database \u2014 including customer names and full delivery\naddresses \u2014 for analytics. How long the copies are kept has not been written down anywhere\nthe team could point to."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture shows that label PDFs and proof-of-delivery photos are stored in Object Storage and that tracking data is held in the Tracking Store, with no discussion of tenant isolation mechanisms for these artifacts. The mapping asserts that req-DATA-003 (tenant separation for stored artifacts) is not applicable to thr-001 because the described attack concerns the Admin Console and Orders Database rather than these stores. Since the actual threat description and the exact requirement wording are not part of the provided evidence, the conclusion that tenant separation of stored artifacts is irrelevant to thr-001 cannot be validated here.",
+        "missing_evidence": [
+          "The text of req-DATA-003 and which artifacts and stores it covers.",
+          "Threat documentation for thr-001 confirming that stored artifacts (e.g., labels, POD photos) are not on the attack path.",
+          "Any description of tenant-separation mechanisms for Object Storage and the Tracking Store."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Object Storage\n\nThe managed object store holding label PDFs and proof-of-delivery photos."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Tracking Store\n\nThe store for per-parcel scan history and tracking state. Reachable only from the core\nzone."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The Admin Console and actors descriptions demonstrate that staff operators can view and modify customer data through a privileged interface. The mapping concludes that req-DATA-004 (about deletion paths) is not applicable to thr-001 because the threat focuses on misuse and exfiltration rather than deletion capabilities. Without the explicit wording of req-DATA-004 and the threat description for thr-001, the assessment that deletion-path controls do not bear on the threat cannot be substantiated solely from the architectural excerpts.",
+        "missing_evidence": [
+          "The full definition of req-DATA-004 and whether it is intended to mitigate threats like thr-001.",
+          "Threat documentation for thr-001 clarifying whether deletion or suppression of customer data is part of the scenario.",
+          "Any description of deletion workflows and controls in the Admin Console."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Staff operator** \u2014 uses the Admin Console."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The Notification Service description explicitly states that for debugging, notification templates log the full rendered message body, including recipient name, delivery address, and delivery window, to the shared application log. This shows that logs do contain sensitive personal data. The mapping asserts that req-LOG-001 (governing presence of sensitive data in logs) is not applicable to thr-001 because that threat concerns misuse of the Admin Console rather than logging. While that may be reasonable threat-scoping, the provided evidence does not include the definition of thr-001 or req-LOG-001, so we cannot confirm that the logging requirement is irrelevant to the threat.",
+        "missing_evidence": [
+          "The text of req-LOG-001 describing when it applies and what it intends to mitigate.",
+          "Threat documentation for thr-001 indicating whether log contents could contribute to the attack or its detection.",
+          "Any analysis explicitly relating logging of notification content to thr-001's risk."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider. For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Admin Console is documented as a privileged staff interface that can read and edit any customer account, order, and address, and the actors list identifies a \"Staff operator\" role that uses it. This directly supports the idea that requirements for recording security-relevant administrative actions (req-LOG-002) are applicable to the system and, by extension, likely relevant to a threat involving misuse of the Admin Console. The mapping states that req-LOG-002 is applicable to thr-001 and that its satisfaction is unverified, which is consistent with the documentation being silent on any admin-action logging. However, the assertion of applicability to thr-001 specifically relies on the unseen threat description, and the mapping does not show whether any partial logging exists. Thus, the system-level applicability and \"unverified\" status are supported by the absence of logging detail, but the threat-specific applicability and completeness of the unverified classification cannot be fully validated.",
+        "missing_evidence": [
+          "The full text of req-LOG-002 describing what constitutes a security-relevant administrative action and required logging.",
+          "Threat documentation for thr-001 showing how Admin Console actions factor into the threat.",
+          "Architectural or operational documentation stating whether and how Admin Console actions are logged and retained."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Staff operator** \u2014 uses the Admin Console."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The data-zone description states that the Orders Database and Tracking Store are reachable only from the core zone, which is direct evidence of internal network segmentation. The mapping claims that req-NET-001 (network segmentation of internal stores) is not applicable to thr-001 because the threat relies on legitimate Admin Console and Identity Service access rather than direct network reachability. While plausible, this judgement depends on the details of thr-001 and the precise scope of req-NET-001, neither of which are provided in the evidence. The documentation therefore cannot, by itself, establish that network segmentation requirements are irrelevant to this threat.",
+        "missing_evidence": [
+          "The definition of req-NET-001, including whether it is intended to address insider or admin-console misuse.",
+          "Threat-model documentation for thr-001 clarifying whether direct network access to internal stores is excluded.",
+          "Any analysis explicitly relating existing network segmentation to the mitigation (or non-mitigation) of thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Tracking Store\n\nThe store for per-parcel scan history and tracking state. Reachable only from the core\nzone."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The Identity Service and other core components described in the architecture would typically rely on long-lived signing keys or provider credentials, but the documentation does not describe how such secrets are managed. The mapping asserts that req-SECRET-001 is not applicable to thr-001 because the threat centres on staff SSO account compromise rather than compromise of long-lived secrets. Without the explicit threat description and requirement definition, the source content cannot confirm that secrets-management controls are irrelevant to thr-001.",
+        "missing_evidence": [
+          "The text of req-SECRET-001 and the types of secrets it covers.",
+          "Threat documentation for thr-001 clarifying whether compromise of signing keys or provider credentials is in or out of scope.",
+          "Design documentation of how long-lived secrets are stored, rotated, and protected."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation shows internal SSO authentication for customers, drivers, and staff operators, but does not describe any delegated access tokens used to reach customer resources on external platforms. The mapping concludes that req-SECRET-002 is not applicable to thr-001 because the threat does not involve such external access tokens. Given that external integrations exist (e.g., payment provider, messaging provider, carriers) and that the exact text of req-SECRET-002 and thr-001's path are not provided, this non-applicability conclusion cannot be fully supported by the supplied excerpts.",
+        "missing_evidence": [
+          "The definition of req-SECRET-002 and what counts as an external-access credential.",
+          "Documentation of any access tokens or credentials used to access customer resources on external platforms.",
+          "Threat documentation for thr-001 confirming whether such external tokens are involved or explicitly excluded."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture clearly documents several external providers and processors: an external messaging provider, an external payment provider, and carrier partners reached via Carrier Link. This is direct evidence that third-party integrations exist and handle customer data. The mapping's conclusion that req-TPI-001 (external-processor data-handling documentation) is not applicable to thr-001 rests on the assertion that the threat does not involve data sent to external processors. Since the threat description and requirement wording are not part of the evidence, the non-applicability determination cannot be validated solely from these component descriptions.",
+        "missing_evidence": [
+          "The full text and scope of req-TPI-001 regarding documentation of external processors.",
+          "Threat-model documentation for thr-001 confirming whether any external processors participate in the attack path.",
+          "Existing documentation on data sent to each external provider (messaging, payments, carriers)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider. For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation notes integrations that could consume metered external services, such as carrier APIs, messaging providers, and payment providers, but does not specify how work is bounded when triggered by inbound events versus interactive use. The mapping concludes that req-TPI-002 (bounding externally triggered work) is not applicable to thr-001 because the threat is about manual Admin Console misuse. Without the definition of thr-001 and req-TPI-002, the evidence cannot confirm that work triggered via external services plays no role in the threat scenario.",
+        "missing_evidence": [
+          "The text of req-TPI-002 and the kinds of externally triggered work it addresses.",
+          "Threat documentation for thr-001 specifying whether any metered external integrations or event-triggered workloads are involved.",
+          "Design documentation describing rate limiting or bounding of work initiated by external events."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The platform overview describes outbound and inbound HTTP interactions with carrier partners via Carrier Link and references external messaging and payments, but it does not use the term \"webhook\" or describe specific inbound event endpoints in detail. The mapping states that req-WEBHOOK-001 (verifying inbound webhook authenticity) is not applicable to thr-001, on the basis that the threat proceeds through interactive Admin Console use. Because the threat description and the precise scope of req-WEBHOOK-001 are absent, the evidence does not suffice to confirm that webhook-like endpoints are irrelevant to thr-001 or that such a requirement could not mitigate related risks.",
+        "missing_evidence": [
+          "The full text of req-WEBHOOK-001 and its definition of inbound events or webhooks.",
+          "Threat documentation for thr-001 clarifying whether any inbound event endpoints could be used on the attack path.",
+          "Architecture or configuration documentation for any endpoints that accept callbacks or status updates from external services."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture notes integrations with external services over HTTPS but does not detail whether inbound events are replay-protected. The mapping asserts that req-WEBHOOK-002 (replay protection for inbound events) is not applicable to thr-001 because no such endpoints are involved. Since thr-001's path and the requirement's scope are not documented in the provided excerpts, the non-applicability judgement cannot be confirmed.",
+        "missing_evidence": [
+          "The text of req-WEBHOOK-002 and the kinds of inbound events it targets.",
+          "Threat documentation for thr-001 indicating whether any inbound event processing is or is not part of the scenario.",
+          "Design or configuration documentation describing replay protection, if any, for inbound callbacks or status updates."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation distinguishes between the Driver Mobile Application path (via the Mobile Gateway behind the API Gateway) and the Admin Console used by staff operators. This suggests that not all threats will involve administrative interfaces. However, the mapping's conclusion that req-ADMIN-001 is not applicable to thr-002 depends on the specific definition of thr-002 (that it involves only the driver path) and on how req-ADMIN-001 is scoped, neither of which are part of the supplied evidence. The architecture alone cannot confirm that administrative-access controls are irrelevant to threat thr-002.",
+        "missing_evidence": [
+          "The definition and scope of req-ADMIN-001.",
+          "Threat documentation for thr-002 describing its attack path and whether the Admin Console or other privileged interfaces are ever used.",
+          "Any analysis explicitly relating thr-002 to administrative controls."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Mobile Gateway\n\nThe endpoint for the driver mobile application: route assignments down, scan events and\nproof-of-delivery photos up. Served over HTTPS behind the API Gateway."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Driver** \u2014 collects and delivers through the mobile application."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "As with thr-001, the architecture overview for Parcelworks names only conventional application components and does not mention any AI/ML or model-based processing, which is contextual evidence that such components may not exist. The mapping asserts that req-AI-001 is not applicable to thr-002 under the assumption that the system does not pass content to a model. Because silence about models is not conclusive and the threat description for thr-002 is not part of the supplied evidence, this non-applicability claim cannot be fully supported.",
+        "missing_evidence": [
+          "Explicit documentation confirming whether the system uses any AI/ML models, including in the driver scan and POD flows.",
+          "Threat documentation for thr-002 clarifying whether any content is sent to models."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The lack of any mentioned model components in the platform overview is contextual support for treating model-output publication controls as potentially out of scope. Nonetheless, the mapping's declaration that req-AI-002 is not applicable to thr-002 rests on an assumption that no model outputs are published in any flows relevant to thr-002, something not proved by the provided documentation.",
+        "missing_evidence": [
+          "Documentation confirming whether any model-generated outputs are presented to users or external parties in Parcelworks.",
+          "Threat documentation for thr-002 indicating whether such outputs are on the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture description does not list any components that send customer content to an external model provider, which is contextual evidence but not conclusive. The mapping concludes that req-AI-003 is not applicable to thr-002 under the assumption that no such integration exists. Without explicit documentation either confirming or denying model integrations, and without the threat description, this assertion remains unverified.",
+        "missing_evidence": [
+          "Architecture or integration documentation explicitly stating whether external AI/model providers are used.",
+          "Threat documentation for thr-002 clarifying whether any external model calls appear in the driver workflow."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The platform overview's omission of any model-based UI components is contextual evidence that model output may not be rendered in Parcelworks interfaces. The mapping's statement that req-AI-004 is not applicable to thr-002, however, assumes the absence of such components and that they are not used in the driver scan and POD flows. That assumption is not established by the supplied evidence alone.",
+        "missing_evidence": [
+          "Documentation explicitly confirming whether any AI/ML model outputs are rendered in Parcelworks user interfaces.",
+          "Threat documentation for thr-002 to show whether any such interfaces, if present, are involved."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Identity Service description directly documents delegated authentication to the company's SSO provider over OpenID Connect, and the API Gateway description states that it authenticates every request against the Identity Service. These passages support the claim that the platform relies on delegated authentication via an external identity provider and that this is clearly documented, which aligns with treating req-AUTH-001 as satisfied at the system level. The mapping further asserts that req-AUTH-001 is applicable to threat thr-002 (a driver misuse scenario), but the definition of thr-002 is not included in the evidence. Thus, while the satisfaction of a delegated-authentication documentation requirement for the system is supported, its specific applicability to thr-002 cannot be fully validated.",
+        "missing_evidence": [
+          "The full text of req-AUTH-001 to confirm its documentation expectations.",
+          "Threat documentation for thr-002 confirming that it relies on user authentication via the SSO provider."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture distinguishes between driver accounts using the Mobile Gateway and staff operators using the Admin Console, and shows both as authenticated via the Identity Service. The mapping concludes that req-AUTH-002 (multi-factor authentication for privileged or externally reachable access) is not applicable to thr-002 because thr-002 involves only ordinary driver accounts. While drivers are not described as administrators, the non-applicability conclusion hinges on the definition of \"privileged\" in req-AUTH-002 and the detailed threat description for thr-002, neither of which are available in the provided evidence. The documentation therefore cannot confirm that MFA expectations are out of scope for this threat.",
+        "missing_evidence": [
+          "The full text of req-AUTH-002, including how it defines privileged access.",
+          "Threat documentation for thr-002 clarifying the capabilities and risk level of compromised driver accounts.",
+          "Any policy or design documentation indicating whether driver access is considered in scope for MFA requirements."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Mobile Gateway\n\nThe endpoint for the driver mobile application: route assignments down, scan events and\nproof-of-delivery photos up. Served over HTTPS behind the API Gateway."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Driver** \u2014 collects and delivers through the mobile application."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview describes a logistics platform serving customers, with bookings and tracking data stored in the Orders Database and Tracking Store. The Mobile Gateway is documented as the endpoint for the driver mobile application, handling scan events and proof-of-delivery photos, and these data are ultimately stored in shared back-end stores (Tracking Store and Object Storage). This supports the idea that tenant-aware authorization is relevant: drivers must not be able to affect parcels belonging to other customers. The mapping asserts that req-AUTHZ-001 is applicable to thr-002 and that compliance is unverified, which is consistent with the absence of any documentation of tenant or customer scoping in the driver-facing APIs or back-end services. However, the specific applicability to thr-002 as a defined threat cannot be fully validated without that threat's description. Thus, the system-level applicability and the \"unverified\" status are supported, while the threat-specific linkage remains inferred.",
+        "missing_evidence": [
+          "The text of req-AUTHZ-001, especially its expectations for tenant-aware authorization in multi-customer platforms.",
+          "Threat documentation for thr-002 explaining how a compromised driver account might cross tenant boundaries.",
+          "API or service documentation describing authorization checks and scoping for driver-submitted scan events and POD uploads."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Mobile Gateway\n\nThe endpoint for the driver mobile application: route assignments down, scan events and\nproof-of-delivery photos up. Served over HTTPS behind the API Gateway."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Tracking Store\n\nThe store for per-parcel scan history and tracking state. Reachable only from the core\nzone."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Object Storage\n\nThe managed object store holding label PDFs and proof-of-delivery photos."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture documents integrations with external platforms via Carrier Link, the messaging provider, and the payment provider. The mapping states that req-AUTHZ-002 (limiting integration privileges to external platforms) is not applicable to thr-002 because that threat involves only first-party components in the driver workflow. As with similar mappings for thr-001, this non-applicability judgement requires knowledge of the thr-002 attack path and the exact scope of req-AUTHZ-002, which are not present in the evidence. The available documentation does not, by itself, establish that delegated privileges to external platforms cannot influence thr-002.",
+        "missing_evidence": [
+          "The full text of req-AUTHZ-002.",
+          "Threat documentation for thr-002 confirming whether any delegated privileges to external platforms are in or out of scope.",
+          "Design documentation describing how permissions are scoped for integrations with carriers, messaging, and payment providers."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The Deploy Runner is documented as running the deployment pipeline that builds and releases the core services, which is exactly the sort of component req-CICD-001 would cover. The mapping declares req-CICD-001 not applicable to thr-002 on the basis that thr-002 assumes driver SSO account compromise rather than pipeline compromise. Without the threat description and the requirement text, the architecture alone cannot validate that build and deployment pipeline controls are irrelevant to thr-002.",
+        "missing_evidence": [
+          "The text of req-CICD-001 and its intended threat coverage.",
+          "Threat documentation for thr-002 clarifying whether supply-chain or deployment compromise is excluded.",
+          "Any risk analysis connecting or decoupling CICD risks from the thr-002 scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Deploy Runner\n\nRuns the deployment pipeline that builds and releases the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Mobile Gateway is documented as handling scan events and proof-of-delivery photos over HTTPS behind the API Gateway, indicating encryption in transit from drivers to the edge. The data-zone description shows that tracking data and POD photos are stored in the Tracking Store and Object Storage, and that analytics copies containing personal data are kept in the Data Warehouse, though with undocumented retention. This directly supports that parcel tracking data and POD photos traverse the public internet and are stored in back-end data stores, making encryption requirements clearly applicable. The mapping states that req-DATA-001 is applicable to thr-002 and that its satisfaction is unverified. That is consistent with the documentation: while HTTPS is mentioned, there is no information about encryption on internal hops or at rest, so overall compliance with an end-to-end encryption requirement cannot be confirmed. As with other mappings, the specific linkage to thr-002 as a defined threat cannot be fully validated from the excerpts alone.",
+        "missing_evidence": [
+          "The definition of req-DATA-001 (what forms of in-transit and at-rest encryption it demands).",
+          "Threat documentation for thr-002 clarifying which legs of the driver, tracking, and POD data flows are security-relevant.",
+          "Design or configuration documentation for encryption at rest for the Tracking Store, Object Storage, and Data Warehouse, and for any internal service-to-service encryption."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Mobile Gateway\n\nThe endpoint for the driver mobile application: route assignments down, scan events and\nproof-of-delivery photos up. Served over HTTPS behind the API Gateway."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Tracking Store\n\nThe store for per-parcel scan history and tracking state. Reachable only from the core\nzone."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Object Storage\n\nThe managed object store holding label PDFs and proof-of-delivery photos."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Data Warehouse\n\nReceives a nightly copy of the Orders Database \u2014 including customer names and full delivery\naddresses \u2014 for analytics. How long the copies are kept has not been written down anywhere\nthe team could point to."
+          }
+        ]
+      }
+    ]
+  }
+}

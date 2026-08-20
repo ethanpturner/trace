@@ -4,11 +4,27 @@ reviewer: recorded-reviewer
 components:
 - id: cmp-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Translation Connector
-    description: sends ticket text to the translation provider and writes the returned translation back
-      as an internal note
+    name: Helpdesk Translate connector service
+    description: Connector service between the helpdesk and an external translation SaaS.
     component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Helpdesk platform
+    description: Helpdesk where agents work with tickets and where translated internal notes are written
+      back onto tickets.
+    component_type: helpdesk
     technology: []
     ownership: null
     deployment_zone: null
@@ -18,12 +34,14 @@ components:
     authentication_mechanisms:
     - api_token
     authorization_mechanisms: []
-- id: cmp-002
+- id: cmp-003
   decision: approve
+  attach_evidence: []
   editable:
-    name: Helpdesk
-    description: holds the tickets; the connector authenticates to it with a workspace API token
-    component_type: saas_application
+    name: Translation SaaS provider
+    description: External translation SaaS that receives ticket content over HTTPS and returns translated
+      text.
+    component_type: saas
     technology: []
     ownership: null
     deployment_zone: null
@@ -32,36 +50,25 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
-- id: cmp-003
-  decision: approve
-  editable:
-    name: Translation Provider
-    description: the external translation SaaS; its standard terms apply and have not been reviewed
-    component_type: external_service
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: true
-    externally_managed: true
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
 actors:
 - id: act-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Support agent
-    actor_type: internal_user
+    actor_type: support_agent
     trust_level: null
     capabilities: []
     authentication_method: null
 assets:
 - id: ast-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Customer tickets
-    asset_type: customer_data
-    description: ticket bodies including customer-written text and attachment text
+    name: Customer ticket content
+    asset_type: data
+    description: Full ticket body including any customer-written text and the extracted text of customer
+      attachments.
     confidentiality_impact: null
     integrity_impact: null
     availability_impact: null
@@ -69,10 +76,24 @@ assets:
     owner: null
 - id: ast-002
   decision: approve
+  attach_evidence: []
   editable:
-    name: Workspace API token
-    asset_type: credentials
-    description: the connector's helpdesk token, granting full workspace access
+    name: Translated ticket notes
+    asset_type: data
+    description: Translated versions of ticket content written back onto tickets as internal notes.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Helpdesk workspace API token
+    asset_type: credential
+    description: Workspace API token used by the connector to authenticate to the helpdesk; the token
+      grants full workspace access.
     confidentiality_impact: null
     integrity_impact: null
     availability_impact: null
@@ -81,23 +102,44 @@ assets:
 data_flows:
 - id: df-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Ticket text to provider
-    direction: bidirectional
+    name: Connector to translation SaaS – ticket content
+    direction: one_way
     protocol: https
-    data_types: []
+    data_types:
+    - ticket_content
+    - attachment_text
     authentication: unknown
-    encryption_in_transit: https
-    internet_exposed: true
+    encryption_in_transit: tls
+    internet_exposed: null
     source_component_id: cmp-001
     destination_component_id: cmp-003
 - id: df-002
   decision: approve
+  attach_evidence: []
   editable:
-    name: Connector to helpdesk
+    name: Translation SaaS to connector – translated text
+    direction: one_way
+    protocol: https
+    data_types:
+    - translated_ticket_content
+    authentication: unknown
+    encryption_in_transit: tls
+    internet_exposed: null
+    source_component_id: cmp-003
+    destination_component_id: cmp-001
+- id: df-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Connector to helpdesk API – tickets and notes
     direction: bidirectional
     protocol: null
-    data_types: []
+    data_types:
+    - ticket_content
+    - translated_ticket_content
+    - internal_notes
     authentication: api_token
     encryption_in_transit: unknown
     internet_exposed: null
@@ -106,46 +148,331 @@ data_flows:
 trust_boundaries:
 - id: tb-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Third-party service boundary
-    boundary_type: application_to_external_service
-    description: null
-    controls: []
+    name: Connector to external translation SaaS
+    boundary_type: external_service
+    description: Boundary between the Helpdesk Translate connector service and the external translation
+      SaaS provider.
+    controls:
+    - https
 claims:
 - id: ctx-001
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
+  - evd-001
   - evd-002
   editable:
-    predicate: external_data_scope
-    value: the connector sends the full ticket body — including customer-written text and the extracted
-      text of customer attachments — to the translation provider over HTTPS
+    predicate: purpose
+    value: Connector service that lets support agents translate customer tickets in place using an external
+      translation SaaS.
     rationale: null
 - id: ctx-002
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-004
+  - evd-001
   editable:
-    predicate: provider_data_terms
-    value: no agreement covering the provider's retention of submitted text or its use beyond returning
-      the translation has been established; the provider's standard terms apply and have not been reviewed
+    predicate: role
+    value: Acts as a connector service between the helpdesk and an external translation SaaS.
     rationale: null
 - id: ctx-003
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  editable:
+    predicate: description
+    value: Helpdesk where agents open tickets and select translate, and where tickets and internal notes
+      exist.
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  - evd-003
+  editable:
+    predicate: description
+    value: Service that connects the helpdesk to the external translation SaaS, sending ticket content
+      for translation and writing returned translations back as internal notes.
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  editable:
+    predicate: description
+    value: External translation SaaS that receives ticket content and returns translated text.
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: is_external_saas
+    value: true
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: description
+    value: Support agent who opens a ticket in the helpdesk and triggers translation.
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: definition
+    value: Full ticket body including any customer-written text and the extracted text of customer attachments.
+    rationale: null
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: definition
+    value: Translated versions of ticket content written back onto the ticket as internal notes.
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
   evidence:
   - evd-003
   editable:
-    predicate: delegated_privilege
-    value: the workspace API token grants full workspace access, scoped that way during setup for convenience,
-      while the integration only reads tickets and writes notes
+    predicate: definition
+    value: Workspace API token used by the connector to authenticate to the helpdesk.
     rationale: null
-questions: []
+- id: ctx-011
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: true
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: sends_full_ticket_body_to_translation_provider
+    value: true
+    rationale: null
+- id: ctx-012
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: sent_to_component
+    value: translation-saas-provider
+    rationale: null
+- id: ctx-013
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: protocol
+    value: https
+    rationale: null
+- id: ctx-014
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: encryption_in_transit
+    value: tls
+    rationale: The documentation states that the connector sends data over HTTPS, which implies HTTP over
+      TLS, so data is encrypted in transit.
+- id: ctx-015
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: writes_translated_text_back_as_internal_note
+    value: true
+    rationale: null
+- id: ctx-016
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: authenticates_to_helpdesk_with
+    value: workspace API token
+    rationale: null
+- id: ctx-017
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: true
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: grants_access
+    value: full workspace access
+    rationale: null
+- id: ctx-018
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: true
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: effective_use_of_helpdesk_api
+    value: only reads tickets and writes notes
+    rationale: null
+- id: ctx-019
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: true
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: specific_retention_agreement_established
+    value: false
+    rationale: The documentation explicitly states that no agreement covering the provider's retention
+      or use of submitted text has been established.
+- id: ctx-020
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: true
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: standard_terms_reviewed_for_this_integration
+    value: false
+    rationale: The documentation states that the provider's standard terms apply and they have not been
+      reviewed for this integration.
+- id: ctx-021
+  status: unknown
+  confidence: low
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: permitted_use_of_submitted_text_under_standard_terms
+    value: unknown
+    rationale: Because no specific agreement exists and the provider's standard terms have not been reviewed,
+      the actual permitted uses of submitted text are not established in the documentation.
+- id: ctx-022
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  - evd-002
+  editable:
+    predicate: operations
+    value: connector reads tickets and writes notes via the helpdesk API using the workspace API token
+    rationale: The documentation says the connector authenticates to the helpdesk with a workspace API
+      token and that the integration only reads tickets and writes notes, implying use of the helpdesk
+      API for these operations.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: What do the translation provider's standard terms allow in terms of retention duration and
+    secondary use (e.g., training, analytics, sharing) of submitted ticket content and translations?
+  priority: high
+  blocking: true
+  answer: 'Cannot be determined from the documentation, and that indeterminacy is itself the documented
+    fact: section 3 states no agreement covering retention or secondary use has been established, the
+    provider''s standard terms apply, and those terms have not been reviewed for this integration. What
+    the terms permit is treated as unknown for analysis; no particular retention or use is asserted.'
+- id: qst-002
+  question: Can the helpdesk workspace API token used by the connector be scoped more narrowly than full
+    workspace access (for example, to only read tickets and write internal notes), and if so why was a
+    fully scoped token chosen?
+  priority: medium
+  blocking: false
+  answer: The documentation states the token was scoped to full workspace access during setup because
+    it was convenient, while the integration only reads tickets and writes notes (section 2). Whether
+    the helpdesk supports narrower scoping is not documented; the stated reason for the current scope
+    is convenience, not a technical constraint.
+- id: qst-003
+  question: Where is the Helpdesk Translate connector service hosted (e.g., cloud provider, network zone)
+    and who operates it relative to the helpdesk and the translation SaaS provider?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-004
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-005
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null

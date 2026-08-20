@@ -1,0 +1,126 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10866,
+    "output_tokens": 7665,
+    "cache_read_tokens": 11008,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.0916085",
+    "duration_seconds": 86.40592475002632
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-callback-signing",
+        "name": "Payment provider callback signature verification (planned)",
+        "description": "Enabling the payment provider's optional callback-signing feature so the Callback Receiver only accepts callbacks that are cryptographically signed by the provider, rather than treating any well-formed callback from the internet as valid. The operations notes record this as a backlog item not yet scheduled.",
+        "control_type": "planned",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "implementation_status": "absent",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "owner": null,
+        "limitations": [
+          "Control is not yet implemented; callbacks remain unsigned and accepted from arbitrary sources until signing is enabled."
+        ]
+      },
+      {
+        "key": "ctrl-channel-retry",
+        "name": "Channel posting retry on provider outages",
+        "description": "Channel Poster retries posting order-status messages to the channel platform HTTPS API during provider outages so that transient failures do not lose updates.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-002",
+        "protected_component_ids": [
+          "cmp-002",
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not describe any bounding, rate limiting, or deduplication for repeated deliveries of the same callback."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [
+          "ctrl-callback-signing"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Callback Receiver (cmp-001) is an internet-accessible endpoint registered with the payment provider that accepts callbacks and triggers order-status processing (evd-002), matching the conditions that the system exposes an endpoint accepting events from an external platform and that inbound events trigger processing or state change. This threat specifically involves forged callbacks to that endpoint. The documentation further states that callbacks are not signed and the endpoint accepts unsigned requests from anywhere (evd-002, evd-005), so no cryptographic origin verification is performed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Order status processing work is triggered by callbacks from the external payment provider to the Callback Receiver (df-001), and Channel Poster posts to the external channel platform HTTPS API with retry behaviour during provider outages (evd-003, evd-006). These match the conditions that work is triggered by an event the system does not originate and that failed work is retried automatically. It is not documented whether calls to the channel platform HTTPS API consume a metered or otherwise capacity-limited external service, so the requirement applies if that API usage is metered or represents significant external resource consumption.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Bounding of callback-triggered work and channel posting is undocumented",
+        "description": "Documentation for the Callback Receiver and Channel Poster describes that external callbacks from the payment provider trigger processing and that Channel Poster retries posting to the channel platform HTTPS API during provider outages (evd-003, evd-006). It does not describe any rate limiting, quota controls, per-tenant limits, or other bounds on the volume of work driven by callbacks or on posting to the external channel platform, so it is not possible to determine whether processing that consumes external resources is bounded against high-volume or malicious triggers.",
+        "importance": "Without documentation of bounds on callback-driven work and outbound posting, the assessment cannot determine whether high-volume synthetic callbacks could drive unbounded consumption of channel platform API calls or internal processing, which is central to the denial-of-service threat thr-002.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-001",
+          "cmp-002",
+          "cmp-004",
+          "df-001",
+          "df-003",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Documentation describing any rate limiting, quota or cost ceilings, or other bounds on callback processing and Channel Poster calls to the channel platform HTTPS API, including retry configuration and any per-tenant or global limits."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

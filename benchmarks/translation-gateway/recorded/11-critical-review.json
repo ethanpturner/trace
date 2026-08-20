@@ -1,0 +1,29 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 18985,
+    "output_tokens": 20269,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.22642125",
+    "duration_seconds": 236.37364754092414
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "critique_type": "unsupported_claim",
+        "description": "The assignment of `confidence: high` to thr-001 is not well supported by the available documentation; the evidence shows data is sent to an external translation provider and that no data-handling agreement or terms review has been done, but it does not establish that the provider\u2019s standard terms actually permit the retention and secondary use of ticket content that the threat relies on.",
+        "rationale": "evd-002 documents that the connector sends full ticket bodies and extracted attachment text to the translation provider over HTTPS and receives a translation, and evd-004 documents that no agreement governing the provider\u2019s retention or secondary use of submitted text has been established and that the provider\u2019s standard terms have not been reviewed for this integration. Neither passage describes what those standard terms allow, nor whether the provider in fact retains or reuses submitted content. The core precondition for thr-001\u2014that the provider\u2019s terms permit retention or reuse beyond what the organisation finds acceptable\u2014is therefore an assumption, not a documented fact. Given that key behaviour is unknown, treating the threat as `confidence: high` overstates how well-supported it is by the source material; an inferred, medium-confidence threat (as already reflected in the evidence assessment) would better match the evidentiary basis.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

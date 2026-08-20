@@ -59,3 +59,14 @@ reasoning segment: one threat-analysis response, one mapping response per threat
 failed attempts where the live run retried), one evidence-validation response, and one critique
 response per threat. `decisions-context.yaml` is applied at checkpoint 1, `decisions-findings.yaml`
 at checkpoint 2, and `report-hash.txt` pins the rendered report.
+
+## Live baselines (2026-08-20)
+
+The `baselines/` directory holds live baselines captured from `openai/gpt-5.1` through
+OpenRouter under `openrouter-economy` as part of the #484 backfill (the pipeline recording
+above keeps its own, earlier attribution — the baselines are a later, cheaper capture, and the
+difference is disclosed rather than smoothed). Scored against the truth set at capture time:
+baseline-generic 0 matched, 1 missed, 1 spurious; baseline-structured 0/1/1;
+baseline-single-pass 0/1/1. All three miss the expected finding and each invents one — on the
+eight-document flagship, no baseline shape reaches the truth set from one call. The envelopes
+record findings, not usage — three single calls at economy rates, cents each.

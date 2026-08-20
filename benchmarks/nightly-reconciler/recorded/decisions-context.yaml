@@ -4,172 +4,98 @@ reviewer: recorded-reviewer
 components:
 - id: cmp-001
   decision: approve
-  editable:
-    name: Reconciler Job
-    description: scheduled batch workload that pulls the day's settlement report, reads the day's billing records, compares the two, and writes a discrepancy summary; it exposes no inbound interface
-    component_type: batch_job
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: false
-    externally_managed: null
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
 - id: cmp-002
   decision: approve
-  editable:
-    name: Billing Database
-    description: managed relational database provided by the cloud platform, holding billing records and discrepancy summaries; reachable only from the reconciler job inside the application subnet
-    component_type: database
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: false
-    externally_managed: true
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
 - id: cmp-003
   decision: approve
-  editable:
-    name: Payment Processor
-    description: the external payment platform that captures payments and publishes a daily settlement report over its reporting API, served over HTTPS
-    component_type: external_service
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: null
-    externally_managed: true
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
 actors:
 - id: act-001
   decision: approve
-  editable:
-    name: Finance analyst
-    actor_type: internal_user
-    trust_level: null
-    capabilities: []
-    authentication_method: null
+- id: act-002
+  decision: approve
 assets:
 - id: ast-001
   decision: approve
-  editable:
-    name: Billing records
-    asset_type: financial_data
-    description: per-customer charge entries held in the billing database, with the discrepancy summaries derived from them
-    confidentiality_impact: null
-    integrity_impact: null
-    availability_impact: null
-    data_classification: null
-    owner: null
+- id: ast-002
+  decision: approve
+- id: ast-003
+  decision: approve
+- id: ast-004
+  decision: approve
 data_flows:
 - id: df-001
   decision: approve
-  editable:
-    name: Settlement report pull
-    direction: bidirectional
-    protocol: https
-    data_types: []
-    authentication: service_credential
-    encryption_in_transit: tls
-    internet_exposed: null
-    source_component_id: cmp-001
-    destination_component_id: cmp-003
 - id: df-002
   decision: approve
-  editable:
-    name: Billing reads and discrepancy writes
-    direction: bidirectional
-    protocol: null
-    data_types: []
-    authentication: unknown
-    encryption_in_transit: unknown
-    internet_exposed: false
-    source_component_id: cmp-001
-    destination_component_id: cmp-002
+- id: df-003
+  decision: approve
 trust_boundaries:
 - id: tb-001
   decision: approve
-  editable:
-    name: Application subnet
-    boundary_type: network_perimeter
-    description: the reconciler job and the billing database sit inside the application subnet; the database is reachable only from the job
-    controls: []
-- id: tb-002
-  decision: approve
-  editable:
-    name: Payment processor boundary
-    boundary_type: application_to_external_service
-    description: null
-    controls: []
 claims:
 - id: ctx-001
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-007
+  confirm: true
   editable:
-    predicate: organizational_control
-    value: 'secrets-vault (org-controls catalog 0.2): Workload credentials are provisioned and rotated by the enterprise secrets service. Service credentials for workloads deployed on the platform are provisioned into the enterprise secrets service, injected into the workload at deploy time, and rotated on a ninety-day schedule. Workload credentials are not held in source control, container images, or configuration files. Mechanism: enterprise secrets service with deploy-time injection. References: Platform Security Standard PS-4, section 2 (secrets handling); SOC 2 Type II report 2026, control CC6.1.'
-    rationale: null
+    rationale: >
+      Asserted in workspace-org-controls.yaml and verified by the parser against org-controls
+      catalog 0.2; the overview states the credential is provisioned through the standard
+      workload deployment, which is this control's applies_when condition.
 - id: ctx-002
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-007
+  confirm: true
   editable:
-    predicate: organizational_control
-    value: 'managed-db-encryption (org-controls catalog 0.2): The platform''s managed relational databases encrypt stored data. Relational databases provisioned through the platform''s managed database service encrypt data at rest by default with platform-managed keys, and the setting cannot be disabled by a workload team. Mechanism: managed database service default encryption at rest. References: Platform Security Standard PS-3, section 1 (data at rest).'
-    rationale: null
+    rationale: >
+      Asserted in workspace-org-controls.yaml and verified by the parser against org-controls
+      catalog 0.2; the overview states the billing database is the platform's managed
+      relational service, which is this control's applies_when condition.
 - id: ctx-003
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-003
-  editable:
-    predicate: credential_provisioning
-    value: the reconciler authenticates to the payment processor's reporting API with a service credential issued by the processor; the credential is provisioned through the standard workload deployment
-    rationale: null
 - id: ctx-004
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-001
-  editable:
-    predicate: deployment_model
-    value: the reconciler runs once per night on the platform's standard workload deployment
-    rationale: null
 - id: ctx-005
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-002
-  editable:
-    predicate: network_reachability
-    value: the billing database is reachable only from the reconciler job inside the application subnet
-    rationale: null
 - id: ctx-006
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-002
-  editable:
-    predicate: managed_platform
-    value: the billing database is a managed relational database provided by the cloud platform
-    rationale: null
-questions: []
+- id: ctx-007
+  decision: approve
+- id: ctx-008
+  decision: approve
+- id: ctx-009
+  decision: approve
+- id: ctx-010
+  decision: approve
+- id: ctx-011
+  decision: approve
+- id: ctx-012
+  decision: approve
+- id: ctx-013
+  decision: approve
+- id: ctx-014
+  decision: approve
+- id: ctx-015
+  decision: approve
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  answer: null
+- id: qst-002
+  answer: null
+- id: qst-003
+  answer: >
+    The overview states the credential is provisioned through the standard workload
+    deployment. Under the asserted secrets-vault control (org-controls catalog 0.2, approved
+    as ctx-001), credentials provisioned that way are held in the enterprise secrets service,
+    injected at deploy time, and rotated on a ninety-day schedule; they are not held in source
+    control, container images, or configuration files.
+- id: qst-004
+  answer: null
+- id: qst-005
+  answer: >
+    The reconciler exposes no inbound interface and initiates outbound HTTPS to the payment
+    processor's reporting API; no external actor reaches the system. The billing database is
+    stated to be reachable only from the reconciler job inside the application subnet; what
+    enforces that restriction is not described by the documents.
+- id: qst-006
+  answer: null

@@ -1,0 +1,57 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10855,
+    "output_tokens": 4935,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.06427875",
+    "duration_seconds": 74.3658902910538
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "This threat describes potential interception and tampering of customer ticket content, translated notes, and the workspace API token while they are transmitted between the connector service (cmp-001) and the helpdesk API (cmp-002) on data flow df-003. req-DATA-001 applies because the system transmits confidential customer data and credentials over a network, and protection of that data in transit (with identification of who provides it) is directly relevant to whether this threat is mitigated.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption of connector\u2013helpdesk API traffic is undocumented",
+        "description": "The integration description states that the connector authenticates to the helpdesk using a workspace API token with full workspace access but does not state whether traffic between the connector service (cmp-001) and the helpdesk platform (cmp-002) is protected with TLS or any other transport encryption. As a result, it is not possible to determine from the available documentation whether customer ticket content, translated notes, and the workspace API token are protected in transit on data flow df-003 in the context of threat thr-004 (network interception of connector\u2013helpdesk API traffic).",
+        "importance": "Clarifying transport encryption on the connector\u2013helpdesk path is necessary to assess the confidentiality and integrity of tickets and the workspace API token for threat thr-004 and to evaluate compliance with requirement req-DATA-001.",
+        "related_object_ids": [
+          "thr-004",
+          "df-003",
+          "cmp-001",
+          "cmp-002",
+          "ast-001",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Architecture or integration documentation stating whether connector\u2013helpdesk API traffic on data flow df-003 uses HTTPS/TLS or another transport encryption mechanism.",
+          "Details of certificate validation and endpoint authentication for the helpdesk API connection, if TLS is used (for example, whether standard certificate validation is enforced and any pinned identities).",
+          "Network or deployment diagrams showing how the connector reaches the helpdesk (for example, whether this path traverses the public internet, a VPN, or a private link)."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

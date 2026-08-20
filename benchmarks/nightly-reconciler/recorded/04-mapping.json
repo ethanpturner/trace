@@ -1,0 +1,173 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 253,
+    "output_tokens": 14221,
+    "cache_read_tokens": 30848,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.14638225",
+    "duration_seconds": 186.24274983396754
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "c1-https-settlement",
+        "name": "Settlement report retrieval over HTTPS",
+        "description": "The Reconciler Job retrieves the daily settlement report from the payment processor's reporting API over HTTPS, providing TLS protection for the settlement data in transit between the internal reconciler and the external payment processor.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "This control relies on standard HTTPS trust; the documentation does not describe any additional measures such as certificate pinning, explicit hostname or IP allowlisting, or out-of-band validation of settlement contents, so a compromised trust store or DNS could still allow spoofed but TLS-protected responses."
+        ]
+      },
+      {
+        "key": "c2-managed-db-encryption",
+        "name": "Managed database encryption at rest",
+        "description": "Billing data and discrepancy summaries are stored in a managed relational database provided by the cloud platform, and organizational controls assert a managed-db-encryption control, indicating that data at rest in managed databases is encrypted by the platform.",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [],
+        "protected_asset_ids": [
+          "ast-003"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-002",
+          "evd-006",
+          "evd-007"
+        ],
+        "owner": null,
+        "limitations": [
+          "The system documentation does not explicitly state that the specific Billing Database instance for this system has managed encryption enabled; inheritance from the organizational managed-db-encryption control is asserted but not shown in this system's own configuration."
+        ]
+      },
+      {
+        "key": "c3-secrets-vault",
+        "name": "Organizational secrets vault for service credentials",
+        "description": "Organizational controls assert a central secrets-vault control, suggesting that long-lived credentials such as the reconciler's service credential for the payment processor are stored in a managed secrets service rather than in source code or static configuration.",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [],
+        "protected_asset_ids": [],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007"
+        ],
+        "owner": null,
+        "limitations": [
+          "The documentation does not show how the reconciler's service credential is provisioned from the vault at runtime or explicitly confirm that this specific credential is stored in the secrets vault."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "c1-https-settlement",
+          "c2-managed-db-encryption"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat concerns integrity of settlement reports and discrepancy summaries as they cross a network boundary between the internal Reconciler Job and an external payment processor over HTTPS [evd-002, df-001]. req-DATA-001 applies because sensitive financial data is transmitted across a network boundary the system does not control, and the requirement governs encryption of such data in transit and at rest.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-007"
+        ],
+        "assumptions": [
+          "Assuming settlement reports and discrepancy summaries are treated as sensitive financial data because they contain per-customer charge information and divergence details [evd-004]."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system holds a service credential used by the Reconciler Job to authenticate to the payment processor's reporting API [evd-003], which would ordinarily make req-SECRET-001 relevant at the system level. However, this specific threat models an attacker intercepting or redirecting the outbound HTTPS connection and spoofing settlement report responses, not theft or misuse of the stored credential itself. How the credential is stored at rest does not materially affect the attacker\u2019s ability to spoof the payment processor in this scenario, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "Assuming threats involving theft or misuse of the reconciler's service credential are analyzed separately from thr-001, which focuses on spoofed settlement data in transit."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Settlement report authenticity controls beyond HTTPS are undocumented",
+        "description": "The documentation states that the payment processor publishes a daily settlement report over an HTTPS reporting API and that the Reconciler Job retrieves and processes that report [evd-001, evd-002]. It also notes that the reconciler authenticates to the API with a service credential [evd-003]. However, there is no documentation establishing whether any additional controls exist to ensure the authenticity and correctness of the settlement reports beyond relying on standard HTTPS (for example, certificate pinning, strict hostname or IP allowlists, or independent cross-checks of the reported totals). Because thr-001 specifically involves spoofed or intercepted settlement reports over this external HTTPS link, the presence or absence of such controls cannot be determined from the available material.",
+        "importance": "Clarifying whether there are controls beyond generic HTTPS to verify that settlement reports truly originate from the legitimate payment processor, and to detect forged or anomalous reports, would directly affect the assessment of thr-001 and whether additional mitigations are needed.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-001",
+          "cmp-003",
+          "ast-002",
+          "ast-003",
+          "df-001"
+        ],
+        "requested_evidence": [
+          "Documentation describing how the Reconciler Job verifies that it is connecting to the legitimate payment processor endpoint (for example, details on TLS certificate validation, certificate pinning, trusted CA configuration, or hostname/IP allowlisting for the reporting API).",
+          "Documentation describing any secondary validation or reconciliation steps used to detect forged or anomalous settlement reports, such as independent computation of expected totals or comparison against an alternate channel from the processor."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement that explicitly covers verifying the authenticity and plausibility of data retrieved from an external HTTPS API that drives critical financial reconciliation, such as settlement reports, including controls like certificate pinning, strict endpoint allowlisting, or independent content validation beyond relying on standard TLS.",
+        "suggested_category": "third_party_integration",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "req-DATA-001 requires that sensitive data be encrypted in transit and at rest and that inherited protections be documented, which is satisfied by using HTTPS and managed storage. It does not, however, require additional measures to ensure that data received from an external HTTPS API is authentic and untampered when TLS authenticity assumptions fail (for example, through certificate pinning or independent validation of financial reports), which is the core of thr-001."
+          },
+          {
+            "requirement_id": "req-TPI-001",
+            "why_not": "req-TPI-001 focuses on documenting what customer data is sent to an external processor and the processor's retention and usage terms. It does not address the integrity or authenticity of data retrieved from that processor, nor the risk that an attacker could spoof the processor and supply forged responses over HTTPS as in thr-001."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "req-WEBHOOK-001 governs cryptographic origin verification for inbound events delivered to an exposed endpoint. In this system, the Reconciler Job is an outbound HTTPS client of the payment processor's API rather than a webhook receiver, so the requirement does not cover authenticity of responses to client-initiated API calls like the settlement report retrieval in thr-001."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  }
+}

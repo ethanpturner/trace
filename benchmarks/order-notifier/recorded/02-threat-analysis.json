@@ -1,77 +1,208 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10653,
+    "output_tokens": 9514,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10845625",
+    "duration_seconds": 82.00352895807009
+  },
   "response": {
     "threats": [
       {
-        "title": "Forged order-status callbacks processed as the provider's",
-        "description": "Both supplied documents establish the same weakness: the integration guide states callbacks are not signed and the provider's signing feature is not enabled, and the incident review confirmed the endpoint accepts unsigned requests from anywhere. Any caller that formats a callback correctly is processed as though it came from the payment provider, and the fabricated status reaches the operations channel.",
+        "title": "Forged callbacks inject false order-status updates into operations channel",
+        "description": "Because the Callback Receiver accepts unsigned callbacks from anywhere and processes any well-formed payload as if it came from the payment provider, an external party can forge callbacks with arbitrary order identifiers and statuses that will be propagated to the operations channel as if they were legitimate updates.",
         "methodology": "stride-scenario-based",
         "category": [
-          "spoofing"
+          "spoofing",
+          "tampering"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-001"
+          "cmp-001",
+          "cmp-002",
+          "cmp-004"
         ],
         "affected_asset_ids": [
-          "ast-001"
+          "ast-001",
+          "ast-002"
         ],
         "related_data_flow_ids": [
-          "df-001"
+          "df-001",
+          "df-002",
+          "df-003"
         ],
         "preconditions": [
-          "the attacker can reach the public callback endpoint"
+          "Callback Receiver remains reachable from arbitrary internet sources and continues to accept unsigned callbacks that it treats as coming from the payment provider (per current design).",
+          "No upstream network control fully prevents an attacker on the internet from sending HTTP requests to the callback endpoint.",
+          "An attacker can discover or guess the callback endpoint URL format."
         ],
         "attack_path": [
-          "format a well-formed callback",
-          "post it to the receiver",
-          "let the fabricated status reach the operations channel"
+          "An attacker on the internet discovers or guesses the URL of the Callback Receiver endpoint registered for payment provider callbacks.",
+          "The attacker crafts an HTTP request that matches the payment provider\u2019s callback schema but contains forged order identifiers and status values.",
+          "The Callback Receiver, which processes any well-formed and unsigned callback, accepts the request and interprets it as a legitimate payment provider callback, producing internal order status data.",
+          "The Channel Poster formats this forged status information into an order-status update and sends it via the channel platform\u2019s HTTPS API.",
+          "The channel platform delivers the forged order-status message into the operations channel, where it appears indistinguishable from legitimate updates to the operations team."
         ],
-        "impact": "Fabricated order statuses reach the operations channel as the provider's.",
+        "impact": "Integrity of Order status data (ast-001) and Operations channel messages (ast-002) is compromised: the operations team may see orders as paid, cancelled, or otherwise updated when no such event occurred at the payment provider, potentially driving incorrect operational actions.",
         "likelihood": null,
         "confidence": "high",
         "evidence_ids": [
+          "evd-001",
           "evd-002",
+          "evd-003",
           "evd-005"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Replayed callbacks repeat processing",
-        "description": "The endpoint accepts unsigned requests, and the operations notes record nothing about repeated deliveries of the same callback. Whether re-submitting a previously valid callback repeats its processing is not established.",
+        "title": "High-volume forged callbacks degrade callback processing and operations channel availability",
+        "description": "The unauthenticated, internet-accessible callback endpoint that treats any well-formed callback as valid allows an attacker to send a large volume of synthetic callbacks, consuming processing capacity and flooding the operations channel with noise, which can obscure legitimate order-status information and potentially affect service availability.",
         "methodology": "stride-scenario-based",
         "category": [
-          "tampering"
+          "denial_of_service",
+          "spoofing"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-001"
+          "cmp-001",
+          "cmp-002",
+          "cmp-004"
         ],
         "affected_asset_ids": [
-          "ast-001"
+          "ast-001",
+          "ast-002"
         ],
         "related_data_flow_ids": [
-          "df-001"
+          "df-001",
+          "df-002",
+          "df-003"
         ],
         "preconditions": [
-          "a previously valid callback is captured or already known",
-          "processing of a repeated callback is not idempotent"
+          "Callback Receiver continues to accept unsigned, well-formed callbacks from arbitrary internet sources and process them as if they came from the payment provider.",
+          "Rate limiting, throttling, or abuse-detection controls on the callback endpoint and on posting to the channel platform are insufficient to block or quickly mitigate sustained high-volume traffic from a single or distributed source.",
+          "Channel Poster generates a channel message for each processed callback without consolidating or aggressively filtering duplicates."
         ],
         "attack_path": [
-          "re-submit a captured callback",
-          "repeat its processing"
+          "An attacker scripts a client or botnet to send a very high volume of well-formed but synthetic callbacks to the Callback Receiver endpoint over the internet.",
+          "The Callback Receiver parses and accepts each well-formed callback and forwards the resulting order status data to the Channel Poster as normal.",
+          "The Channel Poster attempts to format and post a corresponding message for each callback to the channel platform HTTPS API, potentially triggering its own retry logic when rate limits or transient errors occur.",
+          "The volume of processing and outbound posts consumes callback-handling and posting capacity, and the operations channel becomes saturated with noisy or irrelevant order-status messages.",
+          "Legitimate callbacks and their corresponding messages are delayed, dropped, or lost in the noise, reducing the effective availability and usefulness of Order status data and Operations channel messages."
         ],
-        "impact": "Repeated statuses mislead the operations channel.",
+        "impact": "Availability and usefulness of Order status data (ast-001) and Operations channel messages (ast-002) are degraded: legitimate updates may be delayed, dropped, or effectively invisible among\u5927\u91cf noise, and callback-handling or posting components may experience resource exhaustion or rate limiting.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Incorrect or malicious callbacks from payment provider propagate directly to operations channel",
+        "description": "If the payment provider\u2019s callback service is compromised, misconfigured, or buggy and emits callbacks with incorrect or malicious order-status values, the Order Notifier pipeline will treat them as authoritative and forward them directly to the operations channel, potentially misleading the operations team about the true state of orders.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "external_dependency"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-001",
+          "cmp-002",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The payment provider callback service generates callbacks with incorrect or intentionally manipulated order status information due to compromise, operator error, or software defects.",
+          "Order Notifier relies on the payment provider as the authoritative source of order status for the operations channel and does not independently validate callback contents against another trusted system or process before posting.",
+          "Operations staff treat operations-channel updates from Order Notifier as reflecting the actual order status when making decisions."
+        ],
+        "attack_path": [
+          "The payment provider callback service sends a callback for an order with an incorrect or maliciously altered status (for example, marking an unpaid order as 'paid' or a valid order as 'cancelled').",
+          "The Callback Receiver, which is registered with the payment provider for callbacks, accepts the callback and processes it as a valid event, producing order status data.",
+          "The Channel Poster formats this status into a message and sends it via HTTPS to the channel platform API as an operations-channel update.",
+          "The operations channel displays the incorrect status message, and the operations team acts on this information (e.g., initiating fulfilment, cancelling work, or stopping investigation), believing it reflects the true state at the payment provider."
+        ],
+        "impact": "Integrity of Order status data (ast-001) and Operations channel messages (ast-002) is compromised by upstream dependency misbehaviour: operations may take incorrect actions based on misleading but apparently legitimate updates sourced from the payment provider.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Duplicate or replayed callbacks generate confusing or conflicting order-status messages",
+        "description": "If repeated deliveries of the same callback are not detected and handled idempotently, duplicate or replayed callbacks\u2014whether caused by provider retries or an attacker resending captured payloads\u2014can lead to multiple, possibly conflicting order-status messages for the same order in the operations channel, making it harder for operators to determine the true state.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "replay",
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "Order Notifier does not reliably detect and de-duplicate repeated deliveries of the same callback, processing each as a new event.",
+          "The payment provider or another source sends the same callback payload multiple times, either due to retry behaviour, misconfiguration, or malicious replay.",
+          "An attacker who can observe or reconstruct a legitimate callback payload is able to resend it to the Callback Receiver if they choose to perform a replay attack."
+        ],
+        "attack_path": [
+          "The payment provider experiences a transient error and resends the same callback multiple times, or an attacker resends a previously observed callback payload to the Callback Receiver endpoint.",
+          "The Callback Receiver, which processes any well-formed callback it receives, treats each duplicate as a fresh event and produces order status data for each delivery.",
+          "The Channel Poster formats each instance into a separate message and posts all of them to the channel platform HTTPS API.",
+          "The operations channel accumulates several order-status messages for the same order, which may repeat or appear to change state back and forth, increasing confusion about the actual status and potentially obscuring later legitimate updates."
+        ],
+        "impact": "Integrity and clarity of Order status data (ast-001) and Operations channel messages (ast-002) are reduced: operators may struggle to determine the true state of an order amid repeated or conflicting messages, and repeated processing can contribute to unnecessary load on callback-handling and posting components.",
         "likelihood": null,
         "confidence": "low",
         "evidence_ids": [
+          "evd-002",
           "evd-005",
           "evd-006"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

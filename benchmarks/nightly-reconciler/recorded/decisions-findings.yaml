@@ -1,3 +1,12 @@
 assessment_id: asm-001
 reviewer: recorded-reviewer
-findings: []
+findings:
+- id: fnd-001
+  decision: reject
+  rationale: 'DEC-009: the finding is premised on the internal database connection being
+    interceptable, but the connection''s authentication and encryption are undetermined — the
+    run''s own open question (qst-002), which the checkpoint-1 review deliberately left open.
+    No evidence shows the traffic is unprotected: both endpoints sit inside the application
+    subnet, the database is stated to be reachable only from the reconciler job, and the
+    agent''s own confidence is low. Undetermined is a question, never a finding; concluding
+    exposure from the documents'' silence is the exact failure DEC-009 names.'

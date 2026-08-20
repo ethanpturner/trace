@@ -1,0 +1,150 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10895,
+    "output_tokens": 8269,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.09766875",
+    "duration_seconds": 83.88762095791753
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The connector holds delegated access to an external platform (the helpdesk workspace) via a workspace API token and acts on customer tickets by reading them and writing internal notes, so the conditions \"the system holds delegated access to an external platform\" and \"the system acts on a customer resource on the customer's behalf\" both hold for this threat [evd-003]. The threat scenario specifically involves misuse of that delegated access after credential compromise.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The connector authenticates to the external helpdesk platform using a workspace API token, which is a credential that authenticates the system to an external platform [evd-003]. Compromise of this credential is the core of the described threat, so the requirement on how such credentials are stored and managed applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The connector uses a workspace API token to access customer tickets and write notes on an external helpdesk platform, so the condition \"the system accesses customer resources held on an external platform\" holds [evd-003]. It is not established whether the helpdesk platform offers short-lived or installation-scoped credentials for this integration, so the requirement applies only if such credentials are available.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "Assume for now that the helpdesk platform likely offers some form of scoped or installation-level credentials, but the documentation for this integration does not confirm their availability or use."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The attack path for this threat includes compromise of the connector service environment or related infrastructure such as configuration storage or the deployment pipeline as a way to obtain the workspace API token. This would make the deployment path and its trust controls relevant. However, the architecture documentation does not state whether the connector is deployed by an automated pipeline or how third-party components are handled, so the requirement applies only if such an automated pipeline exists and incorporates third-party components.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assume that some automated deployment or configuration mechanism may exist for the connector, but its presence and design are not described in the available documentation."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Storage and protection of the helpdesk workspace API token are not described",
+        "description": "The documentation states that the connector authenticates to the helpdesk with a workspace API token that grants full workspace access [evd-003], but does not describe where this token is stored (for example, a managed secrets service, configuration store, or environment variable), who or what can access it, or how access is controlled and audited. Because compromise of this token is central to the threat, the absence of this information prevents assessment of whether secrets-management expectations are met and how difficult it is for an attacker to extract the token from the connector environment or related infrastructure.",
+        "importance": "Needed to evaluate how well the high-privilege workspace API token is protected in storage and whether the system satisfies secrets-management requirements for credentials that authenticate it to external platforms.",
+        "related_object_ids": [
+          "thr-003",
+          "ast-003",
+          "cmp-001",
+          "cmp-002"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing where the workspace API token is stored (for example, managed secrets service, configuration store, environment variable) and how access to it is controlled.",
+          "Configuration or deployment snippets (redacted as necessary) showing the storage location of the workspace API token and any access-control policies on that location.",
+          "Documentation of rotation procedures for the workspace API token, including who can rotate it and how new values are distributed to the connector."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Lifetime and acquisition method of the workspace API credential are undocumented",
+        "description": "The documentation notes that the connector uses a workspace API token that grants full workspace access and that it was scoped that way during setup for convenience [evd-003], but does not describe whether this token is long-lived or short-lived, how it is obtained (for example, manual generation vs. OAuth or another exchange flow), whether shorter-lived or installation-scoped credentials are available from the helpdesk platform, or why the chosen form was selected. Without this information, it is not possible to assess whether the integration could limit the duration and scope of impact if the token is compromised, as envisioned by the short-lived-credential requirement.",
+        "importance": "Needed to determine whether the integration can use short-lived or installation-scoped credentials to reduce the impact window of a stolen workspace API credential, and to assess alignment with requirements on credential lifetime and scoping.",
+        "related_object_ids": [
+          "thr-003",
+          "ast-003",
+          "cmp-001",
+          "cmp-002"
+        ],
+        "requested_evidence": [
+          "Helpdesk or integration configuration documentation describing the type of workspace credential used (for example, static API token, OAuth token, installation token), its typical lifetime, and renewal process.",
+          "Any platform documentation or configuration references indicating whether short-lived or installation-scoped credentials are available for this integration and, if so, whether they are in use.",
+          "Operations documentation covering credential rotation frequency and procedures for the workspace API token."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Deployment path and configuration storage for the connector are not documented",
+        "description": "The system overview describes the connector and its workflow [evd-001][evd-002] but does not describe how the connector is built and deployed, whether an automated pipeline is used, how that pipeline authenticates to deployment targets, or where configuration (including the workspace API token) is stored. The threat model references compromise of the connector environment or related infrastructure such as configuration storage or the deployment pipeline as a way to obtain the token, but without deployment documentation it is not possible to evaluate the trust placed in the deployment path or the controls around it.",
+        "importance": "Needed to assess whether the deployment pipeline and configuration storage are treated as privileged components, how they authenticate to environments, and how they handle sensitive credentials such as the workspace API token, in order to evaluate requirements on CI/CD trust and supply chain controls.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-001"
+        ],
+        "requested_evidence": [
+          "Deployment documentation describing how the connector is built and deployed, including whether an automated pipeline is used.",
+          "Details of how the deployment pipeline (if present) authenticates to target environments and what permissions it holds.",
+          "Documentation of where connector configuration, including the workspace API token, is stored in the deployment process (for example, configuration management system, secrets manager) and how that storage is secured."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

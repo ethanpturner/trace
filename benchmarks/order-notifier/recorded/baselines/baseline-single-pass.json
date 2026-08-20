@@ -1,0 +1,125 @@
+{
+  "components": [
+    {
+      "name": "Order Notifier",
+      "component_type": "service"
+    },
+    {
+      "name": "Callback Receiver",
+      "component_type": "webhook endpoint"
+    },
+    {
+      "name": "Channel Poster",
+      "component_type": "API client"
+    },
+    {
+      "name": "Payment provider",
+      "component_type": "external payment service"
+    },
+    {
+      "name": "Channel platform",
+      "component_type": "external messaging service"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Spoofed payment callbacks leading to false order status updates",
+      "affected_components": [
+        "Callback Receiver",
+        "Order Notifier",
+        "Channel Poster"
+      ],
+      "rationale": "The Callback Receiver accepts unsigned callbacks from anywhere and processes any well-formed callback as if it came from the payment provider. This enables an attacker to fabricate callbacks that appear valid syntactically and cause false status updates to be posted to the operations channel.\n\nEvidence:\n- \"It processes any well-formed callback it receives: callbacks are not signed, and the provider's optional callback-signing feature is not enabled for this integration.\" (integration-guide.md)\n- \"The review confirmed the callback endpoint accepts unsigned requests from anywhere; any caller that formats a callback correctly is processed as though it came from the payment provider.\" (operations-notes.md)"
+    },
+    {
+      "title": "Denial of service via unbounded processing of arbitrary callbacks",
+      "affected_components": [
+        "Callback Receiver",
+        "Order Notifier",
+        "Channel Poster"
+      ],
+      "rationale": "Because the Callback Receiver accepts unsigned requests from anywhere and processes any well-formed callback, an attacker can flood the endpoint with syntactically valid callbacks. The documentation does not describe any rate limiting, authentication, or other bounds on work triggered per callback, creating a risk of resource exhaustion and operational disruption.\n\nEvidence:\n- \"The Callback Receiver is the endpoint registered with the payment provider. It processes any well-formed callback it receives: callbacks are not signed, and the provider's optional callback-signing feature is not enabled for this integration.\" (integration-guide.md)\n- \"The review confirmed the callback endpoint accepts unsigned requests from anywhere; any caller that formats a callback correctly is processed as though it came from the payment provider.\" (operations-notes.md)"
+    },
+    {
+      "title": "Misleading or duplicate operational signals due to callback replay or redelivery",
+      "affected_components": [
+        "Callback Receiver",
+        "Order Notifier",
+        "Channel Poster"
+      ],
+      "rationale": "The system posts order status updates to an operations channel based on received callbacks. Operations notes explicitly mention safe retry behavior for posting, but state that nothing was noted about repeated deliveries of the same callback. Combined with the lack of authenticity checks, this suggests that duplicate or replayed callbacks could generate repeated or misleading status messages, potentially confusing incident response or operations.\n\nEvidence:\n- \"The Order Notifier receives order-status callbacks from the payment provider and posts updates to the operations channel.\" (integration-guide.md)\n- \"Channel posting has retried safely during provider outages. Nothing was noted about repeated deliveries of the same callback.\" (operations-notes.md)"
+    }
+  ],
+  "findings": [
+    {
+      "requirement_id": "req-WEBHOOK-001",
+      "affected_component": "Callback Receiver",
+      "title": "Callback Receiver does not verify authenticity of inbound callbacks",
+      "rationale": "Requirement req-WEBHOOK-001 expects inbound event authenticity to be verified before processing. The documentation states that callbacks are not signed, the provider's signing feature is disabled, and the endpoint accepts unsigned requests from anywhere, processing any syntactically correct callback as if it came from the payment provider. This establishes that there is no authenticity verification on inbound callbacks.",
+      "evidence_quote": "\"It processes any well-formed callback it receives: callbacks are not signed, and the provider's optional callback-signing feature is not enabled for this integration.\" (integration-guide.md)\n\"The review confirmed the callback endpoint accepts unsigned requests from anywhere; any caller that formats a callback correctly is processed as though it came from the payment provider. Enabling the provider's signing feature is tracked in the backlog and not yet scheduled.\" (operations-notes.md)"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-WEBHOOK-002",
+      "affected_component": "Callback Receiver",
+      "what_cannot_be_determined": "Whether the system prevents or makes harmless replay or duplicate delivery of callbacks (for example, via idempotency keys, nonce handling, or deduplication). Operations notes say only that nothing was noted about repeated deliveries, which does not establish the presence or absence of replay controls."
+    },
+    {
+      "requirement_id": "req-TPI-002",
+      "affected_component": "Order Notifier",
+      "what_cannot_be_determined": "Whether work triggered by external callbacks is bounded via rate limiting, queue limits, authentication gates, or other controls to prevent unbounded processing in response to malicious or excessive callback traffic."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Callback Receiver",
+      "what_cannot_be_determined": "Whether callbacks from the payment provider are received over an encrypted transport (e.g., HTTPS) and whether any data derived from callbacks is stored encrypted at rest. The documentation does not specify the protocol used for inbound callbacks or any storage/encryption behavior."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Channel Poster",
+      "what_cannot_be_determined": "While posting to the channel platform is documented as using HTTPS (providing transport encryption for that leg), there is no information about whether any intermediate storage (queues, logs, buffers) containing order status data is encrypted at rest."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Channel Poster",
+      "what_cannot_be_determined": "How credentials or tokens used to call the channel platform's HTTPS API are stored (e.g., managed secret store vs configuration files or environment variables) and whether they are managed as long-lived secrets in a secure store."
+    },
+    {
+      "requirement_id": "req-SECRET-002",
+      "affected_component": "Channel Poster",
+      "what_cannot_be_determined": "Whether credentials used to reach the channel platform (such as API tokens) are short-lived and regularly rotated, or long-lived static credentials."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Order Notifier",
+      "what_cannot_be_determined": "What data is written to application or operational logs, particularly whether full callback payloads or order identifiers/statuses are logged, and whether any potentially sensitive data is scrubbed or omitted."
+    }
+  ],
+  "questions": [
+    {
+      "question": "How are repeated or replayed callbacks handled? Is there any idempotency mechanism (e.g., event IDs, nonces, or deduplication logic) to ensure that replayed or duplicated callbacks do not cause repeated or inconsistent updates?",
+      "requirement_id": "req-WEBHOOK-002"
+    },
+    {
+      "question": "What controls (rate limiting, authentication gates, queue limits, or backpressure) bound the amount of work the Order Notifier performs in response to external callbacks from the payment provider?",
+      "requirement_id": "req-TPI-002"
+    },
+    {
+      "question": "Are callbacks from the payment provider delivered over HTTPS, and is any data derived from these callbacks (such as queued messages or stored records) encrypted at rest?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "Where and how are the channel platform API credentials or tokens stored (e.g., cloud secret manager, vaulted service, environment variables, or configuration files)?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "What is the lifecycle of the channel platform API credentials (for example, are they short-lived tokens obtained via an OAuth flow, or long-lived static API keys), and how often are they rotated?",
+      "requirement_id": "req-SECRET-002"
+    },
+    {
+      "question": "What information from callbacks and posting operations is written to logs, and are there controls to avoid logging full payloads or other sensitive data?",
+      "requirement_id": "req-LOG-001"
+    }
+  ]
+}

@@ -1,0 +1,1142 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 251,
+    "output_tokens": 21769,
+    "cache_read_tokens": 13056,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.21963575",
+    "duration_seconds": 284.5904338750988
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-003 describe the existence of the Transcript Exporter, Training Store, Tuning Job, and Reply Service, and that full transcripts (including personal data) are exported and used for training. They do not describe tenant models, access-enforced separation of stored artifacts by tenant, or how thr-001 is defined. On this documentation alone, it is not established that req-DATA-003 is out of scope for thr-001; the non-applicability conclusion rests on unstated threat and requirement definitions rather than on the cited passages.",
+        "missing_evidence": [
+          "Threat model documentation for thr-001 describing the attack path and which storage locations are involved.",
+          "Design or policy documentation for req-DATA-003 that defines its scope and any tenant-level storage separation implemented for the Training Store and related artifacts."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The passages in evd-002 and evd-003 show that closed-ticket transcripts are exported in full to a Training Store and used for model training, with no redaction or filtering step. They do not mention any customer-initiated deletion procedures, how deletions propagate to training data, or how req-DATA-004 is scoped, nor do they define thr-001. The claim that customer-initiated deletion is not applicable to this poisoning threat is therefore not established by the cited documentation.",
+        "missing_evidence": [
+          "Documentation for req-DATA-004 describing required deletion behavior across primary and derived stores.",
+          "Architecture or data-lifecycle documentation explaining how customer-initiated deletions interact with the Training Store and fine-tuned model.",
+          "A detailed description of thr-001 to show whether deletion behavior could meaningfully mitigate it."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 describe an internal pipeline that fine-tunes a suggested-reply model and serves suggested replies to support agents. They do not mention browser-based delegated sign-in, redirect URIs, or any OpenID Connect flows, and they do not define thr-001. While those features are not described, the documentation also does not explicitly rule them out in other parts of the system. The conclusion that req-OIDC-001 is not applicable to thr-001 is therefore not established by the available passages.",
+        "missing_evidence": [
+          "Authentication and authorization design documentation stating whether OIDC and redirect URIs are used anywhere in this system.",
+          "Threat model documentation for thr-001 clarifying whether any browser-based delegated sign-in participates in the described attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence describes batch export of closed-ticket transcripts to a Training Store and their use in a tuning job. It does not mention externally issued ID or access tokens, token validation from an identity provider, or the detailed mechanics of thr-001. As a result, the statement that req-OIDC-002 is not applicable to thr-001 is not grounded in the cited passages.",
+        "missing_evidence": [
+          "Identity and access management design detailing if and where external ID/access tokens are used and validated.",
+          "Threat model documentation for thr-001 showing whether any such tokens are involved in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 describe how suggested replies are generated and presented to agents but say nothing about local sessions minted from delegated sign-in or about session lifetime and termination. They also do not describe thr-001. The claim that req-OIDC-003 is not applicable to thr-001 is therefore not established by the documentation.",
+        "missing_evidence": [
+          "Session management and sign-in flow documentation indicating whether delegated sign-in is used and how sessions are handled.",
+          "Threat model details for thr-001 indicating whether local sessions from delegated sign-in participate in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The provided architecture overview does not describe any authorization-code grants, code-to-token exchanges, or client binding for sign-in flows. It also does not define thr-001. From these passages alone, it cannot be determined that req-OIDC-004 is definitively out of scope for thr-001; the non-applicability conclusion depends on threat and requirement semantics that are not documented here.",
+        "missing_evidence": [
+          "Documentation of any OAuth/OIDC authorization-code flows used in the system, including whether they are present in components involved in thr-001.",
+          "Threat model documentation for thr-001 clarifying whether any such flows play a role in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 states that there is a weekly Tuning Job that \"fine-tunes the vendor's base reply model on the training store's current contents\" and that the Transcript Exporter is the only writer to the Training Store with a dedicated job identity, while evd-003 confirms that what customers write is what the model trains on. evd-005 indicates that customers write the ticket messages that become training data. Together, these passages directly support that the system fine-tunes a model on collected data originating from many customers, so the applicability of a training-corpus control like req-TRAIN-001 to thr-001 is well supported. However, none of the evidence describes the specific control behaviors required by req-TRAIN-001 or demonstrates that those requirements are fully satisfied; the status \"satisfied\" is therefore not established by the documentation.",
+        "missing_evidence": [
+          "Control or design documentation for req-TRAIN-001 describing the required governance of training-corpus write paths.",
+          "Configuration or implementation evidence showing how the Training Store's write path and associated identities implement all aspects of req-TRAIN-001, beyond the single-writer property described in evd-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 explains that transcripts exported to the Training Store include \"customer names, email addresses, and complete message bodies,\" and evd-003 notes that there is no redaction or filtering and that what the customer wrote is what the model trains on. This directly supports that training data derives from user/customer production content, so the applicability of req-TRAIN-002 to thr-001 is well documented. However, the evidence does not describe any of the specific protections or controls that req-TRAIN-002 might require, and thus does not support the claim that the requirement is currently \"partially_satisfied\" rather than simply unknown. The satisfaction level portion of the conclusion is therefore not established.",
+        "missing_evidence": [
+          "Definition of req-TRAIN-002 and its required controls for training on user/customer content.",
+          "Design or implementation documentation showing which of those controls are implemented for this Training Store and tuning process, to justify the \"partially_satisfied\" status."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 states that the Tuning Job \"writes the tuned model artifact to the artifact bucket,\" and evd-004 further explains that the tuning job writes each week's artifact to the artifact bucket and that agents are served whichever artifact is most recent. This directly supports that tuned artifacts are both produced and served, so the applicability of req-TRAIN-003 to thr-001 is well supported. The evidence, however, does not describe any of the controls that req-TRAIN-003 might require around those artifacts, so the mapping's classification of the requirement as \"unverified\" is not grounded in the documents; the evidence simply does not speak to whether the requirement's control set is met or not.",
+        "missing_evidence": [
+          "Definition of req-TRAIN-003 and the required controls around tuned model artifacts.",
+          "Configuration or design documentation for the artifact bucket and serving path showing how those controls are or are not implemented."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence excerpts describe transcript export, storage, and training behavior but are silent on logging practices, log content, or log retention. They also do not define thr-001. Because req-LOG-001 concerns log content and no logging behavior is documented here, the claim that it is not applicable to thr-001 is not established by the passages.",
+        "missing_evidence": [
+          "Logging design and data-flow documentation describing what is logged, especially for components involved in thr-001.",
+          "Definition of req-LOG-001 and an explanation of how its scope relates to the documented data flows for thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-005 describe that support agents see suggested replies and that customers write ticket messages. They do not mention any administrative or operator interfaces, nor do they define thr-001. On this basis, it cannot be concluded from the documentation that req-LOG-002 (administrative auditing) is definitively not applicable to thr-001.",
+        "missing_evidence": [
+          "Architecture documentation describing any administrative or operator interfaces and their relation to components in thr-001.",
+          "Definition of req-LOG-002 and mapping guidance explaining when it is considered in scope for a threat."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 describe that the system generates \"suggested replies\" for support tickets and that agents may edit or discard them. This is indirect evidence that the primary outputs are natural-language replies, but the documents do not explicitly rule out generation of code, queries, or commands elsewhere in the system, nor do they define the exact scope of req-CODEGEN-001 or thr-001. As such, the conclusion that req-CODEGEN-001 is not applicable to thr-001 is not fully established by the available text.",
+        "missing_evidence": [
+          "Specification of req-CODEGEN-001, including the kinds of generated artifacts it covers.",
+          "Architecture documentation confirming whether the system ever generates code, queries, or commands for execution, and whether such behavior participates in thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence shows that the model produces suggested replies for support agents, but does not discuss any model-generated configuration, code, or changes to repositories or pipelines, nor does it define req-CODEGEN-002 or thr-001. Without explicit documentation that no such generated artifacts exist in the threat-relevant path, the assertion that req-CODEGEN-002 is not applicable to thr-001 remains unsupported by the passages.",
+        "missing_evidence": [
+          "Definition of req-CODEGEN-002 and its applicability conditions.",
+          "Documentation of whether the model or related tooling can generate configuration or code that is applied to repositories or pipelines in contexts relevant to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-003 describe a batch export job, a Training Store bucket, and a tuning process, but they do not mention network segmentation, network-restricted components, or the detailed content of req-NET-001 or thr-001. From this documentation alone, it cannot be determined that network-segmentation controls are irrelevant to the described threat; the non-applicability conclusion is therefore not established.",
+        "missing_evidence": [
+          "Network architecture documentation for the Transcript Exporter, Training Store, and Tuning Job, including any segmentation controls.",
+          "Definition of req-NET-001 and an explanation of its intended role for threats like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview shows a fine-tuning pipeline over stored transcripts and subsequent serving of tuned model artifacts. It does not describe any retrieval-augmented generation corpus, embeddings index, or per-request retrieval step, but it also does not explicitly state that such mechanisms are absent elsewhere. req-RAG-001 and thr-001 are not defined in the evidence. Accordingly, the assertion that req-RAG-001 is not applicable to thr-001 is not established solely by these passages.",
+        "missing_evidence": [
+          "Architecture documentation specifying whether any retrieval or embeddings layer exists and, if so, how it is used.",
+          "Definition of req-RAG-001 and guidance on when it applies to threats like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-004 show that the system uses a tuned model artifact to generate suggested replies, with no described retrieval of documents or filtering of retrieval results. However, the documents do not explicitly assert that no retrieval pipeline exists, nor do they define req-RAG-002 or thr-001. The claim that authorization filtering of retrieval results is irrelevant (req-RAG-002 not applicable) is therefore not fully supported by the available text.",
+        "missing_evidence": [
+          "Documentation indicating whether any retrieval step exists in the reply generation path, and if so how it is authorized.",
+          "Definition of req-RAG-002 and its applicability criteria for threats like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence indicates that the model is fine-tuned directly on transcripts stored in a Training Store bucket, but it does not clearly state whether a separate retrieval index or embeddings layer exists, nor does it define req-RAG-003 or thr-001. Concluding that there is no retrieval index lifecycle to govern (and thus that req-RAG-003 is not applicable) is not justified purely from what is written.",
+        "missing_evidence": [
+          "Explicit documentation of whether any retrieval index or embeddings corpus exists and how its lifecycle relates to source data.",
+          "Definition of req-RAG-003 and its triggering conditions."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-003 focus on transcript export, storage, and training, and do not mention provider credentials, signing keys, or any secret-storage mechanisms. req-SECRET-001 and thr-001 are not described in the evidence. The assertion that secret storage for such credentials does not bear on the poisoning threat (req-SECRET-001 not applicable) is therefore not established by the documentation.",
+        "missing_evidence": [
+          "Secrets management documentation listing long-lived provider credentials or signing keys, if any, used by components in thr-001.",
+          "Definition of req-SECRET-001 and its intended scope relative to threats like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The passages do not describe any access tokens to external customer resources, their lifetimes, or how they are used. The conclusion that use of short-lived versus long-lived tokens is irrelevant and that req-SECRET-002 is not applicable to thr-001 therefore cannot be confirmed from the available evidence.",
+        "missing_evidence": [
+          "Design documentation describing any tokens or credentials used to access external customer resources and their lifetimes.",
+          "Definition of req-SECRET-002 and criteria for when it applies to a threat like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 shows that the Helpdesk is a source of transcripts and that they are exported into an internal Training Store, but it does not describe all data flows to or from external processors, nor does it define req-TPI-001 or thr-001. From these passages alone, it cannot be concluded that no customer data is sent to any external processor in a way that would make req-TPI-001 relevant to thr-001. The non-applicability assertion is thus not fully supported.",
+        "missing_evidence": [
+          "Comprehensive data-flow diagrams identifying all third-party services and processors involved.",
+          "Definition of req-TPI-001 and clarification of whether any external processing in this pipeline would bring it into scope for thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview describes nightly exports and weekly tuning runs as scheduled batch jobs over internal storage, which directly supports that these particular jobs are scheduled work. However, the documentation does not establish that no unbounded work is triggered by external events against metered external services elsewhere in the system, nor does it define req-TPI-002 or thr-001. Therefore, the stronger claim that req-TPI-002 is not applicable to thr-001 overall is not established by the cited passages.",
+        "missing_evidence": [
+          "Documentation of any externally-triggered workloads or integrations, including rate-limiting and bounding mechanisms.",
+          "Definition of req-TPI-002 and guidance connecting it to threats like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 directly describes a batch \"Transcript Exporter\" job that reads from the helpdesk and writes to the Training Store. It does not describe any inbound webhooks or event endpoints, but it also does not state that none exist elsewhere in the system, nor does it define req-WEBHOOK-001 or thr-001. Therefore, while the documented path does not involve webhooks, the general claim that webhook authenticity verification is not applicable to thr-001 is not fully supported by the evidence.",
+        "missing_evidence": [
+          "Integration documentation describing any inbound webhook or event endpoints used by the system.",
+          "Definition of req-WEBHOOK-001 and mapping guidance for when it is in scope for threats like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence shows data entering via a batch export from the helpdesk and being used for training; it does not document any webhook-style inbound events or event replay handling. However, it also does not explicitly rule out such mechanisms elsewhere or define req-WEBHOOK-002 or thr-001. As a result, the conclusion that webhook replay protections are definitively not applicable to thr-001 is not established by the passages.",
+        "missing_evidence": [
+          "Documentation of any webhook/event ingestion endpoints and their replay protections, if present.",
+          "Definition of req-WEBHOOK-002 and explanation of its relationship to threats like thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 explains that closed-ticket transcripts are exported to a Training Store and used by a Tuning Job to fine-tune a vendor base reply model, and evd-005 identifies \"Customer\" as the actor who writes the ticket messages that become training data. This directly supports that the training corpus consists of customer-authored transcripts collected by the system, so the applicability of req-TRAIN-001 to thr-002 is well supported. However, the evidence does not describe the complete set of controls required by req-TRAIN-001 or demonstrate that they are fully satisfied, so the \"satisfied\" status portion of the conclusion is not established.",
+        "missing_evidence": [
+          "Control documentation for req-TRAIN-001 and how its requirements are implemented for the Training Store and Tuning Job.",
+          "Any design or configuration evidence showing enforcement of governed write paths beyond the single-writer property already described."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 notes that transcripts are exported in full, including names, email addresses, and complete message bodies, and evd-003 confirms that there is no redaction or filtering step and that what the customer wrote is what the model trains on. This directly supports that training data derives from user/customer production content, so the applicability of req-TRAIN-002 to thr-002 is well supported. However, the evidence does not identify any controls meeting req-TRAIN-002 or justify the classification \"unverified\" versus some other satisfaction status; the documents are simply silent on those controls. Thus only the applicability part of the conclusion is supported.",
+        "missing_evidence": [
+          "Definition of req-TRAIN-002 and the protections it requires when training on user/customer content.",
+          "Design or implementation documentation demonstrating which of those protections are present, to support a specific satisfaction status."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 states that the Tuning Job \"writes the tuned model artifact to the artifact bucket,\" and evd-004 clarifies that each week's artifact is written to the artifact bucket and that agents are served whichever artifact is most recent. This directly supports that tuned artifacts are produced and served, so req-TRAIN-003 is applicable to thr-002. The evidence, however, does not describe any of the specific controls required by req-TRAIN-003 or otherwise substantiate the chosen \"unverified\" satisfaction status; it only establishes applicability. The mapping should therefore be revised to distinguish the well-supported applicability from the undocumented satisfaction state.",
+        "missing_evidence": [
+          "Definition of req-TRAIN-003 and its control expectations for tuned model artifacts.",
+          "Configuration or procedural documentation demonstrating how tuned artifacts are governed, to justify a particular satisfaction status."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 describes the Training Store as \"a cloud storage bucket holding the exported transcripts\" from closed tickets, and evd-003 notes that the training store holds the full transcripts as exported, with no redaction or filtering. This directly supports that customer data is retained in a persistent storage bucket after primary ticket handling completes, making a data-retention-focused requirement like req-DATA-002 applicable to thr-003. The evidence does not, however, describe any retention limits, minimization strategies, or other specific controls that req-DATA-002 might require, so the \"unverified\" status and any implied control posture are not established by the documentation.",
+        "missing_evidence": [
+          "Definition of req-DATA-002 and the specific controls it requires for retained data.",
+          "Retention and lifecycle documentation for the Training Store bucket showing how data is managed over time relative to those requirements."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-003 describe batch jobs, storage buckets, and training behavior, but they do not mention any privileged administrative interfaces or describe thr-004. While the threat may focus on compromise of a batch job identity, the documentation does not explicitly state that no administrative interface is involved, so the conclusion that req-ADMIN-001 is not applicable to thr-004 is not established from these passages alone.",
+        "missing_evidence": [
+          "Documentation of administrative and operator interfaces for components involved in thr-004, including how they are exposed and protected.",
+          "Definition of req-ADMIN-001 and mapping guidance that clarifies when it is in or out of scope for a given threat."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence shows that the system uses scheduled batch jobs (Transcript Exporter, Tuning Job) and a Reply Service that generates one suggested reply per open ticket, but it does not discuss autonomous multi-step or recursive agent loops, nor does it define thr-004 or req-AGENT-001. While the documented components are not autonomous agents, the passages do not conclusively rule out such behavior elsewhere in the system, so the non-applicability of req-AGENT-001 to thr-004 is not fully established.",
+        "missing_evidence": [
+          "Architecture documentation specifying whether any autonomous multi-step or recursive agents exist and how they are bounded.",
+          "Definition of req-AGENT-001 and its applicability conditions for threats like thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 states that agents \"see a suggested reply beside each open ticket and decide whether to use it,\" and evd-002 adds that for each open ticket the Reply Service generates one suggested reply \"which the agent may edit or discard.\" This directly supports the claim that model-generated replies are mediated by human agents rather than executed autonomously. However, the evidence does not comprehensively describe all agent-like components or actions in the system, nor does it define req-AGENT-002 or thr-004, so it does not fully establish that there are no privileged, irreversible, or outward-facing actions taken autonomously anywhere in the threat path. Thus the non-applicability conclusion is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-AGENT-002, including the specific types of privileged or irreversible actions it covers.",
+          "Documentation confirming that no autonomous agent components can take such actions in the context of thr-004, beyond the human-in-the-loop reply workflow already described."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview does not mention tools or external services being invoked directly by the model, but it also does not explicitly state that none are used, nor does it define req-AGENT-003 or thr-004. Therefore, the conclusion that least-privilege enforcement for model-invoked tools is not applicable to thr-004 is not established purely by these passages.",
+        "missing_evidence": [
+          "Documentation of any tool or external-service invocation mechanisms controlled by the model or agent components.",
+          "Definition of req-AGENT-003 and guidance on when it should be mapped to threats like thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-003 describe internal batch jobs, storage buckets, and training behavior but do not mention external tool servers or MCP-like integrations, nor do they define req-AGENT-004 or thr-004. Absence of mention is not evidence of absence; thus the assertion that req-AGENT-004 is not applicable to thr-004 is not established by the available documentation.",
+        "missing_evidence": [
+          "Architecture documentation indicating whether any external tool servers or MCP-like integrations are present and how they are authenticated.",
+          "Definition of req-AGENT-004 and its applicability to threats involving internal storage tampering."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-003 directly describe that the system uses a fixed training corpus of full transcripts in a Training Store and that the Tuning Job fine-tunes on that corpus, matching a training-data poisoning scenario. This supports the statement that the threat targets integrity of the training corpus rather than prompt-time handling of untrusted content under analysis. However, the evidence does not define req-AI-001 or its full scope, so it does not conclusively establish that prompt/input-handling requirements are entirely irrelevant to thr-004; other prompt-like inputs might exist outside this path. The non-applicability conclusion is thus only partially supported.",
+        "missing_evidence": [
+          "Definition of req-AI-001, including which classes of untrusted inputs and components it covers.",
+          "Threat model documentation for thr-004 confirming that no prompt-time input handling relevant to req-AI-001 is involved beyond the documented training-corpus poisoning."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-055",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 states that agents see a suggested reply beside each open ticket and decide whether to use it, and evd-002 specifies that for each open ticket the Reply Service generates one suggested reply which the agent may edit or discard. This directly supports that model-generated replies are not automatically published externally; human agents review them first. This aligns with the reasoning that a requirement focused on validating output published externally without human review (req-AI-002) may not apply to this workflow. However, the evidence does not define req-AI-002 or completely rule out other model outputs that might bypass human review in different contexts, so the blanket non-applicability of req-AI-002 to thr-004 is only partially established.",
+        "missing_evidence": [
+          "Definition of req-AI-002 and the specific conditions under which it is intended to apply (e.g., any model output paths without human review).",
+          "Confirmation that all external publication of model outputs relevant to thr-004 involves human review as described in the agent workflow."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-056",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 describes the Tuning Job as fine-tuning \"the vendor's base reply model\" on the Training Store contents and writing the tuned artifact to an internal artifact bucket, but it does not state whether fine-tuning happens locally or via an external model provider, nor does it discuss what customer data, if any, is sent to external AI providers. evd-003 focuses on the content of the Training Store. The applicability reasoning introduces the phrase \"local fine-tuning,\" which is not present in the evidence. Without explicit documentation of whether customer transcripts are or are not sent to an external model provider, the conclusion that req-AI-003 (data minimization to external providers) is not applicable to thr-004 is unsupported.",
+        "missing_evidence": [
+          "Architecture or integration documentation showing whether the Tuning Job invokes an external model provider service and, if so, what data is sent.",
+          "Definition of req-AI-003 and its applicability to any external AI providers used in this pipeline."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 together establish that the Reply Service generates suggested replies using the tuned model and that these replies are rendered in the Agent Console for support agents, while evd-002 and evd-003 elsewhere indicate that training data consists of unredacted customer transcripts. This directly supports the applicability of req-AI-004: model output, potentially influenced by poisoned training data, is rendered into a UI where encoding for the rendering context matters. However, the evidence does not state how, or whether, such output is encoded or escaped in the Agent Console, so the \"unverified\" satisfaction status and any implied control posture are not evidenced; only applicability is.",
+        "missing_evidence": [
+          "Definition of req-AI-004 and the expected encoding/escaping behavior for model outputs rendered in UIs.",
+          "Implementation or configuration documentation for the Agent Console showing how suggested replies are encoded or escaped before rendering."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The provided evidence does not describe any user sign-in flows, authentication mechanisms, or use of external identity providers, nor does it define req-AUTH-001 or thr-004. While thr-004 appears to focus on a batch job identity, the documentation does not explicitly rule out delegated end-user authentication in components that could be relevant. Therefore, the claim that req-AUTH-001 is not applicable to thr-004 is not established.",
+        "missing_evidence": [
+          "Authentication architecture documentation describing whether delegated end-user authentication is used and where.",
+          "Definition of req-AUTH-001 and mapping guidance for its relevance to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-003 focus on non-interactive batch jobs and training data; they do not describe privileged interactive access, administrator accounts, or MFA policies, nor do they define req-AUTH-002 or thr-004. The conclusion that MFA for privileged interactive access is not engaged by thr-004 is thus not demonstrated by the cited documentation.",
+        "missing_evidence": [
+          "Access model and MFA policy documentation for privileged interactive access to components related to thr-004.",
+          "Definition of req-AUTH-002 and an explanation of how it is intended to map to threats like thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence excerpts describe the Training Store, Tuning Job, and Reply Service but do not discuss per-request tenant scoping, authorization checks for serving traffic, or the detailed semantics of req-AUTHZ-001 or thr-004. Accordingly, the documentation does not establish that tenant-aware authorization is irrelevant to this threat, and the non-applicability conclusion is unsupported.",
+        "missing_evidence": [
+          "Authorization design documentation describing tenant scoping and checks on serving paths, including the Reply Service.",
+          "Definition of req-AUTHZ-001 and mapping notes relating it to threats involving compromised writer identities."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 states that the Transcript Exporter reads from a helpdesk system and writes to an internal Training Store bucket, but does not describe how privileges on the external helpdesk platform are delegated or scoped, nor does it define req-AUTHZ-002 or thr-004. The assertion that over-broad delegated privileges on an external platform are not relevant (and thus req-AUTHZ-002 is not applicable) is therefore not established solely from the available text.",
+        "missing_evidence": [
+          "Documentation of how the Transcript Exporter accesses the external helpdesk, including the scope of any delegated privileges.",
+          "Definition of req-AUTHZ-002 and criteria for its applicability to threats involving external platforms such as the helpdesk."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      }
+    ]
+  }
+}
