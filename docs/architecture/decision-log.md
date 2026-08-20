@@ -8946,3 +8946,68 @@ Tradeoffs:
   read with `.get`, and absent in every committed consumer's old files, which parse unchanged.
 - Rows attributed to a model list joined with ` + ` flatten the per-call breakdown; the ledger
   keeps the full detail, and the scorecard stays metrics-and-identifiers-only.
+
+## DEC-137: The run narrates itself — a notify-only phase observer and a derived status read
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**The orchestrator gains a phase observer: a callback invoked once per phase entered, handed a
+snapshot and no way back in.** `Orchestrator` accepts an optional `on_phase` callable alongside
+DEC-031's `on_pause`; at each phase entry it is passed a `PhaseProgress` — run identifier, the
+phase, its position against the fourteen-phase table, and the model-call count and estimated
+cost computed from the execution records the way the ledger computes them. The observer is
+notify-only: it is given no registry, no budget, and no return channel, so routing and ceilings
+stay exactly where DEC-016 put them, and an exception the observer raises — or a ledger read
+failing underneath the snapshot — is suppressed, because a progress line must never be what
+stops a run. `trace run`, `trace resume`, and the three pipeline stages of `trace capture` wire
+the observer to one stderr line per phase; stdout keeps its documented output contract.
+
+**Where a run is becomes a command: `trace runs status`.** It reads three things the run already
+persists — the run row, the state file under `traces/` (rewritten on every transition since the
+crash-safety fix), and the execution records — and reports status, phase, model calls, estimated
+cost, subjects awaiting review, and any error summary, with a `--json` view under the DEC-096
+envelope. The command is a derived read in the review-package sense: it stores nothing, so
+polling it cannot disagree with the run. A run still inside its first phase has written no state
+file yet, and the command says so rather than guessing.
+
+**Nothing on either surface carries source-derived content.** A progress line and a status read
+are phase names, identifiers, and counters by construction; the observability redaction rules
+apply to them as written.
+
+Why:
+
+- A live capture is 41 ± 15 minutes (DEC-092) of total silence between launch and outcome, and
+  the DEC-135 amendment records a model spending two hours inside one evidence-validation batch,
+  indistinguishable from a hang until someone killed the process. The sweep (#484) is twelve
+  more such runs; each needs to be tellable-apart from a wedged one, from inside the terminal
+  and from outside the process (#622).
+- The facts were all already recorded — per-phase state persistence, per-node execution records —
+  and only never surfaced. Both halves are reads over existing writes, which is why neither
+  needed a second store.
+
+Alternatives Considered:
+
+- A heartbeat file written at phase boundaries (rejected: a fourth artifact whose only content
+  is derivable from the state file and the records; a derived read cannot drift, a written
+  heartbeat can).
+- Progress lines from inside the nodes (rejected: a node is given no orchestrator and no peer by
+  section 27, and narration is the loop's knowledge — which phase, which position — not the
+  node's).
+- A `--progress` opt-in flag (rejected: stderr is already the channel that costs a script
+  nothing, and an operator who has to know the flag exists is the operator staring at the
+  silence today).
+
+Tradeoffs:
+
+- The observer computes counters from the records once per phase — fourteen small reads per run,
+  bought deliberately so the narration measures what was written rather than keeping a parallel
+  tally that can drift (the `counters()` reasoning, applied to progress).
+- Suppressing observer exceptions means a broken progress printer fails silently; the
+  alternative is a run a progress line can kill, and between the two, silence loses less.
+- `runs status` reports what the row says, and a killed process leaves the row saying `running`
+  (#613); the command inherits that honesty problem rather than solving it — repair is #613's
+  own decision, not a side effect of a read.

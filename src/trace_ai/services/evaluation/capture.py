@@ -82,6 +82,7 @@ from trace_ai.workflow.finding_review import (
 from trace_ai.workflow.limits import Budget
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
     from pydantic import BaseModel
@@ -90,6 +91,7 @@ if TYPE_CHECKING:
     from trace_ai.infrastructure.model.recorded import RecordedResponse
     from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.services.evaluation.registry import Scenario
+    from trace_ai.workflow.orchestrator import PhaseProgress
 
 __all__ = [
     "REHEARSAL_MARKER",
@@ -383,6 +385,7 @@ def stage_extract(
     data_root: Path | None = None,
     rehearsal: bool = False,
     workflow_version: str | None = None,
+    on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> None:
     """Create the assessment, load the scenario's inputs, and run to checkpoint 1.
 
@@ -447,6 +450,7 @@ def stage_extract(
             ),
             profile=profile,
             budget=_budget(),
+            on_phase=on_phase,
         )
         if not outcome.paused:
             raise CaptureError(f"expected a pause at checkpoint 1, got {outcome.stopped_because}")
@@ -475,6 +479,7 @@ def stage_reason(
     live: StructuredModel | None = None,
     data_root: Path | None = None,
     rehearsal: bool = False,
+    on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> None:
     """Apply the authored context decisions, approve, and run live to checkpoint 2."""
     staging = capture_dir(scenario, rehearsal=rehearsal)
@@ -536,6 +541,7 @@ def stage_reason(
             # pins it — an unpinned wall-clock stamp makes the completion hash unreproducible
             # and the round trip unverifiable (found by the first zero-finding capture, #484).
             generated_at=GENERATED_AT,
+            on_phase=on_phase,
         )
         if not outcome.paused:
             # A run with no candidate findings never pauses at checkpoint 2: the checkpoint
@@ -631,6 +637,7 @@ def stage_report(
     live: StructuredModel | None = None,
     data_root: Path | None = None,
     rehearsal: bool = False,
+    on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> None:
     """Apply the authored finding decisions and run live to completion."""
     staging = capture_dir(scenario, rehearsal=rehearsal)
@@ -687,6 +694,7 @@ def stage_report(
             profile=profile,
             budget=_budget(),
             generated_at=GENERATED_AT,
+            on_phase=on_phase,
         )
         if not outcome.completed:
             raise CaptureError(f"expected completion, got {outcome.stopped_because}")
