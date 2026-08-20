@@ -1526,6 +1526,8 @@ Receives:
 - Approved context
 - Relevant architecture objects
 - Selected supporting evidence
+- Checkpoint-1 settlements: recorded contradictions with their reviewer resolutions, and
+  answered questions with their answers (DEC-141)
 
 ## Mapping Agent
 
@@ -1535,6 +1537,7 @@ Receives:
 - Relevant requirements
 - Related controls
 - Applicable context
+- Checkpoint-1 settlements, inside the stable cacheable span (DEC-105, DEC-141)
 
 ## Evidence Validation Agent
 
@@ -1542,7 +1545,8 @@ Receives:
 
 - The specific conclusion being tested
 - Relevant evidence
-- Contradictory evidence
+- Contradictory evidence, each recorded contradiction carrying its reviewer resolution where
+  one exists (DEC-141)
 - Evidence policy
 
 ## Critical Review Agent

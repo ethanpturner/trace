@@ -28,6 +28,14 @@ re-listing would put the rejected object back.
 truncated mid-excerpt. Architecture objects are never dropped: a threat is asked to name the
 components it affects, and a package that quietly omitted one would be asking the agent to
 reference an identifier it was not given.
+
+**What checkpoint 1 settled travels with the architecture** (DEC-141). The fence can carry two
+passages that disagree, and the settled claims alone do not say the disagreement was settled — the
+contradictory-docs capture measured exactly that gap, with downstream stages re-asking a resolved
+question three times. So the package carries the recorded contradictions with their reviewer
+resolutions, and the answered questions with their answers, both labeled with reviewer provenance
+and rendered through `services/context/resolutions.py`. The resolution is context, not a verdict:
+nothing here instructs the agent toward or away from any finding (DEC-009's posture).
 """
 
 from __future__ import annotations
@@ -42,9 +50,16 @@ from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
+from trace_ai.domain.question import Question
+from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.services.budget import fill_untrusted, schema_overhead
 from trace_ai.services.context.input_package import fenced_excerpt
+from trace_ai.services.context.resolutions import (
+    answered_question_entries,
+    answered_questions,
+    recorded_contradictions,
+)
 
 
 def _manifest(excerpts: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -270,6 +285,8 @@ def _trusted_region(
     methodology: str,
     context: SystemContext,
     architecture: dict[str, list[dict[str, Any]]],
+    contradictions: list[dict[str, Any]],
+    answered: list[dict[str, Any]],
     manifest: list[dict[str, Any]],
 ) -> str:
     """The half of the package the agent may take as instruction.
@@ -316,6 +333,20 @@ def _trusted_region(
             json.dumps(architecture[key], indent=2, sort_keys=True),
         ]
 
+    # What checkpoint 1 settled (DEC-141): reviewer-authored, labeled as such by the entry fields
+    # themselves (`reviewer_resolution`, `response_origin`). Rendered even when empty, so an agent
+    # reading "no recorded contradictions" is told that rather than left to infer it.
+    sections += [
+        "",
+        "## Recorded contradictions (reviewer-settled where resolved)",
+        "",
+        json.dumps(contradictions, indent=2, sort_keys=True),
+        "",
+        "## Reviewer-answered questions",
+        "",
+        json.dumps(answered, indent=2, sort_keys=True),
+    ]
+
     sections += ["", "## Evidence available", "", json.dumps(manifest, indent=2, sort_keys=True)]
     return "\n".join(sections)
 
@@ -355,6 +386,12 @@ def assemble_threat_input(
         "context_claims": _claims(claims),
     }
 
+    # DEC-141: the settlements are authoritative objects, listed from the store the way the review
+    # package lists them — they are assessment objects, not revision members, so DEC-040's
+    # membership rule does not apply to them.
+    contradictions = recorded_contradictions(handle.objects.list(SourceObservation))
+    answered = answered_question_entries(answered_questions(handle.objects.list(Question)))
+
     excerpts = index.render_for_prompt(list(evidence_ids))
 
     # The trusted region (the architecture, the approved context, the manifest) and the schema
@@ -368,6 +405,8 @@ def assemble_threat_input(
         methodology=threat_methodology,
         context=context,
         architecture=architecture,
+        contradictions=contradictions,
+        answered=answered,
         manifest=_manifest(excerpts),
     )
     outcome = fill_untrusted(
@@ -384,6 +423,8 @@ def assemble_threat_input(
         methodology=threat_methodology,
         context=context,
         architecture=architecture,
+        contradictions=contradictions,
+        answered=answered,
         manifest=manifest,
     )
 
@@ -405,6 +446,8 @@ def assemble_threat_input(
             "data_flows": len(architecture["data_flows"]),
             "trust_boundaries": len(architecture["trust_boundaries"]),
             "context_claims": len(architecture["context_claims"]),
+            "recorded_contradictions": len(contradictions),
+            "answered_questions": len(answered),
             "trusted_characters": len(trusted),
             **outcome.metadata(),
         },

@@ -29,6 +29,13 @@ enforces the field is consulted, and DEC-025 is the enforcement — but a mappin
 entry does not apply if the entry was never in the payload. Omitting it here would make DEC-011
 unenforceable at the exact point it matters.
 
+**What checkpoint 1 settled travels in the stable span** (DEC-141). The contradictory-docs capture
+measured a mapping stage re-asking a question the reviewer had resolved at checkpoint 1, because no
+package carried the resolution. The recorded contradictions and answered questions now render
+inside the DEC-105 stable span — they are identical across every threat the run maps, so the cache
+prefix keeps its bytes — through the same `services/context/resolutions.py` entries the threat and
+evidence packages use.
+
 **Exceeding the bound stops the run; it never shrinks the request.** The threat package excludes
 evidence by identifier and reports it, because a threat that cites fewer passages is still a
 correct threat. A mapping run against part of the catalog is not a partial mapping run — it is a
@@ -54,8 +61,15 @@ from trace_ai.domain.component import Component
 from trace_ai.domain.control import Control
 from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.proposals.mapping import MappingProposal
+from trace_ai.domain.question import Question
+from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.services.budget import fill_untrusted, schema_overhead
 from trace_ai.services.context.input_package import fenced_excerpt
+from trace_ai.services.context.resolutions import (
+    answered_question_entries,
+    answered_questions,
+    recorded_contradictions,
+)
 from trace_ai.services.threats.input_package import UnapprovedContextError
 
 
@@ -330,14 +344,22 @@ def _flow_entry(flow: DataFlow) -> dict[str, Any]:
 
 
 def _stable_span(
-    *, assessment_id: str, catalog_version: str, requirements: list[dict[str, Any]]
+    *,
+    assessment_id: str,
+    catalog_version: str,
+    requirements: list[dict[str, Any]],
+    contradictions: list[dict[str, Any]],
+    answered: list[dict[str, Any]],
 ) -> str:
     """The leading span of the trusted region that is byte-identical across every mapping call
-    an assessment makes: the assessment header and the whole requirements catalog (DEC-105).
+    an assessment makes: the assessment header, the whole requirements catalog (DEC-105), and
+    what checkpoint 1 settled (DEC-141).
 
     DEC-024 sends the full catalog on every call and names it the pipeline's largest stable
     prefix; putting it first — before anything the threat varies — is what lets an adapter cache
-    it across the run's calls rather than only across one threat's retries.
+    it across the run's calls rather than only across one threat's retries. The settlements sit
+    here for the same reason: a resolution made at checkpoint 1 is identical across every threat
+    the run maps, so carrying it inside the stable span costs the cache nothing.
     """
     return "\n".join(
         [
@@ -349,6 +371,14 @@ def _stable_span(
             "## Requirements catalog",
             "",
             json.dumps(requirements, indent=2, sort_keys=True),
+            "",
+            "## Recorded contradictions (reviewer-settled where resolved)",
+            "",
+            json.dumps(contradictions, indent=2, sort_keys=True),
+            "",
+            "## Reviewer-answered questions",
+            "",
+            json.dumps(answered, indent=2, sort_keys=True),
         ]
     )
 
@@ -361,6 +391,8 @@ def _trusted_region(
     requirements: list[dict[str, Any]],
     architecture: dict[str, list[dict[str, Any]]],
     controls: list[dict[str, Any]],
+    contradictions: list[dict[str, Any]],
+    answered: list[dict[str, Any]],
     manifest: list[dict[str, Any]],
 ) -> str:
     """The half of the package the agent may take as instruction.
@@ -377,6 +409,8 @@ def _trusted_region(
             assessment_id=assessment_id,
             catalog_version=catalog_version,
             requirements=requirements,
+            contradictions=contradictions,
+            answered=answered,
         ),
         "",
         "## Threat under evaluation",
@@ -481,6 +515,12 @@ def assemble_mapping_input(
     requirement_entries = [_requirement_entry(requirement) for requirement in catalog.requirements]
     control_entries = [_control_entry(control) for control in controls]
 
+    # DEC-141: what checkpoint 1 settled, listed from the store — assessment objects, not revision
+    # members, so DEC-040's membership rule does not apply. Identical across every threat this run
+    # maps, which is why they render inside the DEC-105 stable span.
+    contradiction_entries = recorded_contradictions(handle.objects.list(SourceObservation))
+    answered_entries = answered_question_entries(answered_questions(handle.objects.list(Question)))
+
     excerpts = index.render_for_prompt(list(evidence_ids))
     rendered = [(excerpt["evidence_id"], fenced_excerpt(excerpt)) for excerpt in excerpts]
 
@@ -492,6 +532,8 @@ def assemble_mapping_input(
             requirements=requirement_entries,
             architecture=architecture,
             controls=control_entries,
+            contradictions=contradiction_entries,
+            answered=answered_entries,
             manifest=_manifest(present),
         )
 
@@ -515,6 +557,8 @@ def assemble_mapping_input(
         assessment_id=handle.assessment_id,
         catalog_version=catalog.version,
         requirements=requirement_entries,
+        contradictions=contradiction_entries,
+        answered=answered_entries,
     )
 
     return MappingInput(
@@ -536,6 +580,8 @@ def assemble_mapping_input(
             "context_version": context.version,
             "requirements": len(requirement_entries),
             "controls": len(control_entries),
+            "recorded_contradictions": len(contradiction_entries),
+            "answered_questions": len(answered_entries),
             "components": len(architecture["components"]),
             "actors": len(architecture["actors"]),
             "assets": len(architecture["assets"]),

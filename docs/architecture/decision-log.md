@@ -9222,3 +9222,85 @@ Tradeoffs:
   is.
 - Preferring `observed_at` can flag a citation stale on the day of a fresh capture. Deliberate:
   that is the correction, not a regression — the fact was old; only the copy was new.
+
+## DEC-141: What checkpoint 1 settled travels to the downstream lenses
+
+Date: 2026-08-20
+
+Status: Accepted
+
+Decision:
+
+**The recorded contradictions, with their reviewer resolutions, and the answered questions,
+with their answers, enter the downstream input packages.** The contradictory-docs live capture
+(#632) is the reproduction this entry answers: the reviewer resolved the retention contradiction
+at checkpoint 1, and the downstream stages — which received the conflicting passages in their
+fences and the settled claims in their trusted regions, but never the contradiction record or
+its resolution — re-asked the settled question three times (qst-007/014/018) and filed the
+subject as a documentation gap, missing the scenario's expected finding at coverage 1.0. The
+resolution existed on authoritative objects; no package carried it.
+
+**The rendering is shared and the entries are derived from objects, never from workflow state.**
+`services/context/resolutions.py` renders a contradiction entry — summary, evidence identifiers,
+`settled_claim_ids`, and `reviewer_resolution`, which is `resolve_contradiction`'s recorded
+rationale or null where no reviewer has settled it — and an answered-question entry carrying the
+question, the response, and `response_origin` as the provenance label. Both read
+`SourceObservation` and `Question`, the objects the checkpoint-1 actions write; `ReviewerDecision`
+rows stay out, because they are the audit trail of how the objects got their values and a package
+that carried them would be a second copy of what the objects already say (section 31's state rule,
+applied to packages).
+
+**Where each package carries them.** The threat package gains two trusted-region sections; the
+evidence-validation package's existing contradiction entry (DEC-021, section 38 q8) gains the
+resolution fields; the mapping package carries both inside the DEC-105 stable span, because a
+checkpoint-1 settlement is identical across every threat the run maps and so costs the cache
+prefix nothing. The critique package is unchanged: its subjects are evidence assessments that
+name contradictions by identifier, and after this entry those assessments are made with the
+resolution in view — carrying it a second time would be the duplication the package already
+refuses elsewhere. Report rendering is untouched (DEC-035: deterministic sections own their
+objects already).
+
+**A rejected observation does not travel, and reviewer text cannot fabricate a fence.** The
+reviewer decided a rejected contradiction is not real; carrying it would invite an agent to honor
+a disagreement nobody stands behind. An approved-but-unresolved contradiction travels with a null
+resolution — real, unsettled, and said so. Reviewer-authored text renders in the trusted region on
+the established precedent (a claim's DEC-023 rationale, the critic's dismissal-precedent
+rationale), and every free-text field passes through `neutralize_fence` first, so a reviewer who
+pastes source content containing a fence marker contributes inert quoted prose, never a delimiter.
+
+**The resolution is context, not a verdict** (DEC-009's posture). The entries carry no
+disposition, no severity, and no instruction; a test pins the entry key set so a field with
+verdict shape cannot arrive silently.
+
+Why:
+
+- The measured recall pattern of the sweep — misses surfacing as re-asked questions and
+  over-minted gaps — has this as one identified mechanism: the pipeline re-litigated settled
+  ground because no package said it was settled.
+- The claims alone cannot carry the settlement. A `user_confirmed` value says what is true; only
+  the observation says two passages disagreed about it and a reviewer chose, which is what stops
+  an agent that reads both passages in the fence from asking again.
+
+Alternatives Considered:
+
+- Carrying the `ReviewerDecision` records themselves (rejected: a second copy of what the
+  objects already say, and a package shape coupled to the audit trail).
+- A narrowed, per-threat contradiction selection in the mapping package (rejected: the
+  settlements are assessment-stable, so narrowing buys nothing, varies the DEC-105 stable span
+  per threat, and reopens the "carried only if cited" hole the evidence package's docstring
+  refuses).
+- Extending the critique package too (rejected for now: its assessments are made with the
+  resolution in view after this entry; if the critic measurably re-litigates settlements, that
+  is a new reproduction and a new entry).
+
+Tradeoffs:
+
+- Every mapping call grows by the settlement entries' size. They sit in the cacheable stable
+  span, so the run pays once per cache window rather than per call; the fifteen-scenario corpus
+  puts the entries at well under a kilobyte each.
+- Live runs after this entry compose different prompts than the recorded captures did. Replay is
+  unaffected — recorded responses are served by consumption order, and the call structure is
+  unchanged, which is DEC-134's boundary for a workflow-version bump — so the recordings stay
+  valid as replays of the shape that produced them, and the next live capture of any scenario
+  records the new shape naturally. The re-measurement of the contradictory-docs miss under this
+  shape is sweep follow-up work, tracked with the recall items on #589's evidence.
