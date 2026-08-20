@@ -1,10 +1,63 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10742,
+    "output_tokens": 12624,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1396675",
+    "duration_seconds": 156.8138753749663
+  },
   "response": {
     "threats": [
       {
-        "title": "Theft or abuse of the processor reporting credential",
-        "description": "An attacker who obtains the service credential the reconciler uses against the payment processor's reporting API can read the organization's settlement reports from anywhere the API is reachable. The overview states the credential is provisioned through the standard workload deployment and says nothing further about where it is held or how it is rotated; the asserted organizational secrets service is the documented custody mechanism.",
+        "title": "Spoofed or intercepted settlement reports over external HTTPS link",
+        "description": "An attacker who can intercept or redirect the reconciler's outbound HTTPS connection to the payment processor reporting API forges or modifies the settlement report delivered to the Reconciler Job, causing it to compute and store incorrect discrepancy summaries.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "The Reconciler Job establishes outbound HTTPS connections to the payment processor reporting API across the network trust boundary (df-001, tb-001) and relies on the returned settlement report as input to its comparison logic [evd-001, evd-002].",
+          "An attacker is able to intercept, redirect, or otherwise break the authenticity guarantees of the HTTPS connection (for example via DNS/routing manipulation, host trust store compromise, or a maliciously trusted CA), so that the reconciler accepts responses from an attacker-controlled endpoint.",
+          "The reconciler does not have an independent channel to validate the correctness of the settlement report contents beyond trusting the HTTPS connection."
+        ],
+        "attack_path": [
+          "Attacker gains a position to intercept or redirect the Reconciler Job's outbound HTTPS traffic to the payment processor reporting API across tb-001.",
+          "Attacker presents an HTTPS endpoint mimicking the payment processor reporting API and returns forged or modified settlement report data over df-001.",
+          "The Reconciler Job authenticates and processes the attacker-controlled settlement report as if it came from the legitimate payment processor [evd-002, evd-003].",
+          "Based on the manipulated settlement data, the Reconciler Job computes incorrect discrepancies and writes misleading discrepancy summaries into the Billing Database [evd-002].",
+          "Finance analysts later rely on the incorrect discrepancy summaries when reviewing reconciliation results [evd-005]."
+        ],
+        "impact": "Integrity of settlement reports (ast-002) and discrepancy summaries (ast-003) is compromised, leading to false positives or false negatives in reconciliation and causing finance to miss real issues or investigate fabricated ones.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Theft and misuse of payment processor reporting API credential",
+        "description": "If an attacker gains access to the Reconciler Job's runtime environment or secrets injection path, they can exfiltrate the payment processor reporting API service credential and use it from elsewhere to query the reporting API and impersonate this integration.",
         "methodology": "stride-scenario-based",
         "category": [
           "information_disclosure",
@@ -16,61 +69,201 @@
           "cmp-003"
         ],
         "affected_asset_ids": [
-          "ast-001"
+          "ast-004",
+          "ast-002"
         ],
         "related_data_flow_ids": [
           "df-001"
         ],
         "preconditions": [
-          "an attacker obtains the service credential issued by the processor for this integration"
+          "The payment processor reporting API is authenticated using a service credential issued for this integration and provisioned into the Reconciler Job at deploy time [evd-003].",
+          "An attacker obtains sufficiently privileged access to the Reconciler Job's runtime environment or the mechanism that injects the service credential (for example via a platform compromise or workload exploit).",
+          "The payment processor reporting API accepts this credential from any client that can present it, without additional binding to the reconciler's environment."
         ],
         "attack_path": [
-          "obtain the reporting credential",
-          "call the processor's reporting API with it from an attacker-controlled host"
+          "Attacker compromises the Reconciler Job workload or its hosting environment inside the application subnet [evd-002].",
+          "From the compromised environment, the attacker reads the payment processor reporting API service credential that is provisioned through the standard workload deployment [evd-003].",
+          "Attacker uses the stolen credential from their own infrastructure to authenticate to the payment processor reporting API, impersonating the reconciler integration.",
+          "Using this access, the attacker queries settlement reports or other reporting data for this product from the payment processor [evd-002]."
         ],
-        "impact": "Settlement reports for the organization's payment activity are read outside the reconciler.",
+        "impact": "Confidentiality of the payment processor reporting API service credential (ast-004) is lost, enabling unauthorized access to settlement reports (ast-002) and potentially allowing an attacker to impersonate the reconciler integration towards the payment processor.",
         "likelihood": null,
         "confidence": "medium",
         "evidence_ids": [
+          "evd-002",
           "evd-003"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Direct access to the billing database bypassing the reconciler",
-        "description": "The billing database is stated to be reachable only from the reconciler job inside the application subnet, but how that restriction is enforced — network policy or assumed topology — is not described. A workload elsewhere on the network that can reach the database would read billing records and could alter discrepancy summaries without touching the reconciler.",
+        "title": "Payment processor reporting API outage delays nightly reconciliation",
+        "description": "If the external payment processor reporting API is unavailable or significantly degraded when the Reconciler Job runs, the job cannot retrieve the daily settlement report and may fail or produce incomplete discrepancy summaries, delaying reconciliation until a later run.",
         "methodology": "stride-scenario-based",
         "category": [
-          "elevation_of_privilege",
-          "tampering"
+          "denial_of_service"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-002"
+        ],
         "affected_component_ids": [
-          "cmp-002"
+          "cmp-001",
+          "cmp-003"
         ],
         "affected_asset_ids": [
+          "ast-003",
           "ast-001"
         ],
         "related_data_flow_ids": [
-          "df-002"
+          "df-001"
         ],
         "preconditions": [
-          "the stated reachability restriction is not enforced by network policy"
+          "The Reconciler Job depends on the payment processor's external reporting API, accessed over HTTPS across a network trust boundary, to obtain the daily settlement report [evd-001, evd-002].",
+          "The reporting API or the network path to it experiences an outage, severe latency, or persistent errors during the reconciler's nightly run.",
+          "The reconciler is scheduled to run once per night and does not have a documented alternate data source for settlement information [evd-001]."
         ],
         "attack_path": [
-          "reach the application subnet from elsewhere on the network",
-          "connect to the billing database directly"
+          "At the scheduled nightly time, the Reconciler Job starts and attempts to fetch the day's settlement report from the payment processor reporting API over df-001 [evd-001, evd-002].",
+          "Due to an outage or degraded service on the payment processor side or the network between them, the request fails or times out.",
+          "The Reconciler Job either aborts without producing a discrepancy summary for that day or produces a partial result based on incomplete data.",
+          "Finance analysts the next morning lack a complete or accurate discrepancy summary for the affected day."
         ],
-        "impact": "Billing records are readable and discrepancy summaries alterable outside the reconciler's path.",
+        "impact": "Availability of discrepancy summaries (ast-003) is reduced and billing records (ast-001) for the affected day remain unreconciled until a later successful run, delaying detection of settlement mismatches.",
         "likelihood": null,
-        "confidence": "medium",
+        "confidence": "high",
         "evidence_ids": [
+          "evd-001",
           "evd-002"
         ],
         "assumption_ids": [],
         "open_question_ids": []
+      },
+      {
+        "title": "Billing Database outage during nightly run prevents reconciliation",
+        "description": "If the Billing Database is unavailable, slow, or misconfigured when the Reconciler Job runs, the job cannot read billing records or write discrepancy summaries and may fail entirely, preventing that night's reconciliation from completing.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The Billing Database is the sole data store for billing records and discrepancy summaries, and it is reachable only from the Reconciler Job inside the application subnet [evd-002].",
+          "The Reconciler Job reads billing records and writes discrepancy summaries via df-002 and df-003 during its nightly run [evd-002].",
+          "The Billing Database or its platform experiences an outage, becomes unreachable from the application subnet, or exhibits severe performance degradation during that window."
+        ],
+        "attack_path": [
+          "The Reconciler Job starts its nightly execution and attempts to read the day's billing records from the Billing Database over df-002 [evd-002].",
+          "Due to a database outage, connectivity issue, or misconfiguration, read or write operations fail or time out.",
+          "The job is unable to compare billing records to settlement reports or to persist discrepancy summaries over df-003 [evd-002].",
+          "The nightly run exits with errors or incomplete results, and no reliable discrepancy summary is available for finance review the next morning."
+        ],
+        "impact": "Availability of billing records for reconciliation (ast-001) and of discrepancy summaries (ast-003) is reduced, leaving one or more days of transactions unreconciled and delaying detection of billing or settlement issues.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Over-privileged reconciler database access allows modification of billing records",
+        "description": "If the Reconciler Job's database credentials allow it to modify billing records as well as write discrepancy summaries, a defect or compromise in the job could alter or delete billing records in the Billing Database, undermining the integrity of reconciliation data.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The Reconciler Job connects to the Billing Database to read billing records and write discrepancy summaries [evd-002].",
+          "The database role used by the Reconciler Job is configured with write privileges on billing records tables in addition to the tables that hold discrepancy summaries (assumed; not documented).",
+          "The Reconciler Job is either defective (for example, executing an incorrect update/delete statement) or has been modified/compromised to issue unintended write operations."
+        ],
+        "attack_path": [
+          "The Reconciler Job connects to the Billing Database using its configured database credentials [evd-002].",
+          "Due to over-broad privileges and a defect or compromise, the job issues update or delete statements affecting billing records rather than only writing discrepancy summaries.",
+          "The Billing Database executes these write operations, changing or removing per-customer charge entries (ast-001) [evd-004].",
+          "Subsequent reconciliations operate on corrupted billing data, and discrepancy summaries (ast-003) no longer accurately reflect the true state of charges versus settlements."
+        ],
+        "impact": "Integrity of billing records (ast-001) and the discrepancy summaries derived from them (ast-003) is compromised, potentially leading to incorrect financial reporting and difficulty reconstructing the true transaction history.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Internal interception of database traffic exposes or alters reconciliation data",
+        "description": "If traffic between the Reconciler Job and the Billing Database inside the application subnet is not protected with strong encryption and integrity checks, an attacker with network access in that subnet could eavesdrop on or tamper with billing records and discrepancy summaries in transit.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The Reconciler Job reads billing records from and writes discrepancy summaries to the Billing Database over internal data flows df-002 and df-003 within the application subnet [evd-002].",
+          "Encryption in transit for these flows is documented as unknown, and no explicit mention is made of mutual authentication or integrity protection on the database protocol [evd-002].",
+          "An attacker has gained a position with network visibility or injection capability inside the application subnet (for example, via a compromised co-resident workload)."
+        ],
+        "attack_path": [
+          "Attacker gains network-level access within the application subnet that carries database traffic between the Reconciler Job and the Billing Database [evd-002].",
+          "Because encryption and integrity protection for df-002 and df-003 are absent or misconfigured (assumed), the attacker passively captures billing records and discrepancy summaries on the wire or actively modifies packets.",
+          "Captured traffic reveals per-customer charge entries and discrepancy details (ast-001 and ast-003) [evd-004], or tampered traffic alters query results or written summaries.",
+          "The Reconciler Job processes manipulated data or stores altered discrepancy summaries without detecting the interference."
+        ],
+        "impact": "Confidentiality of billing records (ast-001) and discrepancy summaries (ast-003) may be lost through eavesdropping, and their integrity can be compromised if database traffic is modified in transit, leading to incorrect reconciliation outcomes.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

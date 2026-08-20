@@ -206,6 +206,7 @@ scenarios:
     status: authored
     catalog_version: "0.3"
     category: organizational-control-inheritance
+    workflow_version: "0.2"
 
 # Roadmap Stage 5 calls for 8 to 12 scenarios across its ten coverage categories. Every
 # registered scenario is fully authored — outcome truth and recording — and replays under

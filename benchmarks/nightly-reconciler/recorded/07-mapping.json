@@ -1,0 +1,107 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11435,
+    "output_tokens": 7347,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.09027575",
+    "duration_seconds": 103.4980647919001
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-billing-db-internal-access",
+        "name": "Billing Database reachable only from Reconciler Job in application subnet",
+        "description": "The Billing Database is a managed relational database that holds billing records and discrepancy summaries and is stated to be reachable only from the Reconciler Job inside the application subnet, limiting access to that internal workload.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": []
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-OPS-005",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if the system raises operational alerts for failures of the nightly Reconciler Job or outages of the Billing Database, since such alerts would help ensure that missed reconciliations from a database outage are noticed and acted on. The documentation describes the reconciler and its dependency on the Billing Database but does not state whether any alerts exist for their failures (evd-001, evd-002).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [
+          "Assume the system may have operational alerting for Reconciler Job failures or Billing Database outages, but the current documentation does not describe any such alerts or their routing."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Resilience and monitoring for nightly reconciliation path are undocumented",
+        "description": "The documentation states that the Reconciler Job runs once per night, depends on the Billing Database for both reading billing records and writing discrepancy summaries, and that the database is the sole described store for this data (evd-001, evd-002, evd-004). It does not describe any high-availability or failover configuration for the Billing Database, any retry or rescheduling behavior in the Reconciler Job when database operations fail, or any monitoring and alerting on job failures or database outages. As a result, the assessment cannot determine what controls, if any, exist to detect or mitigate a Billing Database outage that prevents nightly reconciliation from completing (thr-004).",
+        "importance": "Understanding how Billing Database outages and Reconciler Job failures are detected and handled is necessary to judge the real-world impact of this threat and whether missed or delayed reconciliations will be noticed and recovered promptly.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-001",
+          "cmp-002",
+          "ast-001",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Documentation of any high-availability or failover configuration for the Billing Database used by the Reconciler Job.",
+          "Documentation of retry, backoff, or rescheduling behavior in the Reconciler Job when reads or writes to the Billing Database fail or time out.",
+          "Monitoring and alerting documentation describing how failures of the Reconciler Job and outages or severe performance degradation of the Billing Database are detected and which teams or roles are alerted."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement that explicitly addresses resilience and failure-handling for internal batch jobs that depend on a single internal data store, including expectations for retries, catch-up or rescheduling behavior, and monitoring or alerting when the dependency is unavailable, even though a Billing Database outage can prevent the nightly reconciliation from completing.",
+        "suggested_category": "availability",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-OPS-002",
+            "why_not": "req-OPS-002 focuses on bounding work that consumes metered external services or significant compute when triggered by external events; it does not address the continuity or failure-handling of an internal scheduled batch job when its internal database dependency is unavailable."
+          },
+          {
+            "requirement_id": "req-OPS-005",
+            "why_not": "req-OPS-005 governs how alerts are prioritized and routed where alerts already exist, but it does not require that critical internal batch failures or dependency outages be monitored or alerted on in the first place, nor does it address retry or catch-up behavior."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 addresses restricting network reachability of internal components from untrusted networks; it does not set expectations for availability, failover, or failure-handling when an internal data store or its platform experiences an outage that affects dependent batch jobs."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ]
+      }
+    ]
+  }
+}
