@@ -1,0 +1,380 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11292,
+    "output_tokens": 12976,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.145235",
+    "duration_seconds": 138.99021195899695
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns interception and tampering of metrics traffic between internal services (Product service cmp-003, Dashboard cmp-004, and Metrics API cmp-002) and does not involve any privileged administrative or operator interface; the components in scope are described only as internal services and a dashboard, not as administrative interfaces [evd-002, evd-004], so the requirement on restricting administrative interfaces does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documented system consists of an internal Metrics API, a managed database, a product service, and a dashboard [evd-001, evd-002, evd-004], with no model or AI component that processes untrusted content; this threat is about HTTP metrics traffic between services, so the requirement on treating untrusted model input does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario involves internal HTTP requests between application services and does not describe any model output being published externally; no AI or model components are documented [evd-001, evd-002, evd-004], so the requirement on validating model output before external publication does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Metrics records are stored in a managed relational database and exchanged between internal services [evd-002, evd-003]; there is no indication that customer content is sent to an external model provider, and this threat is about interception of HTTP metrics traffic, so the requirement on minimizing data sent to an external model provider does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system overview and threat describe only HTTP APIs and a database [evd-001, evd-002, evd-004]; there is no model whose output is rendered into a user interface or submitted as markup, so the requirement on encoding model output for its rendering context does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns an attacker with network-level access on internal HTTP paths between services, not how end users authenticate; the requirement on documenting delegated user authentication would not change the confidentiality or integrity of metrics traffic between cmp-003, cmp-004, and cmp-002, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat targets internal service-to-service HTTP traffic rather than administrative logins or externally reachable privileged interfaces; multi-factor authentication policy for administrative access would not address interception of metrics between cmp-003, cmp-004, and cmp-002, so this requirement does not apply to the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although metrics records are associated with product accounts [evd-003], the threat scenario is an on-path attacker reading or modifying HTTP traffic between already-authorized internal services; tenant-aware authorization on requests would not prevent a network-level eavesdropper from seeing or altering the plaintext once transmitted, so this requirement does not directly bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture and threat description do not involve delegated access to an external platform; the system components are an internal Metrics API, a product service, a dashboard, and a managed database [evd-001, evd-002, evd-004], so the requirement on limiting external integration privileges does not apply to this threat about internal metrics traffic.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat is a runtime network attack on HTTP traffic between services, not a compromise of the build or deployment pipeline; the requirement on how the deployment path authenticates and manages dependencies does not bear on interception of metrics in transit.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Metrics records contain account identifiers and usage numbers treated as confidential business data [evd-003], and this threat explicitly concerns an attacker intercepting and tampering with metrics over internal HTTP flows between services. The requirement that sensitive data be encrypted in transit and at rest therefore directly applies to these flows and the metrics database.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Treat the absence of any passage describing encryption or integrity protection on df-001 and df-002 as meaning the documentation requirement for those flows is not yet met, without inferring that encryption is operationally absent."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat addresses disclosure and tampering of metrics while in transit between internal services, not how long working copies or intermediate artifacts are retained; the requirement on defining and enforcing a retention period for sensitive working data does not bear on this network interception scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is about interception or modification of metrics over internal HTTP flows, not about unauthorized access to stored artifacts via predictable paths; while metrics are stored in a managed database [evd-002, evd-003], the requirement on tenant-based separation of stored artifacts does not address the network eavesdropping channel described in the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns disclosure and tampering of metrics in transit between services and does not involve customer-initiated deletion or operator-driven removal of stored customer data; therefore the requirement on documenting deletion paths for customer data does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described attack path is interception of metrics over internal HTTP flows, not exposure of sensitive data via application logs; the requirement to exclude restricted data from logs and document log destinations does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative interface or privileged operator actions are involved in this threat, which targets internal metrics traffic between services; thus the requirement to record security-relevant administrative actions does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Metrics API and managed metrics database are internal components that hold confidential metrics data [evd-002, evd-003]; the system overview and Terraform configuration state that the metrics store is reachable only from inside the application subnet, the Metrics API is not reachable from the internet, and the database instance is not publicly accessible [evd-001, evd-002, evd-005, evd-006]. The requirement that such internal components be reachable only from the workloads that use them, and not from an untrusted network, therefore applies to this threat about an attacker gaining network access.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not involve compromise or misuse of long-lived signing keys or provider credentials; it is specifically about interception and tampering of metrics over internal HTTP, so the requirement that such credentials be held in a managed secret store does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat does not describe the system accessing customer resources on an external platform using tokens, nor does it involve replay or misuse of such credentials; it is confined to internal metrics traffic, so the requirement on using short-lived credentials for customer resources does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although metrics are stored in a managed relational database provided by the cloud platform [evd-002], this threat focuses on interception and tampering of metrics between internal services on the application subnet, not on the cloud provider\u2019s retention or usage of customer data. The requirement on documenting external processor data handling therefore does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The scenario does not involve work triggered by inbound events from an external platform or consumption of a metered external service; it is about ordinary internal HTTP requests between services, so the requirement to bound work triggered by external events does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No endpoint accepting events from an external platform is described; the flows in scope are internal HTTP calls from the Product service and Dashboard to the Metrics API [evd-002, evd-004], so the requirement on cryptographic verification of inbound webhook authenticity does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because there is no documented webhook or external event endpoint in this scenario [evd-002, evd-004], and the threat does not involve event re-delivery, the requirement on preventing or making harmless replays of inbound events does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Unclear whether internal metrics HTTP flows are encrypted and integrity-protected",
+        "description": "Metrics records are treated as confidential business data [evd-003], and the system overview states that the managed metrics database is encrypted at rest and that the connection from the Metrics API to the database uses the platform's transport encryption with keys managed by the platform KMS [evd-002, evd-005, evd-006]. However, for the internal HTTP flows df-001 and df-002 between the Product service (cmp-003), the Dashboard (cmp-004), and the Metrics API (cmp-002), the architecture documentation and component descriptions [evd-002, evd-004] do not state whether TLS or any other transport-level encryption and integrity protection is used. As a result, it is not possible from the documentation to determine whether metrics data is protected in transit on these internal service-to-service paths targeted by threat thr-003.",
+        "importance": "Knowing whether df-001 and df-002 are protected with TLS or equivalent is necessary to decide whether the encryption-in-transit aspect of req-DATA-001 is satisfied for the metrics flows that this threat targets.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-002",
+          "cmp-003",
+          "cmp-004",
+          "df-001",
+          "df-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or configuration documentation describing whether TLS or equivalent transport encryption and integrity protection is used on df-001 and df-002 between the Product service, Dashboard, and Metrics API, including how certificates are validated and where termination occurs."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

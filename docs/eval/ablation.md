@@ -9,10 +9,10 @@ content (DEC-076). Generated 2026-08-14 over 15 scenarios (registry 1.0, catalog
 
 | Scenario | Run | False-negative rate | Evidence coverage | False-positive rate | Duplicate rate |
 | --- | --- | --- | --- | --- | --- |
-| contradictory-docs | authoritative | 0% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
-|  | no critical review * | 0% | 100% | 0% | 0% |
-|  | no context approval * | 0% | 100% | 0% | 0% |
+| contradictory-docs | authoritative | 100% | 100% | 100% | 0% |
+|  | no evidence validation * | 100% | 100% | 0% (-100) | 0% |
+|  | no critical review * | 100% | 100% | 100% | 0% |
+|  | no context approval * | 100% | 100% | 0% (-100) | 0% |
 | crypto-wallet | authoritative | 0% | 100% | 67% | 0% |
 |  | no evidence validation * | 0% | 100% | 0% (-67) | 0% |
 |  | no critical review * | 0% | 100% | 67% | 0% |
@@ -25,14 +25,14 @@ content (DEC-076). Generated 2026-08-14 over 15 scenarios (registry 1.0, catalog
 |  | no evidence validation * | 100% | 100% | 0% (-50) | 0% |
 |  | no critical review * | 100% | 100% | 50% | 0% |
 |  | no context approval * | 100% | 100% | 0% (-50) | 0% |
-| invoice-agent | authoritative | 0% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
-|  | no critical review * | 0% | 100% | 0% | 0% |
-|  | no context approval * | 0% | 100% | 0% | 0% |
-| managed-db-service | authoritative | 0% | 100% | 0% | 0% |
-|  | no evidence validation * | 0% | 100% | 0% | 0% |
-|  | no critical review * | 0% | 100% | 0% | 0% |
-|  | no context approval * | 0% | 100% | 0% | 0% |
+| invoice-agent | authoritative | 100% | 100% | 0% | 0% |
+|  | no evidence validation * | 100% | 100% | 0% | 0% |
+|  | no critical review * | 100% | 100% | 0% | 0% |
+|  | no context approval * | 100% | 100% | 0% | 0% |
+| managed-db-service | authoritative | 0% | 100% | 100% | 0% |
+|  | no evidence validation * | 0% | 100% | 0% (-100) | 0% |
+|  | no critical review * | 0% | 100% | 100% | 0% |
+|  | no context approval * | 0% | 100% | 0% (-100) | 0% |
 | missing-docs | authoritative | 0% | 100% | 0% | 0% |
 |  | no evidence validation * | 0% | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |

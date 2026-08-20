@@ -1,0 +1,1352 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 287,
+    "output_tokens": 32140,
+    "cache_read_tokens": 13184,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.32340675",
+    "duration_seconds": 432.74572045798413
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Terraform configuration for aws_db_instance.metrics_db sets \"storage_encrypted\" to true [evd-006], which directly supports the claim that the metrics database component (cmp-001) has storage encryption enabled.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Terraform configuration for aws_db_instance.metrics_db sets \"publicly_accessible\" to false [evd-006], which directly supports the claim that the metrics database component (cmp-001) is not publicly accessible.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The system overview states that \"The metrics store is an internal service that records product usage metrics and serves them to an internal dashboard\" [evd-001], which directly matches the claimed purpose.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The system overview explicitly says the metrics store \"is reachable only from inside the application subnet\" [evd-001], directly supporting the claimed network exposure.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Metrics API is described as \"An internal HTTP service that accepts metric writes from product services and answers metric queries from the dashboard\" [evd-002], which directly supports the stated role of cmp-002 as an internal HTTP service for metrics read/write.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Metrics API section states that it \"is not reachable from the internet\" [evd-002], directly supporting the claim that cmp-002 is not internet reachable.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data description says that metrics records \"contain account identifiers and usage numbers\" [evd-003], which directly supports the list of fields in ast-001.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Data\n\nMetrics records associate a product account with usage counters. They contain account\nidentifiers and usage numbers, which are treated as confidential business data."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same passage states that the account identifiers and usage numbers \"are treated as confidential business data\" [evd-003], directly supporting the data classification of ast-001 as confidential business data.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Data\n\nMetrics records associate a product account with usage counters. They contain account\nidentifiers and usage numbers, which are treated as confidential business data."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The actors section describes the Product service as \"an internal service writing metrics\" [evd-004], directly supporting the stated role of act-001.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Actors\n\n- **Product service** \u2014 an internal service writing metrics.\n- **Dashboard** \u2014 an internal reader of metrics."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The actors section describes the Dashboard as \"an internal reader of metrics\" [evd-004], directly supporting the stated role of act-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Actors\n\n- **Product service** \u2014 an internal service writing metrics.\n- **Dashboard** \u2014 an internal reader of metrics."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The system overview describes a \"Managed Metrics Database\" as \"A managed relational database provided by the cloud platform\" [evd-002], which directly supports the claim that the database is a managed relational database provided by the cloud platform. The Terraform resource aws_db_instance.metrics_db [evd-005] is consistent with that description and provides additional contextual implementation evidence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The managed metrics database description states that \"Key management for the at-rest encryption is handled by the platform's key management service\" [evd-002], directly supporting the claim that at-rest encryption keys are managed by the cloud platform KMS.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same passage notes that \"the connection from the metrics API to the database uses the platform's transport encryption terminated at the managed endpoint\" [evd-002], directly supporting the claim about database connection encryption using platform transport encryption terminated at the managed endpoint.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The claim asserts that the authentication mechanism for the Metrics API (cmp-002) is unknown because documentation does not describe how calls are authenticated, but no cited passage establishes either the absence of authentication or that the mechanism is unknown. The available evidence [evd-001\u2013evd-004] is silent on authentication details, and silence cannot be treated as direct evidence. Therefore the documents do not establish this claim.",
+        "missing_evidence": [
+          "Architecture or API documentation describing how the Metrics API authenticates write and read requests (e.g., service-to-service authentication scheme, credentials, or mTLS configuration).",
+          "Configuration or code references showing enforcement of authentication on the Metrics API."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The claim states that ast-001 has no defined retention policy, based on documentation not stating one. None of the cited materials mention retention for metrics records, but absence of a passage is not evidence that no retention policy exists. The documents therefore do not establish that the retention policy is \"None\" or unknown.",
+        "missing_evidence": [
+          "Data retention documentation for metrics records, including how long they are stored and where.",
+          "Database or lifecycle management configuration that enforces the metrics retention policy."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The managed metrics database is described as being encrypted at rest by the platform, with key management handled by the platform's KMS and transport encryption used between the Metrics API and the database [evd-002]. The Terraform configuration for aws_db_instance.metrics_db sets \"storage_encrypted\" to true and \"publicly_accessible\" to false [evd-005][evd-006], which directly supports that the instance is configured with storage encryption enabled and not publicly accessible. Together these passages establish that encryption in transit (between API and DB) and at rest for the metrics database is provided by the cloud platform, matching the control description.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The system overview states that the metrics store is \"reachable only from inside the application subnet\" [evd-001] and that the Metrics API is an internal HTTP service \"not reachable from the internet\" [evd-002]. The Terraform configuration sets the metrics database \"publicly_accessible\" flag to false [evd-005][evd-006], which establishes that it is not exposed on a public network interface. These passages directly support that both the Metrics API and the metrics database are not reachable from the public internet. However, they do not fully establish that these components are reachable only from the internal application network in the sense of being restricted to specific trusted workloads within that network (for example, they do not document security groups, firewall rules, or additional network policies). Accordingly, the narrower claim about reachability \"only\" from the internal application network is only partially supported by the available evidence.",
+        "missing_evidence": [
+          "Network design or security group/firewall configuration showing which internal subnets and workloads can reach the Metrics API and metrics database.",
+          "Explicit documentation stating that only defined application workloads within the application subnet can connect to the Metrics API and database."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The data description establishes that metrics records contain account identifiers and usage numbers and are treated as confidential business data [evd-003]. The managed metrics database is a cloud-platform managed relational database, with the platform encrypting it at rest by default and providing transport encryption between the Metrics API and the database, with keys managed by the platform KMS [evd-002]. Terraform sets storage_encrypted to true and publicly_accessible to false for the metrics database instance [evd-005][evd-006]. These passages directly support that confidential data is stored in a managed database with encryption at rest and transport encryption on the Metrics API\u2013database connection, which is strong evidence for both applicability of an encryption-in-transit/at-rest requirement (req-DATA-001) and satisfaction of the part of that requirement that concerns the metrics database. However, the mapping assertion does not present evidence about encryption for all possible transmissions of this confidential data (for example, between product services and the Metrics API or between the Dashboard and the Metrics API). Without documentation for those paths or the exact text of req-DATA-001, the claim that the requirement is fully satisfied for thr-001 is only partially supported by the available evidence.",
+        "missing_evidence": [
+          "Definition of req-DATA-001, including which data flows and components it covers.",
+          "Documentation or configuration showing whether connections between product services and the Metrics API, and between the Dashboard and the Metrics API, are encrypted in transit."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Data\n\nMetrics records associate a product account with usage counters. They contain account\nidentifiers and usage numbers, which are treated as confidential business data."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The metrics store is described as reachable only from inside the application subnet [evd-001], and the Metrics API is described as an internal HTTP service not reachable from the internet [evd-002]. Terraform configures the metrics database with publicly_accessible set to false [evd-005][evd-006], so it is not exposed on a public network interface. These passages directly support that the Metrics API and metrics database are not directly reachable from the public internet and are placed on internal network infrastructure, which supports applicability of req-NET-001 and partial satisfaction of its conditions about internal placement. However, req-NET-001 is described (in the mapping text) as concerning reachability from trusted workloads rather than from an untrusted network; the evidence does not document which internal workloads can reach these components or whether additional network policies restrict access. Thus, while applicability is well supported, full satisfaction of req-NET-001 is only partially established by the available documentation.",
+        "missing_evidence": [
+          "Definition of req-NET-001, especially any requirement that only specific trusted workloads reach internal services.",
+          "Network policy, security group, or firewall documentation showing which internal workloads or subnets can connect to the Metrics API and metrics database."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The actors and components documentation defines the in-scope services as a Product service (an internal service writing metrics), the Metrics API (an internal HTTP service), and a Dashboard (an internal reader of metrics) [evd-001][evd-002][evd-004]; no separate administrative or operator interface is described for this metrics subsystem. This directly supports the claim that the components in this threat path are internal producer/consumer services, not explicitly labeled as administrative interfaces. The conclusion that req-ADMIN-001 is not applicable to thr-002 relies additionally on the framework definition of that requirement and on the assumption that none of these internal services are considered administrative in that context, which is not established in the provided system documentation. Therefore, the mapping is partially\u2014but not fully\u2014supported by the evidence.",
+        "missing_evidence": [
+          "Definition of req-ADMIN-001, including what qualifies as an administrative or operator interface.",
+          "Documentation clarifying whether the Dashboard or any other metrics-related interface is considered an administrative or operator interface."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Actors\n\n- **Product service** \u2014 an internal service writing metrics.\n- **Dashboard** \u2014 an internal reader of metrics."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The system overview and data/actors sections describe a metrics store implemented as an internal HTTP Metrics API backed by a managed relational database, carrying metrics records consisting of account identifiers and usage numbers [evd-001][evd-002][evd-003][evd-004]. No machine-learning model, prompt construction, or model outputs are mentioned along this path, which supports the claim that the described components are ordinary HTTP services and a database. The conclusion that req-AI-001 is not applicable to thr-002 depends on the external definition of that requirement and the assumption that there is no unmentioned ML component in this threat path; those aspects are not directly established in the provided documentation. As a result, the mapping is partially supported: the available evidence is consistent with the absence of AI-specific functionality but does not explicitly rule it out or cite the requirement\u2019s scope.",
+        "missing_evidence": [
+          "Definition of req-AI-001 and its applicability criteria.",
+          "Architecture documentation confirming that no machine-learning models or prompt-processing components are involved in the Metrics API, Dashboard, or metrics database flows."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The documentation consistently describes the metrics subsystem as an internal HTTP API backed by a relational database, serving a dashboard and product services [evd-001][evd-002][evd-003][evd-004], with no mention of publishing model output externally. This supports the idea that the described threat path involves direct metrics queries, not external publication of model outputs. The conclusion that req-AI-002 is not applicable relies on the requirement\u2019s external definition and the assumption that there is no other model-output publishing path in scope for thr-002, which are not established in the system documentation. Therefore, the mapping is only partially supported by the cited evidence.",
+        "missing_evidence": [
+          "Definition of req-AI-002 and its specific concern about publishing model outputs.",
+          "Threat or architecture documentation confirming that thr-002 does not involve any model outputs published to external parties."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The components and data are documented as an internal Metrics API and a managed relational database storing metrics records [evd-001][evd-002][evd-003][evd-006]. There is no indication that customer content is being sent to an external model provider; instead, data is stored locally in the managed database. This supports the premise that the system does not use an external model provider along this path. However, the claim that req-AI-003 does not apply to thr-002 ultimately depends on the requirement\u2019s scope and on the assumption that no other flows involving external model providers are part of this threat, which are not established by the provided evidence. Thus the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-AI-003, including its applicability to external model providers.",
+          "Threat modeling or architecture documentation confirming that thr-002 does not involve sending customer content to any external model provider."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The documentation describes an internal Dashboard that reads metrics via the Metrics API [evd-001][evd-002][evd-004]; there is no mention of rendering model outputs in the user interface. This supports the assertion that the described threat path involves internal metrics queries between services, not UI presentation of model output. The conclusion that req-AI-004 is not applicable is based on that understanding of the threat and on the requirement\u2019s external definition, which are only partially grounded in the provided system documentation. Therefore, the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-AI-004 and its conditions around rendering model output.",
+          "Threat documentation clarifying whether any part of thr-002 involves model output being rendered in a user interface."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Actors\n\n- **Product service** \u2014 an internal service writing metrics.\n- **Dashboard** \u2014 an internal reader of metrics."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Metrics API is documented as an internal HTTP service that accepts writes from product services and answers queries from the Dashboard, and it is not reachable from the internet [evd-002]. This supports the idea that the threat path involves internal service-to-service calls rather than end-user authentication or delegated login to an external identity provider. The conclusion that req-AUTH-001 is not applicable to thr-002 depends on the external definition of that requirement and the assumption that end-user authentication is out of scope for this internal API threat, which is not fully established in the available documentation. Thus the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-AUTH-001, including its focus on end-user or delegated authentication.",
+          "Threat description confirming that thr-002 concerns only internal service-to-service access to the Metrics API."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The actors are internal services (Product service and Dashboard) [evd-004], and the Metrics API is an internal HTTP service not reachable from the internet [evd-002]. No privileged administrative interface exposed over an untrusted network is described in the metrics subsystem documentation [evd-001][evd-002][evd-004]. This supports the idea that the threat involves only internal access and not administrative access over an untrusted network. The conclusion that multi-factor authentication for such administrative or externally reachable access (req-AUTH-002) is not engaged relies on the framework definition of that requirement and the assumption that there is no other administrative interface in scope for thr-002; these aspects are not explicitly documented. Hence, the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-AUTH-002 specifying when MFA is required.",
+          "Documentation clarifying whether any metrics-related interfaces are considered privileged administrative interfaces and, if so, how they are exposed."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Actors\n\n- **Product service** \u2014 an internal service writing metrics.\n- **Dashboard** \u2014 an internal reader of metrics."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Metrics records are defined as associating a product account with usage counters and containing account identifiers and usage numbers treated as confidential business data [evd-003]. The actors and components show that the Product service writes metrics and the Dashboard reads them via the internal Metrics API and managed database [evd-001][evd-002][evd-004]. This supports the idea that metrics data may span multiple product accounts and is sensitive, making cross-account or cross-tenant access a plausible concern. However, the mapping assumes\u2014rather than documents\u2014that product accounts correspond to distinct customers or organizations and that the metrics store serves multiple such tenants. The conclusion that req-AUTHZ-001 is conditionally applicable and unverified therefore rests partly on an explicit assumption about the tenancy model, which is not established in the provided evidence. As a result, applicability is only partially supported, and the \"unverified\" status reflects the current lack of authorization design details in the documentation.",
+        "missing_evidence": [
+          "Documentation of the tenancy model (how product accounts map to customers or organizations and whether multiple tenants share the same metrics store).",
+          "Authorization design or configuration for the Metrics API describing tenant-aware access controls on read queries."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Data\n\nMetrics records associate a product account with usage counters. They contain account\nidentifiers and usage numbers, which are treated as confidential business data."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The components and actors describe only internal services (Product service, Metrics API, Dashboard) interacting with a managed metrics database [evd-001][evd-002][evd-004][evd-006]. There is no indication that the system uses delegated access to customer resources on external platforms. This supports the claim that the threat path does not involve delegated authorization to external platforms. The conclusion that req-AUTHZ-002 is not applicable further relies on the framework's definition of that requirement and the assumption that no such delegated external resource access exists elsewhere in thr-002, which are not documented here. Thus, the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-AUTHZ-002 and its scope (e.g., delegated access to external customer resources).",
+          "Threat or architecture documentation confirming that thr-002 does not involve delegated access tokens or API keys to external customer resources."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The available documentation describes runtime components (Metrics API, Dashboard, managed metrics database, metrics data, and internal producer/consumer services) [evd-001][evd-002][evd-003][evd-004], and does not mention build or deployment pipelines. This supports the idea that the described threat path concerns runtime abuse of the Metrics API rather than compromise of the CI/CD pipeline. The conclusion that req-CICD-001 is not applicable to thr-002 follows from that threat framing and the requirement\u2019s definition, which are only partially grounded in the provided evidence; pipeline design might still matter indirectly to this threat. Hence the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-CICD-001 and its relation to runtime threats.",
+          "Threat modeling documentation clarifying whether thr-002 excludes CI/CD pipeline compromise scenarios."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence shows that metrics records are confidential business data [evd-003] stored in a managed database that is encrypted at rest and uses transport encryption between the Metrics API and the database [evd-002], with Terraform configuring storage_encrypted as true and publicly_accessible as false [evd-005][evd-006]. These passages support that an encryption-in-transit and at-rest control exists and that req-DATA-001 would be applicable to this kind of data. The mapping, however, asserts that for thr-002, req-DATA-001 is treated as not applicable because the threat involves authorized reads via the Metrics API. That threat-specific scoping decision is not documented in the provided evidence; no passage states that req-DATA-001 is out of scope for unauthorized-read threats. Therefore, while the evidence supports the existence of underlying encryption controls, it does not establish the conclusion that req-DATA-001 is not applicable to thr-002.",
+        "missing_evidence": [
+          "Risk or threat-model documentation explicitly stating that req-DATA-001 is considered out of scope for threats like thr-002 that involve unauthorized reads through an API.",
+          "Framework guidance or scoping criteria that justify marking req-DATA-001 as not applicable when encryption controls exist but are deemed irrelevant to the specific threat outcome."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Data\n\nMetrics records associate a product account with usage counters. They contain account\nidentifiers and usage numbers, which are treated as confidential business data."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The metrics store is described as a service that \"records product usage metrics and serves them to an internal dashboard\" [evd-001], and metrics records are defined as confidential business data keyed by product account [evd-003]. This implies that the system persists customer-related metrics beyond the moment of collection. That supports the applicability of a data-retention requirement (req-DATA-002) to this threat. However, no passage specifies the retention period, retention enforcement, or lifecycle handling of these metrics; the mapping\u2019s \"unverified\" status for req-DATA-002 correctly reflects that the evidence does not confirm implementation of a defined and enforced retention policy. The applicability portion is supported, while the unverified status is a statement about the assessor\u2019s knowledge rather than a documented fact. Overall, the mapping is partially supported by the evidence.",
+        "missing_evidence": [
+          "Documentation of the defined retention period for metrics records and how it is enforced (e.g., database lifecycle policies, archival, or deletion processes).",
+          "Any configuration or operational runbooks that show implementation of the metrics retention policy."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-002",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The components documentation explains that metrics are stored in a \"managed relational database provided by the cloud platform\" [evd-002], and Terraform shows a single aws_db_instance.metrics_db resource [evd-006]. There is no indication that metrics are stored as discrete artifacts in shared object storage or addressed via path-based access. This directly supports the assertion that the threat path uses an internal HTTP API and relational database rather than shared object storage, and therefore that req-DATA-003, which concerns cross-tenant access to artifacts in shared object storage, is not applicable to thr-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documentation shows that metrics records are customer-related data treated as confidential business data [evd-003] and that the system stores them in a managed database via the Metrics API [evd-001][evd-002]. These facts suggest that requirements concerning deletion or customer data lifecycle (such as req-DATA-004) could be relevant to the system. The mapping asserts that req-DATA-004 is not applicable to thr-002 because the threat is about querying existing metrics, but no evidence passage states that req-DATA-004 is out of scope for this threat or that deletion capabilities are irrelevant to it. This scoping decision is not documented in the provided sources, so the conclusion that req-DATA-004 is not applicable to thr-002 is not established by the evidence.",
+        "missing_evidence": [
+          "Risk or threat-model documentation stating when req-DATA-004 is or is not applied to unauthorized-read threats such as thr-002.",
+          "Any design or policy documents explaining why customer deletion controls are considered out of scope for this particular threat scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Data\n\nMetrics records associate a product account with usage counters. They contain account\nidentifiers and usage numbers, which are treated as confidential business data."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview and data sections describe internal services, an HTTP API, and a managed database holding confidential metrics [evd-001][evd-002][evd-003], but they do not address logging behavior or how logs relate to the modeled threat. The mapping concludes that req-LOG-001 is not applicable to thr-002 because the described attack path does not rely on logs, yet no cited passage describes the threat\u2019s dependence (or lack thereof) on logs or states that log-content controls are out of scope for this threat. As a result, the documents do not establish that req-LOG-001 is not applicable to thr-002.",
+        "missing_evidence": [
+          "Threat modeling documentation describing the data path for thr-002 and clarifying whether logs are relevant to attack progression or detection.",
+          "Any explicit scoping guidance stating that req-LOG-001 is excluded from consideration for threats like thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The actors and components documentation shows only internal producer/consumer services (Product service and Dashboard) interacting with the Metrics API and metrics database [evd-001][evd-002][evd-004], and does not describe a separate administrative or operator interface for the metrics subsystem. This supports the claim that the threat path does not involve privileged administrative actions. However, the conclusion that req-LOG-002 is not applicable to thr-002 depends on the external definition of that requirement and on the assumption that no administrative or operator interface relevant to the threat exists elsewhere, which are not established in the provided evidence. Thus, the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-LOG-002 and the types of administrative or operator actions it covers.",
+          "Documentation confirming whether any metrics-related administrative or operator interfaces exist and, if so, whether they are in scope for thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Actors\n\n- **Product service** \u2014 an internal service writing metrics.\n- **Dashboard** \u2014 an internal reader of metrics."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The metrics store is reachable only from inside the application subnet [evd-001], the Metrics API is not reachable from the internet [evd-002], and Terraform configures the metrics database with publicly_accessible set to false [evd-005][evd-006]. These passages directly support that the Metrics API and managed metrics database are internal components not exposed to the public internet, making req-NET-001 clearly applicable to thr-002. The mapping further states that req-NET-001 is unverified, noting uncertainty about whether only trusted workloads can reach these components. Given that no documentation is provided about internal network policies, security groups, or workload-level restrictions, the evidence supports applicability but not verification of full compliance. Overall, the mapping is partially supported: applicability is well founded, but the \"unverified\" status reflects a real documentation gap around internal network access controls.",
+        "missing_evidence": [
+          "Network policy or security group configuration showing which internal workloads or subnets are permitted to access the Metrics API and metrics database.",
+          "Any explicit statement or diagram confirming that only trusted workloads (and not all entities inside the VPC) can reach these components."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-002",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The documentation states that the Metrics API reads and writes the managed metrics database [evd-002], and Terraform defines an aws_db_instance.metrics_db resource [evd-006], so it is clear that the application authenticates to a managed relational database. However, the mapping assumes, rather than documents, that this access uses a long-lived credential or API key of the sort in scope for req-SECRET-001. The claim that req-SECRET-001 is conditionally applicable and unverified therefore rests on an assumption about how the Metrics API authenticates to the database, which is not specified in the evidence. The mapping is thus only partially supported: it is clear that some form of authentication is required, but the nature of the credential and its management remain undocumented.",
+        "missing_evidence": [
+          "Documentation of how the Metrics API authenticates to the managed metrics database (e.g., username/password, IAM role, or other credential type).",
+          "Secret storage and rotation documentation for any database credentials or platform API keys used by the Metrics API."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence depicts a metrics subsystem consisting of internal services, an internal HTTP API, and a managed metrics database [evd-001][evd-002][evd-004][evd-006]. There is no mention of the system accessing customer resources on external platforms using delegated or short-lived credentials. This supports the idea that req-SECRET-002, which concerns short-lived credentials for customer resources on external platforms, is unlikely to apply to this threat path. However, the conclusion that it is definitively not applicable depends on the requirement\u2019s definition and on assurance that no such external platform access exists elsewhere in thr-002, which are not documented here. Thus the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-SECRET-002 and its focus on external customer resources.",
+          "Architecture or threat documentation confirming that thr-002 does not involve delegated or short-lived credentials for external customer resources."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Metrics Store \u2014 System Overview\n\nThe metrics store is an internal service that records product usage metrics and serves\nthem to an internal dashboard. It is reachable only from inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Metrics records are confidential business data stored in a managed relational database accessed via the internal Metrics API [evd-002][evd-003][evd-006]. The documentation does not describe any separate external processor receiving this data for further processing under distinct terms. This supports the idea that, as modeled, data processing happens within the hosting platform rather than via an external processor. The conclusion that req-TPI-001 is not applicable to thr-002 relies on the external definition of that requirement and the assumption that no additional third-party processors are involved in this threat path; these aspects are not fully documented, so the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-TPI-001 and what constitutes an external processor under the framework.",
+          "Documentation confirming whether any third-party processors receive metrics data and, if so, whether they are in scope for thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Data\n\nMetrics records associate a product account with usage counters. They contain account\nidentifiers and usage numbers, which are treated as confidential business data."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The threat path described for the metrics subsystem involves internal services using the Metrics API to query a local managed database [evd-001][evd-002][evd-006]. There is no mention of work being triggered by external events that consume a metered external service. This supports the idea that req-TPI-002, which is concerned with bounding externally triggered or metered work, is not directly relevant to this threat. Nonetheless, the final conclusion that req-TPI-002 is not applicable to thr-002 depends on the external definition of the requirement and on assurance that no such externally triggered metered work is part of the threat scenario, which are not fully documented. Thus the mapping is partially supported.",
+        "missing_evidence": [
+          "Definition of req-TPI-002 and its criteria for externally triggered or metered work.",
+          "Threat modeling documentation confirming that thr-002 does not involve events that trigger metered external services."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers\nmetric queries from the dashboard. It is not reachable from the internet.\n\n### Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and\nwrites it. The platform encrypts the database at rest by default, and the connection from\nthe metrics API to the database uses the platform's transport encryption terminated at the\nmanaged endpoint. Key management for the at-rest encryption is handled by the platform's\nkey management service."
+          }
+        ]
+      }
+    ]
+  }
+}

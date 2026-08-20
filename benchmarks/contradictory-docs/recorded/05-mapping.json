@@ -1,0 +1,277 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11145,
+    "output_tokens": 14362,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.15891125",
+    "duration_seconds": 157.9562477080617
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "prop-immediate-export-deletion",
+        "name": "Immediate deletion of export files after customer download",
+        "description": "Architecture documentation states that assembled export files written to the managed object store are temporary working data and are deleted immediately once the customer has downloaded them (evd-003).",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "owner": null,
+        "limitations": [
+          "Operations documentation describes a 30-day storage lifecycle policy for completed export files in the managed object store (evd-006), which conflicts with the architecture description of immediate deletion after download (evd-003). The actual behaviour and precedence between these two descriptions are unclear and require confirmation."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Export files consist of customer records (ast-001, ast-002) written to a managed object store and later downloaded by customers (evd-001, evd-003, evd-006). These are sensitive customer data that are both stored and transmitted, and the Export API is a public HTTPS service used to deliver them to customers (evd-002), so the system stores and transmits confidential or restricted data and data crosses a network boundary it does not control, satisfying the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume that assembled export files containing customer records are treated as confidential or restricted data for the purpose of encryption requirements."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [
+          "prop-immediate-export-deletion"
+        ],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system creates export files as temporary working copies of customer records, writes them to a managed object store, and retains them under a 30-day storage lifecycle policy (evd-003, evd-006). These are intermediate artifacts written to persistent storage and retained after processing completes, so the system retains customer data as a by-product of processing and stores intermediate artifacts, matching the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the architecture overview\u2019s statement that exports are deleted immediately after customer download (evd-003) reflects what at least some product documentation tells customers about retention, while the operations guide\u2019s 30-day lifecycle (evd-006) reflects actual or operational behaviour."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Completed export files for many customers are written to and retained in a single managed object store under a common lifecycle policy (evd-003, evd-006), and the threat scenario involves an attacker listing export objects and enumerating identifiers for many customers. This indicates that artifacts from multiple customers share a storage system and are addressable by predictable paths or identifiers, satisfying the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume that the managed object store holds export files for multiple customers concurrently, as described in the threat scenario, and that object naming or metadata allows exports to be associated with specific customers."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The managed object store component holds export files containing data for many customers (ast-002, cmp-003) and is described as an internal storage backend rather than a public interface (evd-003, evd-006). It is used as a data store supporting the export service and holds multi-tenant data, so the requirement\u2019s applicable conditions for internal data stores and multi-tenant holdings are met.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the managed object store is intended as an internal backing component rather than a customer-facing public interface, based on its description as where the Export Worker writes completed exports (evd-002, evd-003)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The Export Worker writes export files to a managed object store (evd-002, evd-003), which typically requires some credential or workload identity to authenticate to the storage provider. If the system holds a long-lived credential or signing key used to authenticate to this external storage platform, the requirement applies; if access is instead via short-lived workload identity with no stored credential, the requirement would not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume only that some mechanism authenticates the Export Worker to the managed object store; the documentation does not state whether this is a long-lived stored credential, a signing key, or a short-lived workload identity."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Assembled export files containing customer records are written to and retained in a managed object store (evd-003, evd-006). This involves sending customer data to an external provider-managed storage service that processes (stores and manages) data on the system\u2019s behalf, so the requirement\u2019s applicable conditions for external processors handling customer data are met.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the managed object store is operated by an external cloud or storage provider rather than being part of the application\u2019s own trust boundary, based on its description as a managed object store (evd-003)."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption of export files in the managed object store and on the worker-to-store path is not documented",
+        "description": "Architecture and operations documentation describe export files containing customer records being written to and retained in a managed object store (evd-003, evd-006) and delivered to customers via a public HTTPS Export API (evd-002). However, the material does not state whether export files are encrypted at rest in the managed object store, nor whether encryption in transit is enforced on the internal data flow from the Export Worker to the object store (df-003), or which party provides those protections. As a result, it is not possible to determine from documentation whether the expectation of req-DATA-001 is met for the storage and internal transfer of these exports.",
+        "importance": "Without clear documentation of encryption at rest in the managed object store and encryption in transit on the internal path to it, the impact of a storage-layer or credential compromise on the confidentiality of export files cannot be reliably assessed, and reviewers cannot tell whether encryption is inherited from the platform or implemented elsewhere.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-003",
+          "ast-002",
+          "df-003",
+          "req-DATA-001"
+        ],
+        "requested_evidence": [
+          "Architecture or platform documentation describing encryption at rest for the managed object store holding export files, including whether encryption is inherited from the storage provider and how keys are managed.",
+          "Documentation or configuration showing whether the Export Worker\u2019s traffic to the managed object store (df-003) is protected by transport encryption (for example, HTTPS or a private link) and where that is enforced."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Authentication method and credential storage for managed object store access are not described",
+        "description": "The Export Worker writes completed export files containing customer records to a managed object store (evd-002, evd-003), and these files are retained for 30 days under a lifecycle policy (evd-006). The documentation does not state how the Export Worker authenticates to the managed object store (for example, via long-lived access keys, a signing key, workload identity, or another mechanism), nor where any such credentials or keys are stored. This prevents verification of whether long-lived provider credentials, if any, are kept in a managed secret store as expected by req-SECRET-001 or whether the system instead relies on short-lived, non-stored identities.",
+        "importance": "Without clarity on whether there are long-lived credentials or keys for the managed object store and where they are stored, it is not possible to assess the risk that compromise of deployment artifacts, configuration, or source control could expose broad storage access, or to determine whether the requirement for managed secret storage is met.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-003",
+          "df-003",
+          "req-SECRET-001"
+        ],
+        "requested_evidence": [
+          "Documentation of how the Export Worker authenticates to the managed object store, including whether it uses long-lived credentials, signing keys, or workload identity.",
+          "If long-lived credentials or keys are used, documentation of where they are stored (for example, a managed secrets service) and how access to that store is controlled."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network placement and access restrictions for the managed object store are not documented",
+        "description": "The managed object store holds export files for multiple customers under a common lifecycle policy (evd-003, evd-006), and the threat scenario assumes that an attacker who gains access to the store or its credentials can list and download many customers\u2019 exports. The documentation does not state where the managed object store is placed in the network, whether it is reachable from the public internet, or whether access is restricted to named workloads such as the Export Worker, as required by req-NET-001. Without this, it is unclear what network-level boundaries, if any, constrain access to the export objects.",
+        "importance": "Understanding whether the managed object store is reachable only from specific application workloads, or from broader network locations, materially affects the likelihood of the described bulk export compromise and is necessary to evaluate whether network segmentation is being used as a protective control.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-003",
+          "df-003",
+          "req-NET-001"
+        ],
+        "requested_evidence": [
+          "Network or deployment diagrams showing the placement of the managed object store (for example, VPC, subnets, private endpoints) and whether it is publicly reachable.",
+          "Documentation or configuration describing which workloads or network principals are allowed to access the managed object store and how that restriction is enforced (for example, security groups, firewall policies, service mesh, or private links)."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "External provider data handling terms for the managed object store are not documented",
+        "description": "Export files containing customer records are written to and retained in a managed object store operated by an external provider (evd-003, evd-006). The architecture and operations documentation do not summarise what customer data is sent to the provider beyond the existence of export files, whether the provider retains data beyond the configured lifecycle, how long any such retention lasts, or whether the provider may use the data for purposes beyond serving storage (for example, analytics or service improvement), as expected by req-TPI-001.",
+        "importance": "Without a documented summary of the external storage provider\u2019s retention and usage terms and what customer data is sent, reviewers cannot understand the effective data handling once exports cross the system\u2019s trust boundary, nor verify that external retention aligns with the system\u2019s own retention expectations.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-003",
+          "ast-002",
+          "req-TPI-001"
+        ],
+        "requested_evidence": [
+          "A brief description of what customer data in export files is sent to the managed object store and how it relates to other stored copies of customer data.",
+          "Documentation or references summarising the storage provider\u2019s retention and usage terms for data in the managed object store, including whether data is retained beyond the configured object lifecycle and whether it is used for any purpose beyond providing the storage service."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "Access to the managed object store that holds multi-tenant export files is not described as being logged or monitored for unusual or bulk access patterns, so a compromise of store credentials or configuration might allow large-scale export file downloads without detection, even if network placement and encryption controls are in place.",
+        "suggested_category": "logging",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-LOG-001",
+            "why_not": "req-LOG-001 concerns excluding restricted data from application logs and documenting where logs are sent; it does not address logging or monitoring of access to backing storage systems such as the managed object store that holds export files."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "req-LOG-002 requires recording privileged actions taken through administrative interfaces, attributed to operator identities, and documenting where those records are kept. It does not cover logging or monitoring read access to shared storage by workloads or credentials outside an administrative UI."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 focuses on restricting network reachability of internal components like data stores and queues to specific workloads, but it does not require that accesses to those components be logged or monitored for anomalous or bulk access patterns."
+          },
+          {
+            "requirement_id": "req-DATA-003",
+            "why_not": "req-DATA-003 addresses how artifacts for different customers are separated in shared storage and how that separation is enforced on access, but it does not require recording or monitoring access events to detect when that separation may have been bypassed or misused."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007"
+        ]
+      }
+    ]
+  }
+}

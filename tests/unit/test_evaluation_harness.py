@@ -153,7 +153,8 @@ def test_forgeflow_replays_through_the_harness_offline(
     [
         # The buckets pin the harness's classification of each committed recording against its
         # truth set — matched and missed alike. A live capture that changes a scenario's honest
-        # score moves its row here rather than evicting the scenario from the test.
+        # score moves its row here rather than evicting the scenario from the test (the
+        # contradictory-docs eviction was this test's last retarget; the buckets end that).
         ("order-notifier", "FND-ON-01", "missed"),
         ("reply-tuner", "FND-RT-01", "matched"),
     ],
@@ -489,7 +490,7 @@ def test_a_scenario_without_a_pin_reports_none_not_a_pass(tmp_path: Path) -> Non
     from trace_ai.services.evaluation.harness import run_scenario
 
     outcome = run_scenario(
-        "invoice-agent",
+        "translation-gateway",
         data_root=tmp_path / "work",
         label="pin-test",
         results_root=tmp_path / "feeds",

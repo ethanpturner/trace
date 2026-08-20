@@ -1,7 +1,12 @@
 assessment_id: asm-001
-reviewer: recorded-reviewer
 findings:
 - id: fnd-001
-  severity: medium
-  decision: approve
-  rationale: The evidence supports the documented weakness the assessment confirmed.
+  decision: reject
+  rationale: 'The description establishes req-DATA-001''s applicability — sensitive export
+    files are stored and transmitted, and data crosses a boundary the system does not control
+    — and then asserts compromise impact, not an evidenced deficiency. Whether the managed
+    object store encrypts at rest is undetermined: qst-002 remains open, and the run''s own
+    documentation gaps (gap-004, gap-007) request exactly that evidence. DEC-009: undetermined
+    is not unmet, and a bulk-compromise narrative over an undetermined control is the
+    documented-gap shape, not a finding. The gap objects already carry the request; approving
+    this finding would convert silence into a weakness.'

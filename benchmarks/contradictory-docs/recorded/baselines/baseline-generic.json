@@ -2,17 +2,10 @@
   "findings": [
     {
       "requirement_id": "req-DATA-002",
-      "affected_component": "Export Worker",
-      "title": "Exports are retained longer than the temporary need",
-      "rationale": "The lifecycle policy retains export objects for 30 days.",
-      "evidence_quote": "A storage lifecycle policy retains export objects for 30 days"
-    },
-    {
-      "requirement_id": "req-DATA-001",
-      "affected_component": "Export Worker",
-      "title": "Retained exports are stored unencrypted",
-      "rationale": "No encryption is described.",
-      "evidence_quote": "the result is written to object storage"
+      "affected_component": "Export Service / managed object store",
+      "title": "Export file retention behavior is inconsistent between architecture and operations documentation",
+      "rationale": "The architecture overview states that export files are deleted immediately after customer download, but the operations guide describes a 30-day retention policy in the managed object store. This inconsistency means the retention of sensitive working data is not clearly defined and may not match what customers are told, risking non-compliance with data-handling expectations or regulatory requirements.",
+      "evidence_quote": "From architecture-overview.md:\n\"The export file is temporary working data: it is deleted immediately once the customer has downloaded it.\"\n\nFrom operations-guide.md:\n\"Completed export files are written to the managed object store. A storage lifecycle policy retains export objects for 30 days and expires them after that. Operators can retrieve a recent export from the store if a customer reports a failed download within that window.\""
     }
   ]
 }

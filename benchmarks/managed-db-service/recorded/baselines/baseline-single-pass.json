@@ -1,0 +1,238 @@
+{
+  "components": [
+    {
+      "name": "Metrics Store",
+      "component_type": "internal service"
+    },
+    {
+      "name": "Metrics API",
+      "component_type": "internal HTTP service"
+    },
+    {
+      "name": "Managed Metrics Database",
+      "component_type": "managed relational database"
+    },
+    {
+      "name": "Product service",
+      "component_type": "internal service client"
+    },
+    {
+      "name": "Dashboard",
+      "component_type": "internal dashboard client"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Internal-only Metrics API without documented authentication or authorization",
+      "affected_components": [
+        "Metrics API",
+        "Managed Metrics Database"
+      ],
+      "rationale": "The documentation describes the Metrics API as an internal HTTP service that accepts writes from product services and answers queries from the dashboard, and notes only that it is not reachable from the internet and is reachable from inside the application subnet, but provides no description of authentication or authorization between callers and the API. Given that metrics records are treated as confidential business data, lack of documented controls for who can call the API or what they can read/write represents a material threat if any internal service in the subnet can interact with it. (system-overview.md: “An internal HTTP service that accepts metric writes from product services and answers metric queries from the dashboard. It is not reachable from the internet.” and “The metrics store is an internal service that records product usage metrics and serves them to an internal dashboard. It is reachable only from inside the application subnet.” and “They contain account identifiers and usage numbers, which are treated as confidential business data.”)"
+    },
+    {
+      "title": "Incomplete network isolation within the application subnet",
+      "affected_components": [
+        "Metrics API",
+        "Managed Metrics Database"
+      ],
+      "rationale": "The metrics store is stated to be reachable only from inside the application subnet, and the database instance is configured as not publicly accessible, but there is no description of finer-grained network controls (such as security groups or firewall rules) limiting access to only the product services and dashboard workloads. This creates a threat that any compromised workload in the same subnet or VPC could access the Metrics API or attempt to reach the database. (system-overview.md: “The metrics store is an internal service … It is reachable only from inside the application subnet.” and terraform-db.tf.json: \"\\\"publicly_accessible\\\": false\")"
+    },
+    {
+      "title": "Potential lack of encryption in transit for service-to-API and dashboard-to-API traffic",
+      "affected_components": [
+        "Product service",
+        "Dashboard",
+        "Metrics API"
+      ],
+      "rationale": "The documentation calls the Metrics API an \"internal HTTP service\" and explicitly describes platform transport encryption only for the Metrics API to database connection, not for the connections from product services or the dashboard to the Metrics API. If those internal calls are plain HTTP within the subnet, then an attacker with access to the internal network (or a compromised workload) could eavesdrop on or tamper with confidential metrics data in transit. (system-overview.md: “An internal HTTP service that accepts metric writes from product services and answers metric queries from the dashboard.” and “the connection from the metrics API to the database uses the platform's transport encryption terminated at the managed endpoint.”)"
+    },
+    {
+      "title": "Undefined retention and deletion for confidential metrics data",
+      "affected_components": [
+        "Managed Metrics Database"
+      ],
+      "rationale": "Metrics records contain account identifiers and usage numbers and are treated as confidential business data, but there is no description of how long these metrics are retained in the managed database or how deletion is handled. This creates a threat of over-retention or inability to honour data retention/deletion obligations, which may conflict with regulatory or contractual requirements. (system-overview.md: “Metrics records associate a product account with usage counters. They contain account identifiers and usage numbers, which are treated as confidential business data.”)"
+    },
+    {
+      "title": "Undocumented tenant-aware authorization for account-specific metrics",
+      "affected_components": [
+        "Metrics API",
+        "Dashboard"
+      ],
+      "rationale": "Metrics records are keyed by product account and treated as confidential business data, and the dashboard reads metrics via the Metrics API. However, the documentation does not describe how the API ensures that a given caller (e.g., a dashboard user or process for account A) cannot access metrics for another account B. This opens a threat of cross-account data exposure due to missing or misconfigured tenant-aware authorization. (system-overview.md: “Metrics records associate a product account with usage counters.” and “They contain account identifiers and usage numbers, which are treated as confidential business data.” and “Dashboard — an internal reader of metrics.”)"
+    }
+  ],
+  "findings": [],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Metrics API",
+      "what_cannot_be_determined": "Whether privileged administrative access to the Metrics API (e.g., configuration endpoints, deployment/admin console) is restricted to specific identities/roles and how that access is documented is not described anywhere in the provided documentation."
+    },
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Managed Metrics Database",
+      "what_cannot_be_determined": "The documentation does not describe who has administrative access (e.g., DBAs, SREs) to the managed metrics database, how that access is controlled (IAM roles, network restrictions), or how the reach of such privileged access is documented."
+    },
+    {
+      "requirement_id": "req-AUTH-001",
+      "affected_component": "Metrics API",
+      "what_cannot_be_determined": "It is not documented whether calls to the internal Metrics API authenticate via a delegated mechanism (such as an internal identity provider, mTLS, or service identity) versus bespoke or unauthenticated access, nor how any delegation is configured."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Metrics Store",
+      "what_cannot_be_determined": "The documentation does not state whether multi-factor authentication is required for any human administrative interfaces involved in operating the metrics store (e.g., cloud console access to the managed database, deployment tooling, or dashboard administration) or who is responsible for enforcing MFA."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Metrics API",
+      "what_cannot_be_determined": "No information is provided on how the Metrics API enforces tenant-aware authorization so that callers can access only metrics for the appropriate product accounts, or how these authorization rules are documented."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Dashboard",
+      "what_cannot_be_determined": "The documentation does not explain how the dashboard ensures that a user or account context can only view metrics for its own product account and not for other accounts sharing the same metrics infrastructure."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Product service",
+      "what_cannot_be_determined": "It is not described whether the product service’s integration with the Metrics API is limited to only the write operations and account scopes it requires, or whether broader privileges exist (such as the ability to read or modify metrics for arbitrary accounts)."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Metrics API",
+      "what_cannot_be_determined": "There is no description of the CI/CD pipeline, deployment path, or how the build artifacts and infrastructure definitions for the Metrics API are validated and trusted before deployment."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Managed Metrics Database",
+      "what_cannot_be_determined": "Aside from a single Terraform resource snippet, there is no end-to-end description of the deployment process and controls for changes to the managed metrics database configuration (e.g., who can apply Terraform, how changes are reviewed, and how the deployment path is secured)."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Metrics API",
+      "what_cannot_be_determined": "While the connection from the Metrics API to the managed database is stated to use the platform’s transport encryption, it is not documented whether connections from the product service and dashboard to the Metrics API itself are encrypted in transit (e.g., HTTPS/mTLS) or use plain HTTP within the subnet."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Metrics Store",
+      "what_cannot_be_determined": "The only at-rest encryption controls described are for the managed database storage; it is not documented whether any other storage locations (e.g., local disks, backups, logs containing metrics) are also encrypted at rest."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Managed Metrics Database",
+      "what_cannot_be_determined": "There is no stated data retention policy for metrics records (how long they are kept, whether they are aggregated or pruned) or any statement about how this retention aligns with what customers are told about usage data handling."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Managed Metrics Database",
+      "what_cannot_be_determined": "The documentation does not explain how stored metrics are separated by tenant or product account within the database (e.g., per-tenant schemas, row-level isolation) or whether any technical separation beyond logical account identifiers is enforced."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Managed Metrics Database",
+      "what_cannot_be_determined": "It is not described whether and how customer-associated metrics data can be deleted on request (e.g., for account closure or regulatory erasure requests), including how deletions are implemented and verified in the managed database."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Metrics API",
+      "what_cannot_be_determined": "No logging strategy is described; specifically, it is unknown whether request/response or application logs from the Metrics API might contain sensitive fields such as account identifiers or detailed usage numbers and what measures, if any, are in place to prevent logging of such data."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Metrics Store",
+      "what_cannot_be_determined": "The documentation does not state whether security-relevant administrative actions (e.g., schema changes, access control modifications, credential rotations) for the metrics store components are recorded in audit logs."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Metrics API",
+      "what_cannot_be_determined": "Beyond stating that the metrics store is reachable only from inside the application subnet, the documentation does not specify which internal workloads can reach the Metrics API or whether network controls restrict access to only the product services and dashboard that require it."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Managed Metrics Database",
+      "what_cannot_be_determined": "Although the database instance is configured as not publicly accessible, there is no description of security groups, subnet configurations, or other mechanisms that limit which internal hosts or services can initiate connections to the managed metrics database."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Managed Metrics Database",
+      "what_cannot_be_determined": "The Terraform configuration shows an encrypted and non-public database instance, but does not indicate how database credentials (or IAM-based access, if used) are stored, rotated, or whether any long-lived credentials are held in a managed secret store."
+    }
+  ],
+  "questions": [
+    {
+      "question": "How is privileged administrative access to the Metrics API (such as operational or configuration endpoints) restricted, and where is the scope of that access documented (e.g., roles, groups, network paths)?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "Who has administrative access to the managed metrics database (DBAs, SREs, application team), how is that access technically enforced (IAM roles, security groups, bastion hosts), and how is its reach documented?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "What authentication mechanism is used for calls from the product service and dashboard to the Metrics API (e.g., mTLS, service accounts, OAuth2, internal identity provider), and is this considered a delegated authentication model?",
+      "requirement_id": "req-AUTH-001"
+    },
+    {
+      "question": "For any human-accessed interfaces involved in administering or operating the metrics store (cloud console, CI/CD system UI, database management tools), is multi-factor authentication enforced and who is responsible for configuring and monitoring MFA?",
+      "requirement_id": "req-AUTH-002"
+    },
+    {
+      "question": "How does the Metrics API enforce tenant-aware authorization so that callers can only read or write metrics for the product accounts they are entitled to, and how is this policy documented (e.g., by account ID, role-based rules, or other scoping)?",
+      "requirement_id": "req-AUTHZ-001"
+    },
+    {
+      "question": "What mechanisms does the dashboard use to ensure that a given user or account context can only view its own product account’s metrics and not metrics for other accounts?",
+      "requirement_id": "req-AUTHZ-001"
+    },
+    {
+      "question": "Are the product service’s and dashboard’s permissions to the Metrics API limited strictly to the operations and account scopes they require (principle of least privilege), and how is this enforced (e.g., per-service credentials, scoped tokens)?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "What is the CI/CD and infrastructure deployment path for the Metrics API and its database, and how are build artifacts, Terraform changes, and deployments reviewed, validated, and protected from tampering?",
+      "requirement_id": "req-CICD-001"
+    },
+    {
+      "question": "Are connections from the product service and dashboard to the Metrics API encrypted in transit (for example, via HTTPS or mTLS) and, if so, how is certificate management handled; if not, what compensating controls exist?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "Besides the managed database encryption at rest, are there any other storage locations for metrics data (such as local volumes, backups, or log archives), and are all such locations encrypted at rest by the platform or another managed service?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What is the defined retention period for metrics records in the managed database or associated storage, and how does this policy align with documentation or contracts that describe how long customers’ usage data is kept?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "How are metrics for different product accounts separated within the managed database (e.g., per-tenant schemas, row-level security), and are there any technical controls beyond application logic to enforce tenant separation?",
+      "requirement_id": "req-DATA-003"
+    },
+    {
+      "question": "Can customer-associated metrics data be deleted on request (such as upon account closure or regulatory erasure requests), and if so, what is the process and technical mechanism for ensuring and verifying deletion from the managed metrics database and any backups?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "What is the logging strategy for the Metrics API and related components, and how do you ensure that application or access logs do not contain sensitive elements such as raw account identifiers and detailed usage numbers unnecessarily?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "Which security-relevant administrative actions for the metrics store (e.g., database access grants, schema changes, configuration changes to the Metrics API) are logged, and where are these audit logs stored and reviewed?",
+      "requirement_id": "req-LOG-002"
+    },
+    {
+      "question": "Within the application subnet, which specific services or subnets are allowed to reach the Metrics API, and are there network controls (such as security groups or firewall rules) that restrict access only to the product services and dashboard that require it?",
+      "requirement_id": "req-NET-001"
+    },
+    {
+      "question": "Which internal hosts or services are permitted to connect to the managed metrics database at the network level (security groups, subnet ACLs), and how is this configured to ensure that only the Metrics API (and any strictly necessary administration paths) can reach it?",
+      "requirement_id": "req-NET-001"
+    },
+    {
+      "question": "How are credentials or access mechanisms for the managed metrics database (passwords, IAM roles, connection strings) stored and rotated, and are any long-lived secrets kept in a managed secret store such as AWS Secrets Manager or a similar service?",
+      "requirement_id": "req-SECRET-001"
+    }
+  ]
+}

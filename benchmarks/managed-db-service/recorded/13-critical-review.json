@@ -1,0 +1,31 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 22119,
+    "output_tokens": 14133,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.16897875",
+    "duration_seconds": 164.8123060419457
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-NET-001 concludes the requirement is fully satisfied for the Metrics API and metrics database, but the cited evidence only establishes that these components are not publicly accessible, not that they are reachable *only* from the specific workloads that use them and not from any untrusted internal network.",
+        "rationale": "Map-042 sets `satisfaction_status: satisfied` and argues that because the metrics store is \"reachable only from inside the application subnet\" [evd-001], the Metrics API is \"not reachable from the internet\" [evd-002], and the database has `publicly_accessible = false` in Terraform [evd-005][evd-006], req-NET-001 is fully met.\n\nThose passages do directly support that the Metrics API and metrics database are not exposed on the public internet and that the database is not publicly accessible. However, req-NET-001 (as summarized in the mapping) also requires that such internal components be \"reachable only from the workloads that use them, and not from an untrusted network.\" None of the cited evidence describes which other workloads or subnets can reach the Metrics API or database, whether the application subnet contains only trusted workloads that legitimately use these components, or whether additional network policies or security groups constrain internal access.\n\nBecause the documentation shows absence of public exposure but is silent on internal segmentation and which internal workloads can connect, the claim that req-NET-001 is *fully satisfied* is stronger than the evidence supports. A more defensible conclusion, given the current material, would treat the requirement as only partially evidenced (internet exposure mitigated, internal reachability undocumented) or leave satisfaction unknown pending further network design or configuration evidence.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}
