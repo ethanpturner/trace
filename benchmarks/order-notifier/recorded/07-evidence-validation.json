@@ -1,0 +1,937 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12264,
+    "output_tokens": 18497,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.2003",
+    "duration_seconds": 140.54331112501677
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 and evd-004 both title the system \"Order Notifier\", directly supporting the claimed name.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "# Order Notifier \u2014 Operations Notes\n\nNotes from the March incident review, kept current by the operations team."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that Order Notifier \"receives order-status callbacks from the payment provider and posts updates to the operations channel\", which matches the stated purpose.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided passage discusses an overall authorization or access model for the Order Notifier. The claim that the access model is \"unknown\" is a reasonable judgment about documentation gaps but is not itself stated or evidenced in the source content.",
+        "missing_evidence": [
+          "Architecture or security design documentation describing the overall access and authorization model for Order Notifier, including how inbound callbacks and outbound posting are authenticated and authorized."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the Callback Receiver as \"the endpoint registered with the payment provider\" that processes callbacks, and evd-001 states that Order Notifier receives order-status callbacks. Together they directly support that cmp-001 is an endpoint registered with the payment provider to receive and process order-status callbacks.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that callbacks are not signed and that the provider's optional callback-signing feature is not enabled for this integration, directly supporting the described callback_authentication property.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 explicitly says that the callback endpoint \"accepts unsigned requests from anywhere\" and that any correctly formatted callback is processed as though it came from the payment provider, which directly matches the stated network_exposure.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 describes the Callback Receiver as \"the endpoint registered with the payment provider\" that processes callbacks. This strongly suggests a webhook-style integration, but the term \"webhook\" and the specific entry point type are not explicitly documented. The claim is therefore an inference that should be confirmed.",
+        "missing_evidence": [
+          "Design or API documentation that explicitly classifies the Callback Receiver as an HTTP webhook (including protocol, path, and expected callback mechanism)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 notes that the callback endpoint \"accepts unsigned requests from anywhere\" and that any caller that formats a callback correctly is processed as though it came from the payment provider. This implies the endpoint is reachable from arbitrary external sources and effectively internet-accessible, supporting the claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the Channel Poster \"formats the order status and posts it to the operations channel over the channel platform's HTTPS API\", directly matching the described role.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 directly states that \"Channel posting has retried safely during provider outages\", which supports the described retry_behavior.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 2. Posting\n\nChannel posting has retried safely during provider outages. Nothing was noted about\nrepeated deliveries of the same callback."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-006 states that \"Nothing was noted about repeated deliveries of the same callback\", which supports the idea that duplicate-callback handling is not documented in the operations notes. However, the assertion \"duplicate_callback_handling: None\" could be read as implying that no handling exists, which is not established by the evidence\u2014only that it was not noted. The claim is therefore supported insofar as the behavior is undocumented, but not as a statement that the system definitively lacks duplicate handling.",
+        "missing_evidence": [
+          "Design, implementation, or runbook documentation that explicitly describes how the system handles repeated deliveries of the same callback (e.g., idempotency keys, de-duplication logic, or confirmation that no special handling exists)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 2. Posting\n\nChannel posting has retried safely during provider outages. Nothing was noted about\nrepeated deliveries of the same callback."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 describes order-status callbacks coming from \"the payment provider\"; evd-002 identifies the Callback Receiver as an endpoint registered with that provider and notes that the provider has an optional callback-signing feature not enabled; evd-005 reiterates the provider's signing feature and backlog status. Together these passages support the characterization of cmp-003 as an external payment provider that issues order-status callbacks and offers an optional callback-signing feature.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the Channel Poster posts to the operations channel over \"the channel platform's HTTPS API\", and evd-001 notes that updates are posted to the operations channel. This supports the description of cmp-004 as the (external) channel platform HTTPS API used for those updates.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 explains that the Callback Receiver processes any well-formed callback and that callbacks are not signed and the signing feature is not enabled; evd-005 adds that the endpoint accepts unsigned requests from anywhere and treats any correctly formatted callback as though from the provider. Together these passages directly support that the inbound callback data flow df-001 has no authentication mechanism.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the provider's optional callback-signing feature is not enabled for this integration, and evd-005 states that enabling the provider's signing feature is tracked in the backlog and not yet scheduled. Together they directly support the described signing_feature_status for df-001.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 says that the Channel Poster posts to the operations channel over the channel platform's \"HTTPS API\", which directly supports that the protocol for df-003 is HTTPS.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 documents that df-003 uses an \"HTTPS API\". While TLS is not named explicitly, HTTPS conventionally implies TLS for transport encryption. The claim that encryption in transit is via TLS is therefore a reasonable and well-supported inference from the documented use of HTTPS.",
+        "missing_evidence": [
+          "Configuration or platform documentation confirming TLS usage and detailing supported protocol versions and cipher suites for the channel platform's HTTPS API."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 shows that the Callback Receiver processes callbacks from the payment provider, and evd-003 shows that the Channel Poster formats order status and posts it to the operations channel. Together they imply that some form of order-status data flows from the Callback Receiver to the Channel Poster within the system. However, the documents do not state that the Callback Receiver itself \"forwards processed order status data\" directly to the Channel Poster or describe the mechanism of that flow. The existence of a data flow between these components is supported, but the specific direction and implementation described in the claim are not documented.",
+        "missing_evidence": [
+          "An architecture or sequence diagram, or design documentation, that explicitly describes how processed callback data moves from the Callback Receiver to the Channel Poster (e.g., direct call, message queue, database)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Channel Poster\n\nThe Channel Poster formats the order status and posts it to the operations channel over the\nchannel platform's HTTPS API."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-019",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that Order Notifier receives order-status callbacks from the payment provider and posts updates to the operations channel. Describing ast-001 as the order status information received via callbacks and propagated to the channel is a straightforward abstraction of this documented behavior.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-020",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 documents that Order Notifier posts order-status updates to the operations channel. Treating the resulting messages in the operations channel as an asset representing those updates is an inferred but well-supported description aligned with the documented behavior.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Order Notifier \u2014 Integration Guide\n\nThe Order Notifier receives order-status callbacks from the payment provider and posts\nupdates to the operations channel."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 establishes that the payment provider offers an optional callback-signing feature that is not enabled for this integration, and evd-005 states that enabling the provider's signing feature is tracked in the backlog and not yet scheduled. These passages directly support that signature verification is a planned but currently absent control. However, the claim further states that, once enabled, the Callback Receiver will only accept cryptographically signed callbacks rather than any well-formed callback from the internet. The specific future behavior and enforcement semantics of the planned signing feature are not described in the provided evidence and remain an inference.",
+        "missing_evidence": [
+          "Provider documentation or design notes describing how the callback-signing feature works (e.g., verification steps, rejection of unsigned/invalid callbacks), and system design documentation stating how the Callback Receiver will be configured to enforce signature verification."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Callback Receiver\n\nThe Callback Receiver is the endpoint registered with the payment provider. It processes\nany well-formed callback it receives: callbacks are not signed, and the provider's optional\ncallback-signing feature is not enabled for this integration."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 1. Callback intake\n\nThe review confirmed the callback endpoint accepts unsigned requests from anywhere; any\ncaller that formats a callback correctly is processed as though it came from the payment\nprovider. Enabling the provider's signing feature is tracked in the backlog and not yet\nscheduled."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 directly states that \"Channel posting has retried safely during provider outages\", which supports the existence of a retry mechanism used during provider outages to avoid losing updates. The limitation about lack of deduplication is also consistent with the note that \"Nothing was noted about repeated deliveries of the same callback.\"",
+        "missing_evidence": [
+          "Documentation of retry policies for the Channel Poster (e.g., backoff strategy, maximum retries, and handling of duplicate callbacks) if stronger assurance on behavior bounds is required."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 2. Posting\n\nChannel posting has retried safely during provider outages. Nothing was noted about\nrepeated deliveries of the same callback."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No source-content passages in this batch describe requirement req-ADMIN-001, threat thr-001, or their relationship. Without evidence about the requirement or threat, the mapping that req-ADMIN-001 is not applicable to thr-001 cannot be validated.",
+        "missing_evidence": [
+          "Authoritative text of req-ADMIN-001 and the full description of thr-001.",
+          "Architecture or threat-model documentation showing which interfaces thr-001 involves and whether any privileged administrative or operator interface is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The provided source content does not include the text of req-AI-001 or the definition of thr-001. Although the system documentation discusses callbacks and channel posting, there is no fenced evidence tying these to the requirement's scope, so the conclusion that req-AI-001 is not applicable to thr-001 cannot be validated from the available passages.",
+        "missing_evidence": [
+          "Authoritative text of req-AI-001 and the full description of thr-001.",
+          "Documentation confirming whether any AI or model component processes externally sourced content in the context of thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No evidence excerpts describe req-AI-002, its applicability conditions, or the detailed steps of thr-001. Without those, the assertion that req-AI-002 is not applicable to thr-001 is analysis-only and cannot be checked against source documentation.",
+        "missing_evidence": [
+          "Authoritative text of req-AI-002 and the full description of thr-001.",
+          "System and threat-model documentation clarifying whether any model output is published externally in the attack path of thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The batch contains no source-content passages defining req-AI-003 or threat thr-001. While the integration documentation mentions only a payment provider and channel platform, we cannot, from absence alone, validate the mapping that req-AI-003 is not applicable to thr-001.",
+        "missing_evidence": [
+          "Authoritative text of req-AI-003 and the full description of thr-001.",
+          "Documentation confirming whether any customer content is sent to an external model provider in the scenario covered by thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "There is no fenced evidence describing req-AI-004 or its scope, nor a detailed source document for thr-001. The assertion that req-AI-004 is not applicable to thr-001 therefore cannot be validated against the provided material.",
+        "missing_evidence": [
+          "Authoritative text of req-AI-004 and the full description of thr-001.",
+          "Architecture or design documentation describing whether any model output is rendered into a UI or markup in the threat scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The available evidence does not include the specification of req-AUTH-001 or the threat description for thr-001. Without those, the conclusion that req-AUTH-001 is not applicable to thr-001 cannot be grounded in source documentation.",
+        "missing_evidence": [
+          "Authoritative text of req-AUTH-001 and the full description of thr-001.",
+          "Design or threat-model documentation explaining whether delegated user authentication to an external IdP plays any role in the thr-001 attack path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No evidence excerpts in this batch define req-AUTH-002 or thr-001. As a result, the mapping that req-AUTH-002 is not applicable to thr-001 is not traceable to any specific source passage.",
+        "missing_evidence": [
+          "Authoritative text of req-AUTH-002 and the full description of thr-001.",
+          "Documentation identifying whether any administrative or privileged user login is involved in the attack path for thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The provided source content does not include the definition of req-AUTHZ-001 or the detailed description of thr-001. Without these, the mapping that req-AUTHZ-001 is not applicable to thr-001 cannot be independently validated.",
+        "missing_evidence": [
+          "Authoritative text of req-AUTHZ-001 and the full description of thr-001.",
+          "Architecture or threat-model documentation indicating whether any multi-tenant authorization boundary is implicated in thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No fenced evidence in this batch describes req-AUTHZ-002, its conditions, or the full definition of thr-001. Accordingly, the applicability decision that req-AUTHZ-002 is not applicable to thr-001 cannot be tied to specific source passages.",
+        "missing_evidence": [
+          "Authoritative text of req-AUTHZ-002 and the full description of thr-001.",
+          "Documentation of the delegated access scopes used for the channel platform API and how, if at all, they factor into thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The batch includes no source-content excerpts defining req-CICD-001 or threat thr-001. Without those, the statement that req-CICD-001 is not applicable to thr-001 cannot be verified against documentation.",
+        "missing_evidence": [
+          "Authoritative text of req-CICD-001 and the full description of thr-001.",
+          "Documentation explaining whether build or deployment pipeline components are involved in the attack path for thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "There are no fenced passages describing req-DATA-001 or the full scope of thr-001. While encryption in transit is touched on for the channel API, that alone does not document the applicability of req-DATA-001 to thr-001, so the mapping remains unevidenced.",
+        "missing_evidence": [
+          "Authoritative text of req-DATA-001 and the full description of thr-001.",
+          "A threat-model or requirements trace showing how data-in-transit and data-at-rest protections relate to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The provided evidence does not include the text of req-DATA-002 or a detailed threat description for thr-001. The conclusion that req-DATA-002 is not applicable to thr-001 is therefore not verifiable from the current source material.",
+        "missing_evidence": [
+          "Authoritative text of req-DATA-002 and the full description of thr-001.",
+          "Documentation describing data retention practices relevant to the flows involved in thr-001, if any."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No source-content excerpts define req-DATA-003 or thr-001 in this batch. As a result, the mapping that req-DATA-003 is not applicable to thr-001 cannot be checked against underlying documentation.",
+        "missing_evidence": [
+          "Authoritative text of req-DATA-003 and the full description of thr-001.",
+          "Architecture or storage documentation indicating whether shared, multi-tenant storage is involved in the data flows relevant to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The batch does not provide the wording of req-DATA-004 or the detailed definition of thr-001. Without those, the assertion that req-DATA-004 is not applicable to thr-001 lacks traceable evidence support.",
+        "missing_evidence": [
+          "Authoritative text of req-DATA-004 and the full description of thr-001.",
+          "Documentation of data deletion capabilities for data affected by thr-001, to understand whether req-DATA-004 could be relevant."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No fenced evidence defines req-LOG-001 or thr-001, nor explains how logging requirements relate to the spoofed-callback scenario. The mapping that req-LOG-001 is not applicable to thr-001 therefore cannot be validated from the current material.",
+        "missing_evidence": [
+          "Authoritative text of req-LOG-001 and the full description of thr-001.",
+          "Documentation of logging behavior for the callback receiver and channel poster flows relevant to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The batch lacks source-content passages describing req-LOG-002 or the detailed steps of thr-001. Consequently, the conclusion that req-LOG-002 is not applicable to thr-001 is not supported by direct evidence.",
+        "missing_evidence": [
+          "Authoritative text of req-LOG-002 and the full description of thr-001.",
+          "Architecture or operations documentation indicating whether any administrative or operator interface with privileged actions exists in the context of thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "Although evd-002 and evd-005 describe an internet-exposed callback endpoint, there is no fenced evidence defining req-NET-001 or thr-001. The mapping that req-NET-001 is not applicable to thr-001 depends on requirement semantics that are not documented in the provided source content.",
+        "missing_evidence": [
+          "Authoritative text of req-NET-001 and the full description of thr-001.",
+          "Network architecture documentation distinguishing public-facing components from internal data stores, queues, caches, or services in relation to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The source content provided does not include the specification of req-SECRET-001 or the full description of thr-001. Without these, the statement that req-SECRET-001 is not applicable to thr-001 cannot be validated against architectural or requirements documentation.",
+        "missing_evidence": [
+          "Authoritative text of req-SECRET-001 and the full description of thr-001.",
+          "Documentation of how credentials, keys, or signing materials (if any) are stored and used in the flows implicated by thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      }
+    ]
+  }
+}

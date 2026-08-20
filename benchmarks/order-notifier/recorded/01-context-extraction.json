@@ -1,21 +1,83 @@
 {
   "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9863,
+    "output_tokens": 10230,
+    "cache_read_tokens": 2944,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.11499675",
+    "duration_seconds": 94.78882712498307
+  },
   "response": {
     "system": {
       "system_name": "Order Notifier",
-      "system_purpose": "receive order-status callbacks from the payment provider and post updates to the operations channel",
+      "system_purpose": "Receives order-status callbacks from the payment provider and posts updates to the operations channel.",
       "business_criticality": null,
       "environment": [],
       "deployment_model": null,
-      "data_classifications": []
+      "data_classifications": [],
+      "access_model": "unknown"
     },
     "claims": [
       {
-        "key": "unsigned-guide",
+        "key": "claim-system-name",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "name",
+        "value": "Order Notifier",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim-system-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Receives order-status callbacks from the payment provider and posts updates to the operations channel.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-access-model-unknown",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "access_model",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The provided documentation does not state an overall authorization posture for the system.",
+        "evidence_ids": []
+      },
+      {
+        "key": "claim-callback-role",
         "subject_type": "component",
-        "subject_key": "receiver",
-        "predicate": "callback_authenticity",
-        "value": "the receiver processes any well-formed callback; callbacks are not signed, and the provider's optional callback-signing feature is not enabled",
+        "subject_key": "callback-receiver",
+        "predicate": "role",
+        "value": "Endpoint registered with the payment provider to receive and process order-status callbacks.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-callback-no-signing",
+        "subject_type": "component",
+        "subject_key": "callback-receiver",
+        "predicate": "callback_authentication",
+        "value": "Callbacks are not signed and the provider's optional callback-signing feature is not enabled for this integration.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -24,11 +86,11 @@
         ]
       },
       {
-        "key": "unsigned-review",
+        "key": "claim-callback-accepts-anywhere",
         "subject_type": "component",
-        "subject_key": "receiver",
-        "predicate": "callback_intake_review",
-        "value": "the incident review confirmed the callback endpoint accepts unsigned requests from anywhere, and enabling provider signing is tracked in the backlog and not yet scheduled",
+        "subject_key": "callback-receiver",
+        "predicate": "network_exposure",
+        "value": "Callback endpoint accepts unsigned requests from anywhere; any correctly formatted callback is processed as though it came from the payment provider.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -37,124 +99,469 @@
         ]
       },
       {
-        "key": "posting",
+        "key": "claim-callback-entrypoint-webhook",
         "subject_type": "component",
-        "subject_key": "poster",
-        "predicate": "channel_posting",
-        "value": "the channel poster posts order status to the operations channel over the channel platform's HTTPS API, and has retried safely during provider outages",
+        "subject_key": "callback-receiver",
+        "predicate": "entry_point_type",
+        "value": "webhook",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The documentation describes the Callback Receiver as an endpoint registered with the payment provider for callbacks, which is the typical webhook integration pattern.",
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-callback-internet-accessible",
+        "subject_type": "component",
+        "subject_key": "callback-receiver",
+        "predicate": "internet_accessible",
+        "value": true,
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "Operations notes state that the callback endpoint accepts unsigned requests from anywhere, implying it is reachable from arbitrary internet sources.",
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "claim-channel-poster-role",
+        "subject_type": "component",
+        "subject_key": "channel-poster",
+        "predicate": "role",
+        "value": "Formats order status and posts it to the operations channel over the channel platform's HTTPS API.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
         "evidence_ids": [
-          "evd-003",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "claim-channel-posting-retries",
+        "subject_type": "component",
+        "subject_key": "channel-poster",
+        "predicate": "retry_behavior",
+        "value": "Channel posting has retried safely during provider outages.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
           "evd-006"
         ]
-      }
-    ],
-    "components": [
+      },
       {
-        "key": "receiver",
-        "name": "Callback Receiver",
-        "component_type": "service",
-        "description": "the endpoint registered with the payment provider; processes any well-formed callback it receives",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": null,
-        "internet_accessible": true,
-        "externally_managed": null,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
+        "key": "claim-duplicate-handling-unknown",
+        "subject_type": "component",
+        "subject_key": "channel-poster",
+        "predicate": "duplicate_callback_handling",
+        "value": null,
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "Operations notes explicitly state that nothing was noted about repeated deliveries of the same callback, so behavior on duplicates is not described.",
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "claim-payment-provider-role",
+        "subject_type": "component",
+        "subject_key": "payment-provider",
+        "predicate": "role",
+        "value": "External payment provider that issues order-status callbacks to Order Notifier and offers an optional callback-signing feature.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "claim-channel-platform-role",
+        "subject_type": "component",
+        "subject_key": "channel-platform-api",
+        "predicate": "role",
+        "value": "External channel platform HTTPS API used to post order status updates to the operations channel.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "claim-flow1-auth-none",
+        "subject_type": "data_flow",
+        "subject_key": "payment-provider-to-callback",
+        "predicate": "authentication",
+        "value": "none",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
         "evidence_ids": [
           "evd-002",
           "evd-005"
         ]
       },
       {
-        "key": "poster",
-        "name": "Channel Poster",
-        "component_type": "service",
-        "description": "formats the order status and posts it to the operations channel over HTTPS",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": null,
-        "internet_accessible": null,
-        "externally_managed": null,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
+        "key": "claim-flow1-signing-backlog",
+        "subject_type": "data_flow",
+        "subject_key": "payment-provider-to-callback",
+        "predicate": "signing_feature_status",
+        "value": "Optional callback-signing feature is available from the provider but is not enabled; enabling it is tracked in the backlog and not yet scheduled.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "claim-flow2-protocol-https",
+        "subject_type": "data_flow",
+        "subject_key": "channel-poster-to-channel-platform",
+        "predicate": "protocol",
+        "value": "https",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
         "evidence_ids": [
           "evd-003"
         ]
-      }
-    ],
-    "actors": [
+      },
       {
-        "key": "provider",
-        "name": "Payment provider",
-        "actor_type": "external_service",
-        "trust_level": null,
-        "capabilities": [],
-        "authentication_method": null,
+        "key": "claim-flow2-encryption-tls",
+        "subject_type": "data_flow",
+        "subject_key": "channel-poster-to-channel-platform",
+        "predicate": "encryption_in_transit",
+        "value": "tls",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The integration guide states that the Channel Poster uses the channel platform's HTTPS API, which implies TLS is used for transport encryption.",
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "claim-internal-flow-exists",
+        "subject_type": "data_flow",
+        "subject_key": "callback-to-channel-poster",
+        "predicate": "existence",
+        "value": "Callback Receiver forwards processed order status data to Channel Poster within the Order Notifier system.",
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The documentation describes a Callback Receiver that processes callbacks and a Channel Poster that formats and posts order status, implying that processed callback data is passed between them, although the mechanism is not detailed.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "claim-asset-order-status",
+        "subject_type": "asset",
+        "subject_key": "order-status-data",
+        "predicate": "description",
+        "value": "Order status information received from payment provider callbacks and propagated to the operations channel.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-asset-operations-messages",
+        "subject_type": "asset",
+        "subject_key": "operations-channel-messages",
+        "predicate": "description",
+        "value": "Messages in the operations channel containing order status updates produced by Order Notifier.",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The integration guide says Order Notifier posts order status updates to the operations channel, so those channel messages represent the propagated order status data.",
         "evidence_ids": [
           "evd-001"
         ]
       }
     ],
+    "components": [
+      {
+        "key": "callback-receiver",
+        "name": "Callback Receiver",
+        "component_type": "webhook_endpoint",
+        "description": "Endpoint registered with the payment provider that receives and processes order-status callbacks.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [
+          "webhook"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [
+          "none"
+        ],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "channel-poster",
+        "name": "Channel Poster",
+        "component_type": "service",
+        "description": "Internal service that formats order status and posts it to the operations channel via the channel platform's HTTPS API.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ]
+      },
+      {
+        "key": "payment-provider",
+        "name": "Payment Provider",
+        "component_type": "external_service",
+        "description": "External payment provider that sends order-status callbacks to Order Notifier and offers an optional callback-signing feature.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "channel-platform-api",
+        "name": "Channel Platform HTTPS API",
+        "component_type": "external_service",
+        "description": "External channel platform HTTPS API that receives order status updates for the operations channel.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-006"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "payment-provider-actor",
+        "name": "Payment provider callback service",
+        "actor_type": "service",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "operations-team",
+        "name": "Operations team",
+        "actor_type": "human_user",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      }
+    ],
     "assets": [
       {
-        "key": "callbacks",
-        "name": "Order-status callbacks",
-        "asset_type": "operational_data",
-        "description": null,
+        "key": "order-status-data",
+        "name": "Order status data",
+        "asset_type": "data",
+        "description": "Order status information received from the payment provider and propagated to the operations channel by Order Notifier.",
         "confidentiality_impact": null,
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
         "component_keys": [
-          "receiver"
+          "payment-provider",
+          "callback-receiver",
+          "channel-poster",
+          "channel-platform-api"
         ],
+        "stored_in_component_keys": [],
         "evidence_ids": [
-          "evd-002"
+          "evd-001"
+        ]
+      },
+      {
+        "key": "operations-channel-messages",
+        "name": "Operations channel messages",
+        "asset_type": "data",
+        "description": "Messages in the operations channel that contain order status updates produced by Order Notifier.",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "channel-platform-api"
+        ],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
         ]
       }
     ],
     "data_flows": [
       {
-        "key": "intake",
-        "name": "Callback intake",
-        "source_component_key": "receiver",
-        "destination_component_key": "poster",
+        "key": "payment-provider-to-callback",
+        "name": "Payment provider callbacks to Callback Receiver",
+        "source_component_key": "payment-provider",
+        "destination_component_key": "callback-receiver",
         "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "order_status_callback"
+        ],
+        "authentication": "none",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "internet-boundary"
+        ],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "callback-to-channel-poster",
+        "name": "Callback Receiver to Channel Poster",
+        "source_component_key": "callback-receiver",
+        "destination_component_key": "channel-poster",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "order_status_internal"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
-        "internet_exposed": null,
+        "internet_exposed": false,
         "evidence_ids": [
-          "evd-002"
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "channel-poster-to-channel-platform",
+        "name": "Channel Poster to channel platform HTTPS API",
+        "source_component_key": "channel-poster",
+        "destination_component_key": "channel-platform-api",
+        "direction": "one_way",
+        "protocol": "https",
+        "data_types": [
+          "order_status_update"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "tls",
+        "crosses_trust_boundary_keys": [
+          "internet-boundary"
+        ],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
         ]
       }
     ],
     "trust_boundaries": [
       {
-        "key": "internet",
-        "name": "Public internet boundary",
-        "boundary_type": "internet_to_application",
-        "description": "the callback endpoint accepts requests from anywhere",
+        "key": "internet-boundary",
+        "name": "Internet to Order Notifier boundary",
+        "boundary_type": "network",
+        "description": "Boundary between external internet-facing services and the internal Order Notifier components.",
         "inside_component_keys": [
-          "receiver"
+          "callback-receiver",
+          "channel-poster"
         ],
-        "outside_component_keys": [],
+        "outside_component_keys": [
+          "payment-provider",
+          "channel-platform-api"
+        ],
         "controls": [],
         "evidence_ids": [
-          "evd-005"
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
         ]
       }
     ],
-    "questions": [],
+    "questions": [
+      {
+        "key": "q-callback-signing",
+        "question": "Will the payment provider's callback-signing feature be enabled for Order Notifier, and will the Callback Receiver validate signatures and reject unsigned or invalid callbacks?",
+        "rationale": "The documentation states that callbacks are currently unsigned and accepted from anywhere, and that enabling signing is only tracked in the backlog. Whether signatures will be enforced determines the authentication posture of the inbound callback data flow and how much trust can be placed in callback origin.",
+        "related_object_key": "payment-provider-to-callback",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-duplicate-callbacks",
+        "question": "How does Order Notifier handle repeated deliveries of the same callback (for example, retries from the payment provider)?",
+        "rationale": "Operations notes say that nothing was noted about repeated deliveries of the same callback, leaving it unclear whether the Callback Receiver and Channel Poster are idempotent. This affects whether duplicate or replayed callbacks could cause inconsistent or misleading order status updates.",
+        "related_object_key": "payment-provider-to-callback",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-channel-api-auth",
+        "question": "What authentication mechanism, if any, is used when the Channel Poster calls the channel platform's HTTPS API (for example, API tokens or OAuth)?",
+        "rationale": "The documentation notes that the Channel Poster uses the channel platform's HTTPS API but does not describe any authentication. Knowing how these API calls are authenticated is necessary to understand how access to the operations channel is controlled and how message posting could be abused.",
+        "related_object_key": "channel-poster-to-channel-platform",
+        "priority": "high",
+        "blocking": false
+      }
+    ],
     "observations": []
   }
 }

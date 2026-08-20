@@ -160,12 +160,14 @@ scenarios:
   - slug: order-notifier
     name: Order Notifier
     path: benchmarks/order-notifier
-    # Two documents describe the same unsigned callback endpoint, and the recorded mapping
-    # draws the same conclusion once per document. Dedup merges the two provisional
-    # findings (DEC-052: shared threat, shared requirement); one finding is approved and
-    # the merged duplicate is retained with duplicate_of_id.
+    # Two documents describe the same unsigned callback endpoint. The authored recording
+    # drew the conclusion once per document and graded the DEC-052 merge; the live capture
+    # (2026-08-20, openai/gpt-5.1) minted no findings at all — the mapping died in the
+    # evidence-validation lens — so the truth set's finding scores missed and the merge
+    # machinery never engaged. See recorded/provenance.md.
     status: authored
     category: duplicate-threats
+    workflow_version: "0.2"
 
   - slug: translation-gateway
     name: Helpdesk Translate

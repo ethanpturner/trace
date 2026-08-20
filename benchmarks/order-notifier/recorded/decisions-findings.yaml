@@ -1,7 +1,0 @@
-assessment_id: asm-001
-reviewer: recorded-reviewer
-findings:
-- id: fnd-001
-  severity: medium
-  decision: approve
-  rationale: Both documents affirmatively establish the unsigned intake; the merged finding carries the union of their evidence, and the duplicate is retained with its merge record rather than double-reported.

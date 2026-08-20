@@ -1,27 +1,31 @@
 assessment_id: asm-001
 system_context_version: 1
-reviewer: recorded-reviewer
+reviewer: capture-reviewer
 components:
 - id: cmp-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Callback Receiver
-    description: the endpoint registered with the payment provider; processes any well-formed callback
-      it receives
-    component_type: service
+    description: Endpoint registered with the payment provider that receives and processes order-status
+      callbacks.
+    component_type: webhook_endpoint
     technology: []
     ownership: null
     deployment_zone: null
     internet_accessible: true
     externally_managed: null
     data_classifications: []
-    authentication_mechanisms: []
+    authentication_mechanisms:
+    - none
     authorization_mechanisms: []
 - id: cmp-002
   decision: approve
+  attach_evidence: []
   editable:
     name: Channel Poster
-    description: formats the order status and posts it to the operations channel over HTTPS
+    description: Internal service that formats order status and posts it to the operations channel via
+      the channel platform's HTTPS API.
     component_type: service
     technology: []
     ownership: null
@@ -31,22 +35,79 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Payment Provider
+    description: External payment provider that sends order-status callbacks to Order Notifier and offers
+      an optional callback-signing feature.
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Channel Platform HTTPS API
+    description: External channel platform HTTPS API that receives order status updates for the operations
+      channel.
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
 actors:
 - id: act-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Payment provider
-    actor_type: external_service
+    name: Payment provider callback service
+    actor_type: service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Operations team
+    actor_type: human_user
     trust_level: null
     capabilities: []
     authentication_method: null
 assets:
 - id: ast-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Order-status callbacks
-    asset_type: operational_data
-    description: null
+    name: Order status data
+    asset_type: data
+    description: Order status information received from the payment provider and propagated to the operations
+      channel by Order Notifier.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Operations channel messages
+    asset_type: data
+    description: Messages in the operations channel that contain order status updates produced by Order
+      Notifier.
     confidentiality_impact: null
     integrity_impact: null
     availability_impact: null
@@ -55,23 +116,54 @@ assets:
 data_flows:
 - id: df-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Callback intake
+    name: Payment provider callbacks to Callback Receiver
     direction: one_way
     protocol: null
-    data_types: []
+    data_types:
+    - order_status_callback
     authentication: unknown
     encryption_in_transit: unknown
-    internet_exposed: null
+    internet_exposed: true
+    source_component_id: cmp-003
+    destination_component_id: cmp-001
+- id: df-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Callback Receiver to Channel Poster
+    direction: one_way
+    protocol: null
+    data_types:
+    - order_status_internal
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
     source_component_id: cmp-001
     destination_component_id: cmp-002
+- id: df-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Channel Poster to channel platform HTTPS API
+    direction: one_way
+    protocol: https
+    data_types:
+    - order_status_update
+    authentication: unknown
+    encryption_in_transit: tls
+    internet_exposed: true
+    source_component_id: cmp-002
+    destination_component_id: cmp-004
 trust_boundaries:
 - id: tb-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Public internet boundary
-    boundary_type: internet_to_application
-    description: the callback endpoint accepts requests from anywhere
+    name: Internet to Order Notifier boundary
+    boundary_type: network
+    description: Boundary between external internet-facing services and the internal Order Notifier components.
     controls: []
 claims:
 - id: ctx-001
@@ -79,36 +171,297 @@ claims:
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-002
+  - evd-001
+  - evd-004
   editable:
-    predicate: callback_authenticity
-    value: the receiver processes any well-formed callback; callbacks are not signed, and the provider's
-      optional callback-signing feature is not enabled
+    predicate: name
+    value: Order Notifier
     rationale: null
 - id: ctx-002
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-005
+  - evd-001
   editable:
-    predicate: callback_intake_review
-    value: the incident review confirmed the callback endpoint accepts unsigned requests from anywhere,
-      and enabling provider signing is tracked in the backlog and not yet scheduled
+    predicate: purpose
+    value: Receives order-status callbacks from the payment provider and posts updates to the operations
+      channel.
     rationale: null
 - id: ctx-003
+  status: unknown
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence: []
+  editable:
+    predicate: access_model
+    value: unknown
+    rationale: The provided documentation does not state an overall authorization posture for the system.
+- id: ctx-004
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  editable:
+    predicate: role
+    value: Endpoint registered with the payment provider to receive and process order-status callbacks.
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: callback_authentication
+    value: Callbacks are not signed and the provider's optional callback-signing feature is not enabled
+      for this integration.
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  editable:
+    predicate: network_exposure
+    value: Callback endpoint accepts unsigned requests from anywhere; any correctly formatted callback
+      is processed as though it came from the payment provider.
+    rationale: null
+- id: ctx-007
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: entry_point_type
+    value: webhook
+    rationale: The documentation describes the Callback Receiver as an endpoint registered with the payment
+      provider for callbacks, which is the typical webhook integration pattern.
+- id: ctx-008
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  editable:
+    predicate: internet_accessible
+    value: true
+    rationale: Operations notes state that the callback endpoint accepts unsigned requests from anywhere,
+      implying it is reachable from arbitrary internet sources.
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
   evidence:
   - evd-003
+  editable:
+    predicate: role
+    value: Formats order status and posts it to the operations channel over the channel platform's HTTPS
+      API.
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
   - evd-006
   editable:
-    predicate: channel_posting
-    value: the channel poster posts order status to the operations channel over the channel platform's
-      HTTPS API, and has retried safely during provider outages
+    predicate: retry_behavior
+    value: Channel posting has retried safely during provider outages.
     rationale: null
-questions: []
+- id: ctx-011
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: duplicate_callback_handling
+    value: null
+    rationale: Operations notes explicitly state that nothing was noted about repeated deliveries of the
+      same callback, so behavior on duplicates is not described.
+- id: ctx-012
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  - evd-005
+  editable:
+    predicate: role
+    value: External payment provider that issues order-status callbacks to Order Notifier and offers an
+      optional callback-signing feature.
+    rationale: null
+- id: ctx-013
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-003
+  editable:
+    predicate: role
+    value: External channel platform HTTPS API used to post order status updates to the operations channel.
+    rationale: null
+- id: ctx-014
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-005
+  editable:
+    predicate: authentication
+    value: none
+    rationale: null
+- id: ctx-015
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-005
+  editable:
+    predicate: signing_feature_status
+    value: Optional callback-signing feature is available from the provider but is not enabled; enabling
+      it is tracked in the backlog and not yet scheduled.
+    rationale: null
+- id: ctx-016
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: protocol
+    value: https
+    rationale: null
+- id: ctx-017
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: encryption_in_transit
+    value: tls
+    rationale: The integration guide states that the Channel Poster uses the channel platform's HTTPS
+      API, which implies TLS is used for transport encryption.
+- id: ctx-018
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-003
+  editable:
+    predicate: existence
+    value: Callback Receiver forwards processed order status data to Channel Poster within the Order Notifier
+      system.
+    rationale: The documentation describes a Callback Receiver that processes callbacks and a Channel
+      Poster that formats and posts order status, implying that processed callback data is passed between
+      them, although the mechanism is not detailed.
+- id: ctx-019
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: description
+    value: Order status information received from payment provider callbacks and propagated to the operations
+      channel.
+    rationale: null
+- id: ctx-020
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: description
+    value: Messages in the operations channel containing order status updates produced by Order Notifier.
+    rationale: The integration guide says Order Notifier posts order status updates to the operations
+      channel, so those channel messages represent the propagated order status data.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: Will the payment provider's callback-signing feature be enabled for Order Notifier, and will
+    the Callback Receiver validate signatures and reject unsigned or invalid callbacks?
+  priority: high
+  blocking: false
+  answer: Not currently. Both documents state the provider's optional callback-signing feature is not
+    enabled; the operations notes record enabling it as backlog work, not yet scheduled. No signature-validation
+    behavior exists to describe.
+- id: qst-003
+  question: What authentication mechanism, if any, is used when the Channel Poster calls the channel platform's
+    HTTPS API (for example, API tokens or OAuth)?
+  priority: high
+  blocking: false
+  answer: null
+- id: qst-002
+  question: How does Order Notifier handle repeated deliveries of the same callback (for example, retries
+    from the payment provider)?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-004
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: 'The operations notes state the callback endpoint accepts unsigned requests from anywhere: any
+    internet caller that formats a callback correctly reaches intake and is processed as though it were
+    the payment provider. External reachability is documented; the callers are effectively anonymous.'
+- id: qst-005
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null

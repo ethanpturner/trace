@@ -1,0 +1,11 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-WEBHOOK-001",
+      "affected_component": "Callback Receiver",
+      "title": "Callback endpoint accepts unsigned requests from anywhere without authenticity verification",
+      "rationale": "req-WEBHOOK-001 requires that inbound events be authenticated before processing. The documentation explicitly states that callbacks are not signed, the provider’s signing feature is not enabled, and the endpoint accepts unsigned requests from anywhere, processing any well‑formed callback as if it came from the payment provider. This means there is no verification that incoming callbacks are genuinely from the provider, so any party can forge callbacks and have them processed as legitimate events.",
+      "evidence_quote": "\"The Callback Receiver is the endpoint registered with the payment provider. It processes any well-formed callback it receives: callbacks are not signed, and the provider's optional callback-signing feature is not enabled for this integration.\"\n\n\"The review confirmed the callback endpoint accepts unsigned requests from anywhere; any caller that formats a callback correctly is processed as though it came from the payment provider. Enabling the provider's signing feature is tracked in the backlog and not yet scheduled.\""
+    }
+  ]
+}
