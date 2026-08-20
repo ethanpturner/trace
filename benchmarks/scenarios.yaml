@@ -158,9 +158,12 @@ scenarios:
     # DEC-114). One finding (unminimized transcripts train the model, documented), one gap
     # (artifact lineage, silence), one satisfied mapping (the governed write path) whose
     # suppressed conclusion is the pack's own false-positive class. Pins catalog 0.3.
+    # The recording (#484) is a live gateway capture replacing the authored DEC-114
+    # recording file for file.
     status: authored
     category: fine-tuning
     catalog_version: "0.3"
+    workflow_version: "0.2"
 
   - slug: order-notifier
     name: Order Notifier

@@ -1,21 +1,58 @@
 {
   "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12809,
+    "output_tokens": 14485,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.16086125",
+    "duration_seconds": 137.60616950003896
+  },
   "response": {
     "system": {
       "system_name": "Reply Tuner",
-      "system_purpose": "fine-tune and serve a suggested-reply model for support agents",
+      "system_purpose": "Internal pipeline that fine-tunes a suggested-reply model on closed support tickets and serves tuned suggestions to support agents.",
       "business_criticality": null,
       "environment": [],
       "deployment_model": null,
-      "data_classifications": []
+      "data_classifications": [],
+      "access_model": "unknown"
     },
     "claims": [
       {
-        "key": "write-path",
+        "key": "clm-system-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Fine-tune a suggested-reply model on closed support tickets and serve tuned replies to support agents.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "clm-training-data-source",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "training_data_source",
+        "value": "Closed support ticket transcripts from the helpdesk.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-transcript-exporter-role",
         "subject_type": "component",
-        "subject_key": "store",
-        "predicate": "training_store_write_path",
-        "value": "the exporter's job identity is the only principal with write access to the training store, granted through the platform's access policy",
+        "subject_key": "transcript_exporter_job",
+        "predicate": "role",
+        "value": "Nightly job that exports closed-ticket transcripts from the helpdesk into the training store.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -24,11 +61,37 @@
         ]
       },
       {
-        "key": "training-content",
+        "key": "clm-transcript-exporter-only-writer",
         "subject_type": "component",
-        "subject_key": "store",
-        "predicate": "training_data_content",
-        "value": "transcripts are exported in full, including customer names, email addresses, and complete message bodies, with no redaction or filtering step between the helpdesk and the training store",
+        "subject_key": "transcript_exporter_job",
+        "predicate": "is_only_writer_to_training_store",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-exporter-identity-write-access",
+        "subject_type": "actor",
+        "subject_key": "exporter_job_identity",
+        "predicate": "write_access_to_training_store_bucket",
+        "value": "Only principal with write access to the training store bucket, granted through the platform access policy.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-training-store-contents-pii",
+        "subject_type": "component",
+        "subject_key": "training_store_bucket",
+        "predicate": "contains_full_ticket_transcripts_with_pii",
+        "value": true,
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -38,30 +101,162 @@
         ]
       },
       {
-        "key": "artifact-versioning",
+        "key": "clm-no-redaction-before-training",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "training_data_redaction",
+        "value": "No redaction or filtering step between the helpdesk and the training store; what the customer wrote is what the model trains on.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-tuning-job-role",
         "subject_type": "component",
-        "subject_key": "tuner",
-        "predicate": "artifact_versioning",
-        "value": "each week's tuned artifact is written to the artifact bucket named by date, and agents are served whichever artifact is most recent",
+        "subject_key": "tuning_job",
+        "predicate": "role",
+        "value": "Weekly job that fine-tunes the vendor's base reply model on the training store's current contents and writes the tuned model artifact to the artifact bucket.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-reply-service-role",
+        "subject_type": "component",
+        "subject_key": "reply_service",
+        "predicate": "role",
+        "value": "Serves the most recent tuned model to the agent console and, for each open ticket, generates one suggested reply which the agent may edit or discard.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-artifact-bucket-role",
+        "subject_type": "component",
+        "subject_key": "artifact_bucket",
+        "predicate": "role",
+        "value": "Bucket where the tuning job writes each week's tuned model artifact, named by date, from which the most recent artifact is served to agents.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
         "evidence_ids": [
           "evd-004"
         ]
+      },
+      {
+        "key": "clm-support-agent-role",
+        "subject_type": "actor",
+        "subject_key": "support_agent",
+        "predicate": "role",
+        "value": "Internal user who sees suggested replies for open tickets, can edit them, and decides whether to use them.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-005",
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-customer-role",
+        "subject_type": "actor",
+        "subject_key": "customer",
+        "predicate": "role",
+        "value": "Writes the ticket messages that become the transcripts used as training data.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-005",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-helpdesk-component",
+        "subject_type": "component",
+        "subject_key": "helpdesk_system",
+        "predicate": "role",
+        "value": "Helpdesk system that holds support tickets whose transcripts are exported into the training store.",
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The Transcript Exporter is described as exporting closed-ticket transcripts 'from the helpdesk' into the training store, which implies a distinct helpdesk system component.",
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-flow-artifact-to-reply-service",
+        "subject_type": "data_flow",
+        "subject_key": "flow_artifact_bucket_to_reply_service",
+        "predicate": "role",
+        "value": "Reply Service loads the most recent tuned model artifact from the artifact bucket in order to serve it to agents.",
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The tuning job writes weekly artifacts to the artifact bucket and agents are served whichever artifact is most recent via the Reply Service, implying the service reads artifacts from that bucket.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-flow-helpdesk-to-training-store",
+        "subject_type": "data_flow",
+        "subject_key": "flow_helpdesk_to_training_store",
+        "predicate": "role",
+        "value": "Nightly export of closed-ticket transcripts from the helpdesk into the training store via the Transcript Exporter job.",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The Transcript Exporter is described as a nightly job that exports closed-ticket transcripts from the helpdesk into the training store, which implies a data flow between those components.",
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-training-store-read-access-unknown",
+        "subject_type": "component",
+        "subject_key": "training_store_bucket",
+        "predicate": "read_access_control",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "low",
+        "rationale": "Documentation specifies which principal can write to the bucket but does not state who can read from it.",
+        "evidence_ids": []
+      },
+      {
+        "key": "clm-agent-console-auth-unknown",
+        "subject_type": "component",
+        "subject_key": "agent_console",
+        "predicate": "authentication_mechanism",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "low",
+        "rationale": "Documentation notes that internal support agents use the console but does not describe how they authenticate.",
+        "evidence_ids": []
       }
     ],
     "components": [
       {
-        "key": "exporter",
+        "key": "transcript_exporter_job",
         "name": "Transcript Exporter",
-        "component_type": "service",
-        "description": "nightly job exporting closed-ticket transcripts from the helpdesk into the training store",
+        "component_type": "batch_job",
+        "description": "Nightly job that exports closed-ticket transcripts from the helpdesk into the training store.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
-        "internet_accessible": false,
+        "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
@@ -70,32 +265,35 @@
         ]
       },
       {
-        "key": "store",
+        "key": "training_store_bucket",
         "name": "Training Store",
-        "component_type": "object_storage",
-        "description": "cloud storage bucket holding the exported transcripts, organized by export date",
+        "component_type": "storage_bucket",
+        "description": "Cloud storage bucket holding exported closed-ticket transcripts, organized by export date.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
-        "internet_accessible": false,
-        "externally_managed": true,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
-        "evidence_ids": [
-          "evd-002"
-        ]
-      },
-      {
-        "key": "tuner",
-        "name": "Tuning Job",
-        "component_type": "service",
-        "description": "weekly job fine-tuning the vendor's base reply model on the training store's current contents",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": null,
-        "internet_accessible": false,
+        "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "tuning_job",
+        "name": "Tuning Job",
+        "component_type": "batch_job",
+        "description": "Weekly job that fine-tunes the vendor's base reply model on the training store's current contents and writes the tuned model artifact to the artifact bucket.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
@@ -104,32 +302,97 @@
         ]
       },
       {
-        "key": "reply",
+        "key": "reply_service",
         "name": "Reply Service",
         "component_type": "service",
-        "description": "serves the most recent tuned model to the agent console, one suggested reply per open ticket",
+        "description": "Serves the most recent tuned model to the agent console and generates one suggested reply per open ticket for agents to edit or discard.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
-        "internet_accessible": false,
+        "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "helpdesk_system",
+        "name": "Helpdesk",
+        "component_type": "external_system",
+        "description": "Helpdesk system that holds support tickets whose transcripts are exported into the training store.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
           "evd-002"
+        ]
+      },
+      {
+        "key": "artifact_bucket",
+        "name": "Artifact Bucket",
+        "component_type": "storage_bucket",
+        "description": "Bucket where the tuning job writes each week's tuned model artifact, named by date, from which the most recent artifact is served to agents.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "agent_console",
+        "name": "Agent Console",
+        "component_type": "ui",
+        "description": "Interface where support agents see suggested replies for open tickets and can edit or discard them.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
         ]
       }
     ],
     "actors": [
       {
-        "key": "agent",
+        "key": "support_agent",
         "name": "Support agent",
         "actor_type": "internal_user",
         "trust_level": null,
-        "capabilities": [],
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "view_suggested_replies",
+          "edit_suggested_replies",
+          "decide_whether_to_use_suggestions"
+        ],
         "authentication_method": null,
         "evidence_ids": [
+          "evd-001",
+          "evd-002",
           "evd-005"
         ]
       },
@@ -138,63 +401,131 @@
         "name": "Customer",
         "actor_type": "external_user",
         "trust_level": null,
-        "capabilities": [],
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "write_ticket_messages"
+        ],
         "authentication_method": null,
         "evidence_ids": [
+          "evd-003",
           "evd-005"
+        ]
+      },
+      {
+        "key": "exporter_job_identity",
+        "name": "Transcript Exporter job identity",
+        "actor_type": "service_identity",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "write_training_store_bucket"
+        ],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-002"
         ]
       }
     ],
     "assets": [
       {
-        "key": "transcripts",
-        "name": "Ticket transcripts",
-        "asset_type": "personal_data",
-        "description": "full closed-ticket transcripts including customer names, email addresses, and message bodies",
-        "confidentiality_impact": null,
+        "key": "training_data_transcripts",
+        "name": "Training data transcripts",
+        "asset_type": "dataset",
+        "description": "Full transcripts of closed support tickets, including customer names, email addresses, and complete message bodies, used as training data.",
+        "confidentiality_impact": "Exposure would reveal full customer communications and associated personal identifiers from support tickets.",
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
         "component_keys": [
-          "store",
-          "tuner"
+          "helpdesk_system",
+          "training_store_bucket",
+          "transcript_exporter_job",
+          "tuning_job"
         ],
         "stored_in_component_keys": [
-          "store"
+          "training_store_bucket"
         ],
         "evidence_ids": [
+          "evd-002",
           "evd-003"
         ]
       },
       {
-        "key": "tuned-model",
-        "name": "Tuned reply model",
+        "key": "tuned_reply_models",
+        "name": "Tuned reply model artifacts",
         "asset_type": "model_artifact",
-        "description": "the weekly fine-tuned artifact the reply service serves",
+        "description": "Weekly tuned versions of the vendor's base reply model written by the Tuning Job to the artifact bucket and served to agents.",
+        "confidentiality_impact": "Exposure would reveal the tuned reply model derived from customer support transcripts.",
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "tuning_job",
+          "artifact_bucket",
+          "reply_service"
+        ],
+        "stored_in_component_keys": [
+          "artifact_bucket"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "suggested_replies",
+        "name": "Suggested replies",
+        "asset_type": "generated_content",
+        "description": "Per-ticket suggested replies generated by the Reply Service and presented to support agents in the agent console.",
+        "confidentiality_impact": "Exposure would reveal generated responses that may incorporate or reflect customer support content.",
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "reply_service",
+          "agent_console"
+        ],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "vendor_base_model",
+        "name": "Vendor base reply model",
+        "asset_type": "model",
+        "description": "Vendor-provided base reply model that the Tuning Job fine-tunes using the training store contents.",
         "confidentiality_impact": null,
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
         "component_keys": [
-          "tuner",
-          "reply"
+          "tuning_job"
         ],
+        "stored_in_component_keys": [],
         "evidence_ids": [
-          "evd-004"
+          "evd-001",
+          "evd-002"
         ]
       }
     ],
     "data_flows": [
       {
-        "key": "export",
-        "name": "Transcript export",
-        "source_component_key": "exporter",
-        "destination_component_key": "store",
+        "key": "flow_helpdesk_to_training_store",
+        "name": "Export closed-ticket transcripts from helpdesk to training store",
+        "source_component_key": "helpdesk_system",
+        "destination_component_key": "training_store_bucket",
         "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "ticket_transcripts"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
@@ -204,40 +535,101 @@
         ]
       },
       {
-        "key": "train",
-        "name": "Training read",
-        "source_component_key": "store",
-        "destination_component_key": "tuner",
+        "key": "flow_training_store_to_tuning_job",
+        "name": "Tuning Job reads training data from training store",
+        "source_component_key": "training_store_bucket",
+        "destination_component_key": "tuning_job",
         "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "ticket_transcripts"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
         "internet_exposed": null,
         "evidence_ids": [
-          "evd-002"
+          "evd-002",
+          "evd-003"
         ]
       },
       {
-        "key": "serve",
-        "name": "Suggested-reply serving",
-        "source_component_key": "tuner",
-        "destination_component_key": "reply",
+        "key": "flow_tuning_job_to_artifact_bucket",
+        "name": "Tuning Job writes tuned model artifacts to artifact bucket",
+        "source_component_key": "tuning_job",
+        "destination_component_key": "artifact_bucket",
         "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "tuned_model_artifact"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
         "internet_exposed": null,
         "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "flow_artifact_bucket_to_reply_service",
+        "name": "Reply Service loads tuned model artifact from artifact bucket",
+        "source_component_key": "artifact_bucket",
+        "destination_component_key": "reply_service",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "tuned_model_artifact"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "flow_reply_service_to_agent_console",
+        "name": "Reply Service sends suggested replies to agent console",
+        "source_component_key": "reply_service",
+        "destination_component_key": "agent_console",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "suggested_replies"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
           "evd-004"
         ]
       }
     ],
     "trust_boundaries": [],
-    "questions": [],
+    "questions": [
+      {
+        "key": "q-training-store-read-access",
+        "question": "Which identities or roles, besides the Transcript Exporter job, can read data from the training store bucket, and through what access controls?",
+        "rationale": "The documentation specifies that the exporter job identity is the only principal with write access to the training store bucket but does not describe read access; knowing who can read full, unredacted ticket transcripts materially affects exposure of customer communications and personal data.",
+        "related_object_key": "training_store_bucket",
+        "priority": "high",
+        "blocking": true
+      },
+      {
+        "key": "q-tuned-model-retention",
+        "question": "What is the retention policy for tuned reply model artifacts in the artifact bucket (for example, are old artifacts deleted after a period or retained indefinitely)?",
+        "rationale": "The documentation notes that each week's tuned model artifact is written to a dated bucket and that agents are served the most recent artifact, but does not state how long historical artifacts are kept; retention affects how long model artifacts derived from customer transcripts remain available.",
+        "related_object_key": "artifact_bucket",
+        "priority": "medium",
+        "blocking": false
+      }
+    ],
     "observations": []
   }
 }

@@ -1,0 +1,98 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10316,
+    "output_tokens": 5738,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.072787",
+    "duration_seconds": 76.12622479198035
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Training Store is a cloud storage bucket that holds full closed-ticket customer transcripts as exported from the helpdesk (evd-002, evd-003), so the system retains customer data after the primary processing (ticket handling) completes and writes intermediate artifacts to persistent storage. This threat concerns bulk exposure of that retained data, so this retention-focused requirement bears directly on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Read access to the Training Store bucket is not documented",
+        "description": "The documentation describes the Training Store as a cloud storage bucket holding exported closed-ticket transcripts, and specifies that the Transcript Exporter job identity is the only writer with write access (evd-002). It does not state which principals can read from the bucket, how read access is granted or limited, or whether least-privilege access is enforced for this concentrated repository of sensitive training data (evd-002, evd-003). As a result, it is not possible to determine from documentation whether the threat of an unauthorized reader gaining bulk access to transcripts is mitigated.",
+        "importance": "Understanding which identities can read from the Training Store and how those grants are governed is essential to assess the likelihood of bulk exfiltration of sensitive customer transcripts (thr-003) and to verify that access to this high-value dataset is limited to the minimum set of training pipeline components that require it.",
+        "related_object_ids": [
+          "cmp-002",
+          "ast-001",
+          "thr-003"
+        ],
+        "requested_evidence": [
+          "Cloud storage access policy or IAM configuration for the Training Store bucket, listing all principals with read or list permissions and how those permissions are managed.",
+          "Architecture or operations documentation that describes which services or roles are intended to read from the Training Store and under what conditions."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Retention policy for training transcripts in the Training Store is not documented",
+        "description": "The documentation states that the Training Store holds full closed-ticket transcripts, including customer names, email addresses, and complete message bodies, with no redaction or filtering between the helpdesk and the Training Store (evd-002, evd-003). It does not describe how long these transcripts are retained, whether any storage lifecycle policy or scheduled deletion is applied, or how that period aligns with customer-facing data handling commitments. This prevents verification of whether retention of sensitive working data is defined and enforced as required by req-DATA-002.",
+        "importance": "The duration for which full customer transcripts are retained in the Training Store directly affects the volume of data available to an unauthorized reader in the threat scenario (thr-003) and can impact privacy and regulatory obligations; without a documented retention policy, this cannot be assessed or verified.",
+        "related_object_ids": [
+          "cmp-002",
+          "ast-001",
+          "thr-003"
+        ],
+        "requested_evidence": [
+          "Operations or storage lifecycle documentation specifying the retention period for transcripts in the Training Store and how it is enforced (for example, lifecycle rules or scheduled deletion jobs).",
+          "Customer-facing data handling or privacy documentation that states how long support ticket data is retained and whether training copies are covered by the same commitments."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement that documentation state which principals can read from sensitive internal data stores such as training corpora buckets, and how least-privilege read access is enforced. In this system, the Training Store bucket holds full closed-ticket transcripts with PII (evd-002, evd-003), the writer identity is documented, but read access paths and identities are not, leaving the core precondition of threat thr-003 unassessable from architecture documentation.",
+        "suggested_category": "data_protection",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-DATA-003",
+            "why_not": "req-DATA-003 focuses on separation of stored artifacts by tenant and enforcement of that separation in multi-tenant storage. The Training Store serves a single organization, and the concern here is which internal principals can read the entire corpus at all, not cross-tenant separation of artifacts."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 addresses network placement and ensuring internal components are not reachable from untrusted networks. Threat thr-003 assumes an authenticated principal with storage read permission; even with correct network segmentation, overly broad or undocumented read permissions would still allow bulk exfiltration, so the requirement does not cover the access-design concern."
+          },
+          {
+            "requirement_id": "req-TRAIN-001",
+            "why_not": "req-TRAIN-001 governs who can write to the training corpus and how content enters it. Evidence evd-002 already documents that only the Transcript Exporter job identity writes to the Training Store. The concern in thr-003 is about undocumented read access to the corpus, which this write-path-focused requirement does not address."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  }
+}

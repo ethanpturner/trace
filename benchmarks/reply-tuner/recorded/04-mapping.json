@@ -1,0 +1,89 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 294,
+    "output_tokens": 6302,
+    "cache_read_tokens": 32256,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.0674195",
+    "duration_seconds": 75.17236554098781
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system fine-tunes a vendor base reply model on closed-ticket transcripts collected by the system, and the training corpus consists of transcripts authored by many customers, so the corpus accepts content from more than one source or author. [evd-002] This matches the applicable conditions for governed training-corpus write paths.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data for the fine-tuning process derives directly from customer support ticket content, including names, email addresses, and full message bodies, which is user/customer production content. [evd-002][evd-003] This matches the applicable condition that training data derives from user or customer content.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Tuning Job produces tuned model artifacts weekly and writes them to the Artifact Bucket, and the Reply Service serves the most recent tuned artifact to agents. [evd-002][evd-004] Tuned artifacts are therefore produced and served, meeting the applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Lineage of tuned reply model artifacts is not documented",
+        "description": "Documentation states that the Tuning Job writes weekly tuned reply model artifacts to an Artifact Bucket and that agents are served the most recent artifact, but does not describe any registry or metadata that records each artifact's base model version or the specific training-data snapshot used. [evd-002][evd-004] Without this, it is not possible from the available material to determine whether tuned artifacts can be traced back to their training inputs as required by TRAIN-003.",
+        "importance": "Artifact lineage is important for investigating issues such as PII regurgitation from tuned models, determining which artifacts were trained on a problematic corpus snapshot, and rolling back or retraining specific versions.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-006",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Documentation or configuration for any model registry or artifact store that records, per tuned reply model artifact, the base model version and the training-data version or snapshot used.",
+          "Schema or examples of metadata stored alongside tuned artifacts in the Artifact Bucket, if this is where lineage is recorded."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}
