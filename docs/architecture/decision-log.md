@@ -8947,7 +8947,136 @@ Tradeoffs:
 - Rows attributed to a model list joined with ` + ` flatten the per-call breakdown; the ledger
   keeps the full detail, and the scorecard stays metrics-and-identifiers-only.
 
-## DEC-137: Every live run journals its responses, and replaying the journal is an operator's assertion
+## DEC-137: Repairing an orphaned run is an operator's assertion — `trace runs repair`, never a heuristic
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**A `running` workflow run whose process is gone is repaired by an operator saying so.** `trace
+runs repair <assessment> <run> --force` marks the run failed through the ledger's own
+`complete(error_summary=...)` — the same close a run performs on itself, counters recomputed
+from the records it actually wrote — with a summary naming the external kill and the verb that
+asserted it. Without `--force` the command shows the run and changes nothing (the DEC-017
+amendment's dry-run grammar). Any status but `running` is refused with the verb that already
+covers it: paused and failed runs are `trace resume`'s, abandoned paused runs are `trace runs
+prune`'s, completed runs need nothing. After repair, `trace resume` restarts the failed phase in
+a fresh process, which is the recovery DEC-017 already defined for a failed run.
+
+**Detection is not automated, and no heartbeat is introduced.** Nothing inspects age, progress,
+or the process table. The #484 pilots measured why: a single evidence-validation batch held a
+run for over two hours while working correctly, so any staleness rule cheap enough to trust
+would misfire on exactly the runs that cost the most to interrupt. The honest detection rule is
+the operator's knowledge that the process was killed — DEC-127's explicitness precedent, applied
+to run state instead of store state.
+
+Why:
+
+- The gap is measured, not hypothetical: the husky-ai capture was killed mid-critique (#613),
+  its run sat at `running` with no process behind it, `resume` refused — neither paused nor
+  failed — and the DEC-017 amendment's prune is deliberately narrow, paused runs only. The
+  coordinating session closed the row through the ledger's `complete(error_summary=...)` API by
+  script: the sanctioned mechanics without the sanctioned surface. This entry supplies the
+  surface.
+- Routing through the ledger keeps the repaired row indistinguishable in shape from a run that
+  failed while its process was alive — spend rolled up from the records, `completed_at`
+  stamped — and the error summary is what says an operator asserted the kill. A raw status edit
+  would leave counters stale and no record of who decided.
+- The remaining #484 captures are driven from sessions that sleep, disconnect, and get killed;
+  every orphan otherwise costs a by-hand script against internal APIs, which is the kind of
+  unrecorded intervention the ledger exists to prevent.
+
+Alternatives Considered:
+
+- A staleness heuristic or heartbeat that detects orphans automatically (rejected: a running
+  run that looks stale may be a slow provider call, and the pilots measured two-hour batches;
+  a wrong automatic repair marks live work failed while its process still writes. A heartbeat
+  is #622's progress surface, and even with one, repair stays operator-asserted).
+- Widening `trace runs prune` to running runs (rejected: prune destroys the run's rows and
+  state file; an orphan's records are paid-for history the assessment keeps, and its state
+  file is what `resume` restarts from).
+- Letting `trace resume` accept a `running` run directly (rejected: resume would then decide
+  the process is gone, which is this entry's assertion made silently; two processes driving
+  one run is the row the ledger cannot represent).
+
+Tradeoffs:
+
+- An operator can repair a run whose process is in fact alive; the live process later
+  overwrites the row when it pauses, completes, or fails. Accepted under DEC-004 — local,
+  single user, one operator who knows what they killed — and the dry run shows the run before
+  anything moves.
+- The repaired run's `error_summary` carries operator-supplied text. It is operator input on
+  the operator's own row, the same trust as an assessment name, and section 27's safe-message
+  rule concerns source-document content, which this path never touches.
+
+## DEC-138: The run narrates itself — a notify-only phase observer and a derived status read
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**The orchestrator gains a phase observer: a callback invoked once per phase entered, handed a
+snapshot and no way back in.** `Orchestrator` accepts an optional `on_phase` callable alongside
+DEC-031's `on_pause`; at each phase entry it is passed a `PhaseProgress` — run identifier, the
+phase, its position against the fourteen-phase table, and the model-call count and estimated
+cost computed from the execution records the way the ledger computes them. The observer is
+notify-only: it is given no registry, no budget, and no return channel, so routing and ceilings
+stay exactly where DEC-016 put them, and an exception the observer raises — or a ledger read
+failing underneath the snapshot — is suppressed, because a progress line must never be what
+stops a run. `trace run`, `trace resume`, and the three pipeline stages of `trace capture` wire
+the observer to one stderr line per phase; stdout keeps its documented output contract.
+
+**Where a run is becomes a command: `trace runs status`.** It reads three things the run already
+persists — the run row, the state file under `traces/` (rewritten on every transition since the
+crash-safety fix), and the execution records — and reports status, phase, model calls, estimated
+cost, subjects awaiting review, and any error summary, with a `--json` view under the DEC-096
+envelope. The command is a derived read in the review-package sense: it stores nothing, so
+polling it cannot disagree with the run. A run still inside its first phase has written no state
+file yet, and the command says so rather than guessing.
+
+**Nothing on either surface carries source-derived content.** A progress line and a status read
+are phase names, identifiers, and counters by construction; the observability redaction rules
+apply to them as written.
+
+Why:
+
+- A live capture is 41 ± 15 minutes (DEC-092) of total silence between launch and outcome, and
+  the DEC-135 amendment records a model spending two hours inside one evidence-validation batch,
+  indistinguishable from a hang until someone killed the process. The sweep (#484) is twelve
+  more such runs; each needs to be tellable-apart from a wedged one, from inside the terminal
+  and from outside the process (#622).
+- The facts were all already recorded — per-phase state persistence, per-node execution records —
+  and only never surfaced. Both halves are reads over existing writes, which is why neither
+  needed a second store.
+
+Alternatives Considered:
+
+- A heartbeat file written at phase boundaries (rejected: a fourth artifact whose only content
+  is derivable from the state file and the records; a derived read cannot drift, a written
+  heartbeat can).
+- Progress lines from inside the nodes (rejected: a node is given no orchestrator and no peer by
+  section 27, and narration is the loop's knowledge — which phase, which position — not the
+  node's).
+- A `--progress` opt-in flag (rejected: stderr is already the channel that costs a script
+  nothing, and an operator who has to know the flag exists is the operator staring at the
+  silence today).
+
+Tradeoffs:
+
+- The observer computes counters from the records once per phase — fourteen small reads per run,
+  bought deliberately so the narration measures what was written rather than keeping a parallel
+  tally that can drift (the `counters()` reasoning, applied to progress).
+- Suppressing observer exceptions means a broken progress printer fails silently; the
+  alternative is a run a progress line can kill, and between the two, silence loses less.
+- `runs status` reports what the row says, and a killed process leaves the row saying `running`
+  until the operator asserts otherwise; DEC-137's `trace runs repair` is that assertion — a
+  status read reports the row, it never repairs it.
+
+## DEC-139: Every live run journals its responses, and replaying the journal is an operator's assertion
 
 Date: 2026-08-19
 
@@ -8994,10 +9123,13 @@ responses no model gave — the artifact the rehearsal marker (#534) exists to r
 
 Why:
 
-- Twelve #484 captures remain at roughly $5.25 each, driven from a laptop that sleeps. Each
-  mid-phase interruption re-spent the phase; with the journal it re-drives free.
+- The remaining #484 captures run at roughly $5.25 each, driven from a laptop that sleeps.
+  Each mid-phase interruption re-spent the phase; with the journal it re-drives free.
 - A disputed conclusion gains a re-drive path months later without a provider key: the journal
   entries are recording-envelope files and replay through the machinery that already exists.
+- DEC-137 gives an orphaned run a sanctioned repair into `failed`, and DEC-017's resume
+  restarts a failed run from the phase it stopped in — the journal is the piece that makes
+  that restart free, so the three land together as the run-operability set.
 
 Alternatives Considered:
 

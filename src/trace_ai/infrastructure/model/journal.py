@@ -9,7 +9,7 @@ consumed response into the assessment's `traces/journal/` area, shaped exactly a
 of the request that produced the response, so a replay can tell "the same call again" from "a call
 that merely asks for the same schema".
 
-**Replay is operator-asserted, never automatic** (DEC-137). A resume replays the journal only when
+**Replay is operator-asserted, never automatic** (DEC-139). A resume replays the journal only when
 the operator names it with `--replay-journal`; a stale journal must not silently answer an edited
 input. `JournalReplayModel` serves an entry only when the requested schema *and* the request hash
 match, marks each served entry spent with a sidecar file so it can never answer twice across

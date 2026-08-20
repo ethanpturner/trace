@@ -134,6 +134,7 @@ if TYPE_CHECKING:
     from trace_ai.infrastructure.model.seam import StructuredModel
     from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.workflow.context_review import ContextReviewPackage
+    from trace_ai.workflow.orchestrator import PhaseProgress
     from trace_ai.workflow.state import PendingHumanReview
 
 __all__ = ["build_parser", "main", "run"]
@@ -946,6 +947,27 @@ def build_parser() -> argparse.ArgumentParser:
         "runs",
         help="workflow-run housekeeping",
     ).add_subparsers(dest="command", required=True)
+    run_status = runs_commands.add_parser(
+        "status",
+        help="where a run is right now: status, phase, model calls, estimated cost (DEC-138)",
+        description=(
+            "Reports where a workflow run is from what the run already persists: the run row, "
+            "the state file under traces/, and the execution records. A derived read for "
+            "polling a run from outside the process driving it -- it writes nothing and holds "
+            "no state of its own. The phase comes from the state file, which is written on "
+            "every transition; a run still in its first phase has not written one yet, and the "
+            "command says so rather than guessing."
+        ),
+    )
+    run_status.add_argument("assessment_id", help="the assessment whose run to report")
+    run_status.add_argument(
+        "--run",
+        dest="workflow_run_id",
+        default=None,
+        metavar="RUN_ID",
+        help="a specific run's identifier; omitted, the latest run",
+    )
+    _json_flag(run_status)
     prune = runs_commands.add_parser(
         "prune",
         help="remove abandoned paused runs: superseded, or paused past a stated age "
@@ -976,6 +998,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     prune.add_argument(
         "--force", action="store_true", help="actually remove; without it, a dry run"
+    )
+    repair = runs_commands.add_parser(
+        "repair",
+        help="mark an orphaned running run failed, on the operator's assertion (DEC-137)",
+        description=(
+            "A killed process leaves its run at `running` with no process behind it; `resume` "
+            "refuses -- the run is neither paused nor failed -- and prune covers paused runs "
+            "only. Repair marks the run failed with an error summary naming the external kill, "
+            "and `trace resume` then restarts the failed phase. The assertion is the operator's: "
+            "nothing checks a heartbeat or an age, because a running run that looks stale may be "
+            "a slow provider call. Without --force it shows the run and changes nothing."
+        ),
+    )
+    repair.add_argument("assessment_id")
+    repair.add_argument("run_id", help="the run to repair; `trace assessment status` lists runs")
+    repair.add_argument(
+        "--reason",
+        default=None,
+        metavar="TEXT",
+        help="what happened to the process, recorded in the run's error summary; "
+        "omitted, the summary states an external kill",
+    )
+    repair.add_argument(
+        "--force", action="store_true", help="actually mark it failed; without it, a dry run"
     )
 
     reset = commands.add_parser(
@@ -1046,7 +1092,7 @@ def _model_flags(parser: argparse.ArgumentParser) -> None:
         help=(
             "replay a live run's journaled response before spending, repeatable; a directory "
             "stands for its unspent numbered entries in order. An entry answers only the call "
-            "that recorded it, exactly once — anything it cannot answer runs live (DEC-137)"
+            "that recorded it, exactly once — anything it cannot answer runs live (DEC-139)"
         ),
     )
     parser.add_argument(
@@ -1149,7 +1195,9 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("catalog", "show"): _catalog_show,
         ("catalog", "validate"): _catalog_validate,
         ("diff", None): _diff,
+        ("runs", "status"): _runs_status,
         ("runs", "prune"): _runs_prune,
+        ("runs", "repair"): _runs_repair,
     }
 
     if args.group is None:
@@ -1256,6 +1304,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            on_phase=_print_phase_progress,
         )
     elif args.stage == "reason":
         capture_service.stage_reason(
@@ -1264,6 +1313,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            on_phase=_print_phase_progress,
         )
     elif args.stage == "report":
         capture_service.stage_report(
@@ -1271,6 +1321,7 @@ def _capture(args: argparse.Namespace) -> int:
             profile_name=args.model_profile,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            on_phase=_print_phase_progress,
         )
     else:
         capture_service.stage_baseline(
@@ -1875,6 +1926,87 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
     return 0
 
 
+def _runs_status(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Report where a run is, from what the run already persists (DEC-138).
+
+    Three sources, every one written by the run itself: the run row (status, timestamps, error
+    summary), the state file under `traces/` (the phase, rewritten on every transition), and the
+    execution records (model calls and estimated cost, computed exactly as the ledger computes
+    them). The command stores nothing, so polling it cannot disagree with the run.
+    """
+    from trace_ai.services.execution_ledger import ExecutionLedger
+
+    handle = service.handle(args.assessment_id)
+    runs = handle.objects.list(WorkflowRun)
+    if not runs:
+        print(f"{args.assessment_id} has no workflow runs", file=sys.stderr)
+        return 1
+    if args.workflow_run_id is None:
+        run = runs[-1]
+    else:
+        matches = [candidate for candidate in runs if candidate.id == args.workflow_run_id]
+        if not matches:
+            print(f"{args.assessment_id} has no run {args.workflow_run_id}", file=sys.stderr)
+            return 1
+        run = matches[0]
+
+    counters = ExecutionLedger(handle, run).counters()
+    order = list(Phase)
+    phase = None
+    awaiting = 0
+    try:
+        state = load_state(handle, run.id)
+    except FileNotFoundError:
+        # The state file is written on the first transition; a run still in its first phase has
+        # not written one, and saying so beats inventing a phase the run never recorded.
+        state = None
+    if state is not None:
+        phase = state.current_phase
+        if state.pending_human_review is not None:
+            awaiting = len(state.pending_human_review.object_ids)
+
+    if args.as_json:
+        return _print_json(
+            "run-status",
+            {
+                "assessment_id": args.assessment_id,
+                "workflow_run_id": run.id,
+                "run_status": run.status.value,
+                "started_at": run.started_at,
+                "completed_at": run.completed_at,
+                "phase": phase.value if phase is not None else None,
+                "phase_number": order.index(phase) + 1 if phase is not None else None,
+                "phase_total": len(order),
+                "model_calls": counters["total_model_calls"],
+                "estimated_cost": counters["estimated_cost"],
+                "awaiting_review": awaiting,
+                "error_summary": run.error_summary,
+            },
+        )
+
+    print(f"workflow run:   {run.id} (of {len(runs)} on {args.assessment_id})")
+    print(f"status:         {run.status.value}")
+    if run.started_at is not None:
+        print(f"started:        {run.started_at.isoformat()}")
+    if run.completed_at is not None:
+        print(f"ended:          {run.completed_at.isoformat()}")
+    if phase is not None:
+        print(f"phase:          {phase.value} ({order.index(phase) + 1}/{len(order)})")
+    else:
+        print("phase:          not yet recorded (the run has not completed its first phase)")
+    print(f"model calls:    {counters['total_model_calls']}")
+    cost = counters["estimated_cost"]
+    if cost is not None:
+        print(f"estimated cost: ${cost}")
+    else:
+        print("estimated cost: none recorded")
+    if awaiting:
+        print(f"awaiting:       {awaiting} subject(s)")
+    if run.error_summary:
+        print(f"error:          {run.error_summary}")
+    return 0
+
+
 def _runs_prune(args: argparse.Namespace, service: AssessmentService) -> int:
     """Remove abandoned paused runs (DEC-017 amendment). A dry run without --force refuses."""
     from trace_ai.services.run_pruning import abandoned_runs, prune_runs
@@ -1905,6 +2037,34 @@ def _runs_prune(args: argparse.Namespace, service: AssessmentService) -> int:
         f"record(s), {result.state_files_removed} state file(s), recorded spend "
         f"${result.estimated_cost_removed} removed with them"
     )
+    return 0
+
+
+def _runs_repair(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Mark an orphaned running run failed (DEC-137). A dry run without --force refuses."""
+    from trace_ai.services.run_repair import RunRepairError, describe_run, repair_run
+
+    handle = service.handle(args.assessment_id)
+    candidate = describe_run(handle, args.run_id)
+    cost = "-" if candidate.estimated_cost is None else f"${candidate.estimated_cost}"
+    print(
+        f"{args.assessment_id}  {candidate.run_id}  {candidate.status:<10}  "
+        f"started {candidate.started_at_display}  "
+        f"{candidate.execution_record_count} execution record(s)  {cost}"
+    )
+    if not args.force:
+        print(
+            "nothing was changed; pass --force to mark it failed, asserting its process is gone",
+            file=sys.stderr,
+        )
+        return REFUSED
+    try:
+        updated = repair_run(handle, args.run_id, reason=args.reason)
+    except RunRepairError as refusal:
+        print(f"refused: {refusal}", file=sys.stderr)
+        return REFUSED
+    print(f"marked {updated.id} failed: {updated.error_summary}")
+    print(f"Restart the failed phase with `trace resume {args.assessment_id}`.")
     return 0
 
 
@@ -2605,6 +2765,26 @@ def _budget_from(args: argparse.Namespace) -> Any:
     )
 
 
+def _print_phase_progress(progress: PhaseProgress) -> None:
+    """One stderr line as the run enters each phase (DEC-138).
+
+    Stderr, not stdout: the run's documented output contract stays what `_print_run_outcome`
+    prints, and a script capturing stdout sees nothing new. Everything on the line is an
+    identifier, a phase name, or a counter — never source-derived content.
+    """
+    cost = (
+        f", estimated cost ${progress.estimated_cost}"
+        if progress.estimated_cost is not None
+        else ""
+    )
+    print(
+        f"{progress.workflow_run_id}: {progress.phase.value} "
+        f"({progress.phase_number}/{progress.phase_total}), "
+        f"{progress.model_calls} model call(s) so far{cost}",
+        file=sys.stderr,
+    )
+
+
 def _run(args: argparse.Namespace, service: AssessmentService) -> int:
     """Run the pipeline from initialization until it pauses, completes, or stops.
 
@@ -2619,6 +2799,7 @@ def _run(args: argparse.Namespace, service: AssessmentService) -> int:
         model=model,
         profile=profile,
         budget=_budget_from(args),
+        on_phase=_print_phase_progress,
     )
     return _print_run_outcome(outcome)
 
@@ -2663,7 +2844,7 @@ def _run_model(
     """The model a run command drives: journaled when live, replaying what the operator names.
 
     A live profile's model is wrapped so every response the run consumes lands in the
-    assessment's own `traces/journal/` area (DEC-137). The fake provider journals nothing:
+    assessment's own `traces/journal/` area (DEC-139). The fake provider journals nothing:
     a journal of the deterministic substitute would hold responses no model gave, which is
     the exact artifact the rehearsal marker exists to refuse.
     """
@@ -2742,6 +2923,7 @@ def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
         profile=profile,
         workflow_run_id=args.workflow_run_id,
         budget=_budget_from(args),
+        on_phase=_print_phase_progress,
     )
     return _print_run_outcome(outcome)
 

@@ -1,4 +1,4 @@
-"""The live-run response journal (#623, DEC-137).
+"""The live-run response journal (#623, DEC-139).
 
 Every live response an ordinary run consumes is journaled in the recording-envelope shape, and a
 resume replays the journal only when the operator names it — an entry answers exactly the call

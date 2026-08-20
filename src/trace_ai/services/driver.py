@@ -95,7 +95,7 @@ from trace_ai.workflow.finding_review import FindingReviewNode
 from trace_ai.workflow.limits import Budget
 from trace_ai.workflow.mapping_validation import apply_downgrades, validate_mappings
 from trace_ai.workflow.nodes import NodeContext, NodeResult
-from trace_ai.workflow.orchestrator import Orchestrator, RunOutcome
+from trace_ai.workflow.orchestrator import Orchestrator, PhaseProgress, RunOutcome
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.report_generation import (
     PROMPT_ID as REPORT_PROMPT_ID,
@@ -1340,6 +1340,7 @@ def run_assessment(
     generated_at: datetime | None = None,
     ablations: Sequence[str] = (),
     stop_before: Phase | None = None,
+    on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> RunOutcome:
     """Run a fresh assessment from initialization until it pauses, completes, or stops.
 
@@ -1387,6 +1388,7 @@ def run_assessment(
         budget=spend,
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),
+        on_phase=on_phase,
     )
     outcome = orchestrator.run(
         AssessmentState.begin(assessment_id=assessment_id, workflow_run_id=run.id),
@@ -1406,6 +1408,7 @@ def resume_assessment(
     budget: Budget | None = None,
     generated_at: datetime | None = None,
     stop_before: Phase | None = None,
+    on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> RunOutcome:
     """Resume a paused run in a fresh process (DEC-017: resuming is a read).
 
@@ -1458,6 +1461,7 @@ def resume_assessment(
         budget=spend,
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),
+        on_phase=on_phase,
     )
     outcome = orchestrator.run(state, stop_before=stop_before)
     _emit_external_tracing(handle, assessment.configuration, run.id)
