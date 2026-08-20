@@ -756,22 +756,25 @@ than rounding it away.
 
 ### Failure taxonomy
 
-From reading the per-item match sets of all twenty-five committed evaluation runs — fifteen
-authoritative Trace runs (thirteen clean, two adversarial, one of them the live capture) and ten
-baseline runs, regenerated offline. Two failure categories appear. The live view is the
-[scorecard](docs/eval/scorecard.html).
+From reading the per-item match sets of the committed evaluation runs — fifteen authoritative
+Trace runs, all live captures (thirteen on `openai/gpt-5.1` through the gateway in the 2026-08
+sweep, #484; two earlier pre-batching `claude-opus-5` captures), their adversarial condition
+replays, and forty-five live baseline runs, three per scenario. Three failure categories appear.
+The live view is the [scorecard](docs/eval/scorecard.html).
 
 | Failure mode | Frequency | Observed in |
 |---|---|---|
-| **Live run answers beside the truth set** — both live-captured `claude-opus-5` runs produce approved, defensible findings that match none of their truth sets' reachable expectations by the structural matcher: forgeflow 0 of 1 matched with 4 spurious and 2 conditional expectations unreached (DEC-133 — entries conditioned on a contradiction resolution the run's protocol did not supply report beside the score, not inside it; the run's paired questions carry their grade), husky-ai 0 of 2 matched with 4 spurious. The diagnosis (#564, DEC-116, `docs/eval/live-diagnosis.md`): the runs produce mappings under the expected requirements, but the single evidence-validation call silently under-assesses — 25 of 185 mappings on forgeflow, and `evidence_assessment_coverage` 0.275 on husky-ai, the metric's first confirming live reading — so an unassessed mapping resolves to no output (DEC-013). This is the live-model failure mode the offline recordings could not show; the batching fix is #585. | 2 of 15 authoritative Trace runs | forgeflow, husky-ai (clean, live captures) |
-| **Silence read as a weakness** — a baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports, index retention concluded to violate a schedule nothing states it violates. This is the DEC-009 failure the pipeline exists to prevent, and on the retrieval scenario even the structured baseline commits it — structure alone does not stop silence being read as absence. | 8 spurious findings across 6 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1), rag-support-bot (2); baseline-structured on rag-support-bot (1) |
+| **The evidence-validation funnel under-assesses (pre-batching shape)** — the two `claude-opus-5` captures produce approved, defensible findings that match none of their truth sets' reachable expectations: forgeflow 0 of 1 matched with 4 spurious (2 conditional expectations unreached, DEC-133), husky-ai 0 of 2 matched with 4 spurious. The diagnosis (#564, DEC-116, `docs/eval/live-diagnosis.md`): the single evidence-validation call silently under-assessed — 25 of 185 mappings on forgeflow, `evidence_assessment_coverage` 0.275 on husky-ai — so an unassessed mapping resolved to no output (DEC-013). The DEC-134 batching fix is measured working: every one of the thirteen sweep captures reads coverage 1.0. Re-capturing the two opus scenarios under the batched shape is #588's remaining condition. | 2 of 15 authoritative Trace runs, both pre-batching | forgeflow, husky-ai (`claude-opus-5`, workflow 0.1) |
+| **The right conclusion surfaces in the wrong layer** — a sweep capture reaches the expected weakness but expresses it as questions or documentation gaps rather than a finding, so the matcher scores a miss with zero spurious: order-notifier's unsigned intake became meta-documentation questions, parcel-platform's notification-logging finding stayed claim-and-question, invoice-agent's two expected findings arrived as a different-lens candidate, and contradictory-docs re-asked a contradiction checkpoint 1 had already resolved — three times — before filing it as a gap. The adjacent signature is gap over-minting where a gap layer exists (11 gaps against 1 expected on nightly-reconciler, 17 against 2 on parcel-platform), and the DEC-066 fingerprint splitting a substantively matched finding on component-name inequality (translation-gateway; the baselines lose findings to the same string-equality rule). Coverage 1.0 throughout — lens, not omission. This row is the #589 truth-set reconciliation's subject matter, with the checkpoint-1 propagation defect filed separately. | 6 of 15 authoritative Trace runs; 0 spurious findings across all 13 sweep captures | contradictory-docs, invoice-agent, order-notifier, translation-gateway, parcel-platform (partial), nightly-reconciler (gap layer) |
+| **Silence read as a weakness** — a baseline invents a finding where the documentation is simply quiet: missing MFA an inherited identity provider covers, encryption details a managed platform supplies, absent replay protection, retention concluded to violate a schedule nothing states it violates. Measured live across all fifteen scenarios: the generic baseline produced 45 spurious findings — seventeen on oidc-portal's zero-finding truth set alone, all seventeen removed by structured input — the structured baseline 12, the whole-assessment single call 11. This is the DEC-009 failure the pipeline exists to prevent, and structure reduces it without eliminating it. | 68 spurious findings across 45 live baseline runs | every scenario; sharpest on oidc-portal (generic: 17 against a zero-finding truth set) |
 
-The thirteen offline Trace runs produced no spurious finding; the live capture's four are the
-first row's mismatches, real findings scored spurious because the expected lenses never survived
-the evidence-validation funnel. The second
-row stays a baseline failure — inventing weaknesses from silence — which no Trace run, live or
-offline, has produced: the comparison exists to measure
-that difference, not to assert it.
+The thirteen sweep captures produced no spurious finding, and two findings matched their truth
+sets exactly with severity concordance (reply-tuner, parcel-platform). The pooled Trace
+false-positive count is dominated by the two pre-batching opus rows — a pooled number that mixes
+workflow shapes and models, which the scorecard's per-row attribution (DEC-136) makes visible and
+the #601 stratified readout will separate. The third row stays a baseline failure — inventing
+weaknesses from silence — which no Trace run, live or offline, has produced: the comparison
+exists to measure that difference, not to assert it.
 
 ## Documentation
 
