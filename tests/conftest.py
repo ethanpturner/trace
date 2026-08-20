@@ -30,12 +30,37 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from trace_ai.config import get_settings
+from trace_ai.config import PROJECT_ROOT, get_settings
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from pathlib import Path
 
 _PROVIDER_KEY_VARS = ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "LANGSMITH_API_KEY")
+
+AUTHORED_SCENARIO = PROJECT_ROOT / "tests" / "fixtures" / "helpdesk-translate-authored"
+
+
+@pytest.fixture
+def authored_scenario_registry(tmp_path: Path) -> Path:
+    """A registry with one synthetic entry: the frozen authored Helpdesk Translate scenario.
+
+    Every registered scenario carries a live recording, and a live recording's scores move when
+    a scenario is re-captured — so a test that needs a stable replay shape (findings matched,
+    no offline report pin) registers the frozen authored copy under a synthetic slug instead of
+    borrowing a registered scenario. See `tests/fixtures/helpdesk-translate-authored/README.md`.
+    """
+    registry = tmp_path / "scenarios.yaml"
+    registry.write_text(
+        'registry_version: "1.0"\n'
+        "scenarios:\n"
+        "  - slug: authored-fixture\n"
+        "    name: Authored Fixture\n"
+        f"    path: {AUTHORED_SCENARIO}\n"
+        "    status: authored\n",
+        encoding="utf-8",
+    )
+    return registry
 
 
 @pytest.fixture(autouse=True)

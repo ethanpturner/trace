@@ -1,0 +1,11 @@
+assessment_id: asm-001
+reviewer: recorded-reviewer
+findings:
+- id: fnd-001
+  severity: high
+  decision: approve
+  rationale: The document itself states that no agreement governs retention or secondary use and that the standard terms are unreviewed, while full customer content is sent. The shortfall is documented, not inferred.
+- id: fnd-002
+  severity: medium
+  decision: approve
+  rationale: The over-scoped token is documented as a convenience choice against a stated narrower need; the blast radius of a token theft is the workspace.

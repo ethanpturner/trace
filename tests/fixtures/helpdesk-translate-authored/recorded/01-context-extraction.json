@@ -1,0 +1,220 @@
+{
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Helpdesk Translate",
+      "system_purpose": "let support agents translate customer tickets in place through an external translation SaaS",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
+    },
+    "claims": [
+      {
+        "key": "full-body-sent",
+        "subject_type": "component",
+        "subject_key": "connector",
+        "predicate": "external_data_scope",
+        "value": "the connector sends the full ticket body \u2014 including customer-written text and the extracted text of customer attachments \u2014 to the translation provider over HTTPS",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "no-retention-agreement",
+        "subject_type": "component",
+        "subject_key": "connector",
+        "predicate": "provider_data_terms",
+        "value": "no agreement covering the provider's retention of submitted text or its use beyond returning the translation has been established; the provider's standard terms apply and have not been reviewed",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "over-scoped-token",
+        "subject_type": "component",
+        "subject_key": "connector",
+        "predicate": "delegated_privilege",
+        "value": "the workspace API token grants full workspace access, scoped that way during setup for convenience, while the integration only reads tickets and writes notes",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "connector",
+        "name": "Translation Connector",
+        "component_type": "service",
+        "description": "sends ticket text to the translation provider and writes the returned translation back as an internal note",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [
+          "api_token"
+        ],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "helpdesk",
+        "name": "Helpdesk",
+        "component_type": "saas_application",
+        "description": "holds the tickets; the connector authenticates to it with a workspace API token",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "provider",
+        "name": "Translation Provider",
+        "component_type": "external_service",
+        "description": "the external translation SaaS; its standard terms apply and have not been reviewed",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "agent",
+        "name": "Support agent",
+        "actor_type": "internal_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "tickets",
+        "name": "Customer tickets",
+        "asset_type": "customer_data",
+        "description": "ticket bodies including customer-written text and attachment text",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "helpdesk",
+          "connector"
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "workspace-token",
+        "name": "Workspace API token",
+        "asset_type": "credentials",
+        "description": "the connector's helpdesk token, granting full workspace access",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "connector"
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "translate-out",
+        "name": "Ticket text to provider",
+        "source_component_key": "connector",
+        "destination_component_key": "provider",
+        "direction": "bidirectional",
+        "protocol": "https",
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "https",
+        "crosses_trust_boundary_keys": [
+          "third-party"
+        ],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "helpdesk-access",
+        "name": "Connector to helpdesk",
+        "source_component_key": "connector",
+        "destination_component_key": "helpdesk",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "api_token",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "third-party"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "third-party",
+        "name": "Third-party service boundary",
+        "boundary_type": "application_to_external_service",
+        "description": null,
+        "inside_component_keys": [
+          "connector"
+        ],
+        "outside_component_keys": [
+          "helpdesk",
+          "provider"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
+}

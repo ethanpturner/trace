@@ -1,0 +1,449 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10655,
+    "output_tokens": 16583,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.18050875",
+    "duration_seconds": 162.86497916595545
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "conn_tls_to_translation",
+        "name": "TLS encryption between connector and translation provider",
+        "description": "The connector sends full ticket bodies and extracted attachment text to the external translation provider over HTTPS, providing encryption in transit across the external boundary.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "Protects ticket content only while in transit between the connector and the translation provider and does not constrain how the provider retains or reuses the data once received."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-ADMIN-001 concerns privileged administrative or operator interfaces and how their access and reach are documented. Threat thr-001 is about an external translation provider\u2019s retention and secondary use of ticket content and does not involve any administrative interface on the helpdesk or connector path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-001 addresses treatment of untrusted content passed into a model and controls against prompt or instruction injection. In thr-001, ticket content is sent to an external translation SaaS over HTTPS (evd-002) but there is no model under this system\u2019s control and no prompt-construction or injection scenario described, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-002 concerns automatic publication of model output to destinations outside the system without human review. In thr-001, the translated text is written back to the helpdesk as an internal note on the ticket (evd-002), not published externally, so this requirement is not engaged by the described threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Customer ticket content, including extracted attachment text, is sent from the connector to an external translation SaaS over HTTPS (evd-002). req-AI-003 applies where customer content is sent to an external model provider; this threat fits if the translation SaaS is implemented using external models, but the documentation does not state whether a model provider is used, so applicability is conditional on that fact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Assume the translation SaaS uses machine translation models and therefore qualifies as an external model provider; if it does not, req-AI-003 does not apply."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-004 requires encoding of model output when rendered into user interfaces or markup to prevent active-content issues. Threat thr-001 concerns confidentiality and privacy exposure from the translation provider\u2019s retention and secondary use of ticket content, not active-content rendering or injection, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTH-001 is about documenting delegated user authentication to an external identity provider. Thr-001 focuses on how customer ticket content is sent from the connector to an external translation SaaS and how that provider may retain or reuse it; no delegated user authentication mechanism is described in the attack path, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTH-002 covers responsibility for multi-factor authentication on privileged or externally reachable administrative access. Thr-001 involves a support agent using normal ticket operations and a connector invoking an external translation provider; it does not involve any privileged administrative interface or MFA policy, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTHZ-001 addresses tenant-aware authorization and enforcement of tenant boundaries in a multi-tenant system. Thr-001 concerns the fact that entire tickets, including attachments, are sent to an external translation SaaS (evd-002) and may be retained and reused there (evd-004); it does not involve cross-tenant access within the helpdesk or connector, so the tenant-authorization requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTHZ-002 concerns limiting delegated integration privileges (for example, platform app scopes). Although evd-003 notes that the connector\u2019s workspace API token is broadly scoped in the helpdesk, thr-001 is specifically about what happens to ticket content once it is sent to the external translation provider, not about over-broad access within the helpdesk itself, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-CICD-001 addresses trust in the deployment pipeline and third-party components entering builds. Thr-001\u2019s attack path involves runtime behaviour of the connector and translation SaaS and the provider\u2019s data-retention practices (evd-001, evd-002, evd-004), not build or deployment mechanisms, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-001 focuses on encryption of sensitive data in transit and at rest and documenting when that protection is inherited. While ticket content is sent over HTTPS to the translation provider (evd-002), thr-001\u2019s concern is that the provider may retain and reuse that content under its own terms (evd-004); encryption does not address that retention and secondary use, so this requirement does not bear on the described threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-002 addresses defined and enforced retention periods for sensitive working data that the system itself persists. Thr-001 instead focuses on the external translation provider\u2019s potential long-lived retention and secondary use of ticket content under its own standard terms (evd-004); it does not concern working copies retained inside this system, so the requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-003 concerns separation of stored artifacts by tenant within a shared storage system. Thr-001 is about ticket content being sent to, and potentially retained by, an external translation provider (evd-002, evd-004), not about how artifacts are separated in any internal storage, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "req-DATA-004 applies where a system stores customer data in more than one store and must document how that data can be removed, including from derived or secondary stores. Thr-001 describes customer ticket content held in the helpdesk and also sent to an external translation provider, which may retain submitted text and translations beyond returning the result (evd-001, evd-002, evd-004), making the provider\u2019s copies effectively secondary stores whose deletion capability is relevant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-LOG-001 concerns excluding restricted data from application logs and documenting log destinations. Thr-001 describes ticket content flowing from the connector to an external translation SaaS and the provider\u2019s potential retention and reuse of that content (evd-002, evd-004); logs are not mentioned in the attack path and are not central to the threat, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-LOG-002 is about recording security-relevant administrative actions. Thr-001 does not involve privileged administrative operations; it concerns normal ticket translation workflow and the external provider\u2019s handling of submitted content (evd-001, evd-002, evd-004), so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-NET-001 addresses network placement and reachability of internal components such as data stores, queues, or caches. Thr-001 concerns an intentional HTTPS integration from the connector to an external translation SaaS (evd-002) and the provider\u2019s retention of that data (evd-004), not unintended network exposure of internal components, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-SECRET-001 requires long-lived signing keys and provider credentials to be held in a managed secret store. Although the connector uses a workspace API token to authenticate to the helpdesk (evd-003), thr-001\u2019s risk is about the translation provider\u2019s retention and reuse of ticket content, not about custody of credentials, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-SECRET-002 concerns the lifetime of credentials used to access customer resources on external platforms. Thr-001 is about what happens to ticket content once it has been sent to the translation SaaS and the provider\u2019s potential retention and secondary use (evd-002, evd-004); the lifetime of tokens used to access the helpdesk or provider is not part of the described threat, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "req-TPI-001 applies where customer data is sent to an external provider that processes data on the system\u2019s behalf. In thr-001, the connector sends the full ticket body, including customer-written text and extracted attachment text, to an external translation SaaS over HTTPS for processing (evd-002), clearly meeting the condition that customer data crosses the trust boundary to an external processor.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-TPI-002 addresses bounding work triggered by external events or metered services so repeated triggers cannot cause unbounded consumption. Thr-001 describes a support agent explicitly initiating translations via the helpdesk, with no mention of untrusted external event sources or retry storms (evd-002); the threat is about privacy and retention at the translation provider (evd-004), not unbounded work, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-WEBHOOK-001 concerns authenticity verification of inbound events (such as webhooks) from external platforms. Thr-001 involves outbound HTTPS requests from the connector to an external translation SaaS and responses containing translated text (evd-002); no inbound event endpoint is described, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-WEBHOOK-002 addresses protection against replay of inbound events. Thr-001\u2019s flow is a synchronous translation request/response over HTTPS (evd-002), not an event-driven webhook integration, so replay of inbound events is not part of the described threat and the requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Deletion behaviour for customer data held by the translation provider is undocumented",
+        "description": "The documentation states that no agreement covers the translation provider\u2019s retention of submitted text or its use of that text beyond returning the translation, and that the provider\u2019s standard terms apply and have not been reviewed for this integration (evd-004). Nothing in the available material describes whether, or how, customer ticket content and translated notes held by the translation provider can be deleted when a customer or operator requires it, including any copies retained beyond the immediate translation request.",
+        "importance": "Without clarity on deletion capabilities at the translation provider, it is not possible to determine whether the system can honour customer deletion requests or limit the lifetime of sensitive ticket content once it has crossed the provider boundary, which directly affects the impact of thr-001 and satisfaction of data-lifecycle expectations such as req-DATA-004.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-001",
+          "cmp-003",
+          "ast-001",
+          "ast-002",
+          "req-DATA-004",
+          "req-TPI-001"
+        ],
+        "requested_evidence": [
+          "Provider contract or data processing agreement describing retention, secondary use, and deletion of submitted ticket content and translations, or architecture/operations documentation explaining how deletion requests are propagated to the translation provider and what stores and backups are covered."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

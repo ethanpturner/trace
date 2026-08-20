@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Helpdesk Translate connector",
+      "title": "Helpdesk API token is over-privileged relative to integration needs",
+      "rationale": "The connector uses a workspace API token that grants full workspace access even though the integration only needs to read tickets and write notes. This violates the principle of least privilege and the requirement that integration privileges be limited to those required.",
+      "evidence_quote": "\"The connector authenticates to the helpdesk with a workspace API token. The token grants full workspace access; it was scoped that way during setup because it was convenient, and the integration only reads tickets and writes notes.\""
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Helpdesk Translate connector",
+      "title": "External translation provider data handling and retention are not agreed or reviewed",
+      "rationale": "There is no agreement in place governing how the external translation provider retains or uses submitted ticket data, and the provider’s standard terms have not been reviewed for this integration. This means external processor data handling is neither defined nor documented for the service, failing the requirement to document how external processors handle data.",
+      "evidence_quote": "\"No agreement covering the translation provider's retention of submitted text, or its use of submitted text for any purpose beyond returning the translation, has been established. The provider's standard terms apply; they have not been reviewed for this integration.\""
+    }
+  ]
+}

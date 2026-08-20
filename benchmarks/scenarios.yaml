@@ -182,6 +182,7 @@ scenarios:
     # findings, one custody gap.
     status: authored
     category: third-party-integrations
+    workflow_version: "0.2"
 
   - slug: parcel-platform
     name: Parcelworks

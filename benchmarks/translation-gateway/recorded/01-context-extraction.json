@@ -1,21 +1,114 @@
 {
   "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12563,
+    "output_tokens": 14177,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.15747375",
+    "duration_seconds": 172.03805687499698
+  },
   "response": {
     "system": {
       "system_name": "Helpdesk Translate",
-      "system_purpose": "let support agents translate customer tickets in place through an external translation SaaS",
+      "system_purpose": "Connector service that lets support agents translate customer helpdesk tickets in place using an external translation SaaS.",
       "business_criticality": null,
       "environment": [],
       "deployment_model": null,
-      "data_classifications": []
+      "data_classifications": [],
+      "access_model": "unknown"
     },
     "claims": [
       {
-        "key": "full-body-sent",
+        "key": "clm-system-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Connector service that lets support agents translate customer tickets in place using an external translation SaaS.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-system-role-connector",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "role",
+        "value": "Acts as a connector service between the helpdesk and an external translation SaaS.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "clm-component-helpdesk-platform-desc",
         "subject_type": "component",
-        "subject_key": "connector",
-        "predicate": "external_data_scope",
-        "value": "the connector sends the full ticket body \u2014 including customer-written text and the extracted text of customer attachments \u2014 to the translation provider over HTTPS",
+        "subject_key": "helpdesk-platform",
+        "predicate": "description",
+        "value": "Helpdesk where agents open tickets and select translate, and where tickets and internal notes exist.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-component-connector-desc",
+        "subject_type": "component",
+        "subject_key": "helpdesk-translate-connector",
+        "predicate": "description",
+        "value": "Service that connects the helpdesk to the external translation SaaS, sending ticket content for translation and writing returned translations back as internal notes.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-component-translation-saas-desc",
+        "subject_type": "component",
+        "subject_key": "translation-saas-provider",
+        "predicate": "description",
+        "value": "External translation SaaS that receives ticket content and returns translated text.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-component-translation-saas-external",
+        "subject_type": "component",
+        "subject_key": "translation-saas-provider",
+        "predicate": "is_external_saas",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "clm-actor-support-agent-desc",
+        "subject_type": "actor",
+        "subject_key": "support-agent",
+        "predicate": "description",
+        "value": "Support agent who opens a ticket in the helpdesk and triggers translation.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -24,95 +117,275 @@
         ]
       },
       {
-        "key": "no-retention-agreement",
-        "subject_type": "component",
-        "subject_key": "connector",
-        "predicate": "provider_data_terms",
-        "value": "no agreement covering the provider's retention of submitted text or its use beyond returning the translation has been established; the provider's standard terms apply and have not been reviewed",
+        "key": "clm-asset-customer-ticket-content-def",
+        "subject_type": "asset",
+        "subject_key": "customer-ticket-content",
+        "predicate": "definition",
+        "value": "Full ticket body including any customer-written text and the extracted text of customer attachments.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
         "evidence_ids": [
-          "evd-004"
+          "evd-002"
         ]
       },
       {
-        "key": "over-scoped-token",
-        "subject_type": "component",
-        "subject_key": "connector",
-        "predicate": "delegated_privilege",
-        "value": "the workspace API token grants full workspace access, scoped that way during setup for convenience, while the integration only reads tickets and writes notes",
+        "key": "clm-asset-translated-ticket-notes-def",
+        "subject_type": "asset",
+        "subject_key": "translated-ticket-notes",
+        "predicate": "definition",
+        "value": "Translated versions of ticket content written back onto the ticket as internal notes.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-asset-api-token-def",
+        "subject_type": "asset",
+        "subject_key": "helpdesk-workspace-api-token",
+        "predicate": "definition",
+        "value": "Workspace API token used by the connector to authenticate to the helpdesk.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
         "evidence_ids": [
           "evd-003"
         ]
+      },
+      {
+        "key": "clm-connector-sends-full-ticket-body",
+        "subject_type": "component",
+        "subject_key": "helpdesk-translate-connector",
+        "predicate": "sends_full_ticket_body_to_translation_provider",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-ticket-content-sent-to-provider",
+        "subject_type": "asset",
+        "subject_key": "customer-ticket-content",
+        "predicate": "sent_to_component",
+        "value": "translation-saas-provider",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-flow-https",
+        "subject_type": "data_flow",
+        "subject_key": "connector-to-translation-saas-request",
+        "predicate": "protocol",
+        "value": "https",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-flow-tls-encryption",
+        "subject_type": "data_flow",
+        "subject_key": "connector-to-translation-saas-request",
+        "predicate": "encryption_in_transit",
+        "value": "tls",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The documentation states that the connector sends data over HTTPS, which implies HTTP over TLS, so data is encrypted in transit.",
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-connector-writes-translation-note",
+        "subject_type": "component",
+        "subject_key": "helpdesk-translate-connector",
+        "predicate": "writes_translated_text_back_as_internal_note",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-connector-auth-with-api-token",
+        "subject_type": "component",
+        "subject_key": "helpdesk-translate-connector",
+        "predicate": "authenticates_to_helpdesk_with",
+        "value": "workspace API token",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-api-token-scope",
+        "subject_type": "asset",
+        "subject_key": "helpdesk-workspace-api-token",
+        "predicate": "grants_access",
+        "value": "full workspace access",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-integration-actual-use",
+        "subject_type": "component",
+        "subject_key": "helpdesk-translate-connector",
+        "predicate": "effective_use_of_helpdesk_api",
+        "value": "only reads tickets and writes notes",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-no-retention-agreement",
+        "subject_type": "component",
+        "subject_key": "translation-saas-provider",
+        "predicate": "specific_retention_agreement_established",
+        "value": false,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": "The documentation explicitly states that no agreement covering the provider's retention or use of submitted text has been established.",
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-provider-terms-not-reviewed",
+        "subject_type": "component",
+        "subject_key": "translation-saas-provider",
+        "predicate": "standard_terms_reviewed_for_this_integration",
+        "value": false,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": "The documentation states that the provider's standard terms apply and they have not been reviewed for this integration.",
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-provider-permitted-use-unknown",
+        "subject_type": "component",
+        "subject_key": "translation-saas-provider",
+        "predicate": "permitted_use_of_submitted_text_under_standard_terms",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "low",
+        "rationale": "Because no specific agreement exists and the provider's standard terms have not been reviewed, the actual permitted uses of submitted text are not established in the documentation.",
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-flow-helpdesk-api-inferred",
+        "subject_type": "data_flow",
+        "subject_key": "connector-to-helpdesk-api",
+        "predicate": "operations",
+        "value": "connector reads tickets and writes notes via the helpdesk API using the workspace API token",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The documentation says the connector authenticates to the helpdesk with a workspace API token and that the integration only reads tickets and writes notes, implying use of the helpdesk API for these operations.",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ]
       }
     ],
     "components": [
       {
-        "key": "connector",
-        "name": "Translation Connector",
+        "key": "helpdesk-translate-connector",
+        "name": "Helpdesk Translate connector service",
         "component_type": "service",
-        "description": "sends ticket text to the translation provider and writes the returned translation back as an internal note",
+        "description": "Connector service between the helpdesk and an external translation SaaS.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "helpdesk-platform",
+        "name": "Helpdesk platform",
+        "component_type": "helpdesk",
+        "description": "Helpdesk where agents work with tickets and where translated internal notes are written back onto tickets.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "ui"
+        ],
         "data_classifications": [],
         "authentication_mechanisms": [
           "api_token"
         ],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-001",
-          "evd-002"
+          "evd-002",
+          "evd-003"
         ]
       },
       {
-        "key": "helpdesk",
-        "name": "Helpdesk",
-        "component_type": "saas_application",
-        "description": "holds the tickets; the connector authenticates to it with a workspace API token",
+        "key": "translation-saas-provider",
+        "name": "Translation SaaS provider",
+        "component_type": "saas",
+        "description": "External translation SaaS that receives ticket content over HTTPS and returns translated text.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
         "internet_accessible": null,
         "externally_managed": true,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
-        "evidence_ids": [
-          "evd-003"
-        ]
-      },
-      {
-        "key": "provider",
-        "name": "Translation Provider",
-        "component_type": "external_service",
-        "description": "the external translation SaaS; its standard terms apply and have not been reviewed",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": null,
-        "internet_accessible": true,
-        "externally_managed": true,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
           "evd-001",
+          "evd-002",
           "evd-004"
         ]
       }
     ],
     "actors": [
       {
-        "key": "agent",
+        "key": "support-agent",
         "name": "Support agent",
-        "actor_type": "internal_user",
+        "actor_type": "support_agent",
         "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
         "capabilities": [],
         "authentication_method": null,
         "evidence_ids": [
@@ -122,36 +395,58 @@
     ],
     "assets": [
       {
-        "key": "tickets",
-        "name": "Customer tickets",
-        "asset_type": "customer_data",
-        "description": "ticket bodies including customer-written text and attachment text",
+        "key": "customer-ticket-content",
+        "name": "Customer ticket content",
+        "asset_type": "data",
+        "description": "Full ticket body including any customer-written text and the extracted text of customer attachments.",
         "confidentiality_impact": null,
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
         "component_keys": [
-          "helpdesk",
-          "connector"
+          "helpdesk-translate-connector",
+          "translation-saas-provider"
         ],
+        "stored_in_component_keys": [],
         "evidence_ids": [
           "evd-002"
         ]
       },
       {
-        "key": "workspace-token",
-        "name": "Workspace API token",
-        "asset_type": "credentials",
-        "description": "the connector's helpdesk token, granting full workspace access",
+        "key": "translated-ticket-notes",
+        "name": "Translated ticket notes",
+        "asset_type": "data",
+        "description": "Translated versions of ticket content written back onto tickets as internal notes.",
         "confidentiality_impact": null,
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
         "component_keys": [
-          "connector"
+          "helpdesk-translate-connector",
+          "helpdesk-platform",
+          "translation-saas-provider"
         ],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "helpdesk-workspace-api-token",
+        "name": "Helpdesk workspace API token",
+        "asset_type": "credential",
+        "description": "Workspace API token used by the connector to authenticate to the helpdesk; the token grants full workspace access.",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "helpdesk-translate-connector"
+        ],
+        "stored_in_component_keys": [],
         "evidence_ids": [
           "evd-003"
         ]
@@ -159,62 +454,116 @@
     ],
     "data_flows": [
       {
-        "key": "translate-out",
-        "name": "Ticket text to provider",
-        "source_component_key": "connector",
-        "destination_component_key": "provider",
-        "direction": "bidirectional",
+        "key": "connector-to-translation-saas-request",
+        "name": "Connector to translation SaaS \u2013 ticket content",
+        "source_component_key": "helpdesk-translate-connector",
+        "destination_component_key": "translation-saas-provider",
+        "direction": "one_way",
         "protocol": "https",
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "https",
-        "crosses_trust_boundary_keys": [
-          "third-party"
+        "data_types": [
+          "ticket_content",
+          "attachment_text"
         ],
-        "internet_exposed": true,
+        "authentication": "unknown",
+        "encryption_in_transit": "tls",
+        "crosses_trust_boundary_keys": [
+          "connector-translation-saas-boundary"
+        ],
+        "internet_exposed": null,
         "evidence_ids": [
           "evd-002"
         ]
       },
       {
-        "key": "helpdesk-access",
-        "name": "Connector to helpdesk",
-        "source_component_key": "connector",
-        "destination_component_key": "helpdesk",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "api_token",
-        "encryption_in_transit": "unknown",
+        "key": "translation-saas-to-connector-response",
+        "name": "Translation SaaS to connector \u2013 translated text",
+        "source_component_key": "translation-saas-provider",
+        "destination_component_key": "helpdesk-translate-connector",
+        "direction": "one_way",
+        "protocol": "https",
+        "data_types": [
+          "translated_ticket_content"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "tls",
         "crosses_trust_boundary_keys": [
-          "third-party"
+          "connector-translation-saas-boundary"
         ],
         "internet_exposed": null,
         "evidence_ids": [
-          "evd-003"
+          "evd-002"
+        ]
+      },
+      {
+        "key": "connector-to-helpdesk-api",
+        "name": "Connector to helpdesk API \u2013 tickets and notes",
+        "source_component_key": "helpdesk-translate-connector",
+        "destination_component_key": "helpdesk-platform",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "ticket_content",
+          "translated_ticket_content",
+          "internal_notes"
+        ],
+        "authentication": "api_token",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
         ]
       }
     ],
     "trust_boundaries": [
       {
-        "key": "third-party",
-        "name": "Third-party service boundary",
-        "boundary_type": "application_to_external_service",
-        "description": null,
+        "key": "connector-translation-saas-boundary",
+        "name": "Connector to external translation SaaS",
+        "boundary_type": "external_service",
+        "description": "Boundary between the Helpdesk Translate connector service and the external translation SaaS provider.",
         "inside_component_keys": [
-          "connector"
+          "helpdesk-translate-connector"
         ],
         "outside_component_keys": [
-          "helpdesk",
-          "provider"
+          "translation-saas-provider"
         ],
-        "controls": [],
+        "controls": [
+          "https"
+        ],
         "evidence_ids": [
-          "evd-001"
+          "evd-001",
+          "evd-002",
+          "evd-004"
         ]
       }
     ],
-    "questions": [],
+    "questions": [
+      {
+        "key": "q-translation-provider-terms",
+        "question": "What do the translation provider's standard terms allow in terms of retention duration and secondary use (e.g., training, analytics, sharing) of submitted ticket content and translations?",
+        "rationale": "The documentation states that no specific agreement has been established and that the provider's standard terms, which have not been reviewed, apply. The actual retention period and permitted uses directly affect how long and for what purposes customer ticket content and translations may be stored and processed by the third-party provider, which is critical for understanding data exposure and compliance obligations.",
+        "related_object_key": "translation-saas-provider",
+        "priority": "high",
+        "blocking": true
+      },
+      {
+        "key": "q-api-token-scope",
+        "question": "Can the helpdesk workspace API token used by the connector be scoped more narrowly than full workspace access (for example, to only read tickets and write internal notes), and if so why was a fully scoped token chosen?",
+        "rationale": "The documentation states that the workspace API token currently grants full workspace access even though the integration only needs to read tickets and write notes. Understanding whether this broad scope is technically required or can be reduced would change the assessment of how much helpdesk data and functionality is exposed through this credential.",
+        "related_object_key": "helpdesk-workspace-api-token",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-connector-hosting",
+        "question": "Where is the Helpdesk Translate connector service hosted (e.g., cloud provider, network zone) and who operates it relative to the helpdesk and the translation SaaS provider?",
+        "rationale": "The documentation identifies the connector as a service between the helpdesk and an external translation SaaS but does not describe its hosting environment or operator. This information would clarify which party controls the connector's infrastructure and what additional trust boundaries or controls apply to data as it passes through the connector.",
+        "related_object_key": "helpdesk-translate-connector",
+        "priority": "medium",
+        "blocking": false
+      }
+    ],
     "observations": []
   }
 }
