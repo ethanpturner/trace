@@ -450,7 +450,10 @@ remains open is the narrated demo video.
   fourteenth (reply-tuner, DEC-114) exercises the 0.3 catalog's fine-tuning pack, and the
   fifteenth (nightly-reconciler, DEC-122) exercises the org-controls assertion, its two
   suppressions resting on asserted organizational facts — and `trace evaluate --all` runs the
-  register with nothing skipped.
+  register with nothing skipped. The corpus is described as a versioned artifact in
+  [the benchmark package](docs/eval/benchmark-package.md) (DEC-146): `benchmarks/manifest.yaml`
+  names every scenario's files, pins, and digests, CI fails when it drifts from the corpus, and
+  the specification's limitations section states what the numbers do not establish.
 - **The M12 decision debt, closed** — DEC-057 through DEC-072 (risk treatment, episodic revisit,
   routing reasons, the STRIDE coverage baseline, the precedent feed, catalog-gap candidates,
   fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
