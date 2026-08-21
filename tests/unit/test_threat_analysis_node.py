@@ -20,6 +20,7 @@ labels is refused.
 from __future__ import annotations
 
 from collections.abc import Iterator
+from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -352,6 +353,40 @@ def test_the_package_carries_the_architecture_in_the_trusted_region(prepared: An
     assert "Webhook Receiver" in package.trusted
     assert "Analysis Worker" in package.trusted
     assert package.component_ids == tuple(component_ids(handle))
+
+
+def test_the_package_composes_identically_whenever_the_context_was_approved(
+    prepared: Any,
+) -> None:
+    """DEC-142: no wall clock reaches the composed request.
+
+    Two runs that approve the same context at different instants must compose byte-identical
+    packages, or the DEC-139 journal's hash check fires on a difference no analysis input
+    produced — the #639 divergence, measured as a `call_sha256` miss on the first
+    post-checkpoint call of an otherwise-identical re-drive.
+    """
+    handle, _ledger, context = prepared
+    assert context.approved_at is not None
+
+    def assembled(ctx: SystemContext) -> Any:
+        return assemble_threat_input(
+            handle,
+            context=ctx,
+            index=EvidenceIndex(handle),
+            evidence_ids=evidence_ids(handle),
+            profile=PROFILE,
+            assessment_name="ForgeFlow",
+            threat_methodology="stride-scenario-based",
+        )
+
+    re_approved = SystemContext.model_validate(
+        {**context.model_dump(), "approved_at": context.approved_at + timedelta(hours=7)}
+    )
+    first, second = assembled(context), assembled(re_approved)
+
+    assert first.trusted == second.trusted
+    assert first.untrusted == second.untrusted
+    assert context.approved_at.isoformat() not in first.trusted
 
 
 def test_a_rejected_object_is_absent_from_the_package(prepared: Any) -> None:

@@ -9304,3 +9304,69 @@ Tradeoffs:
   valid as replays of the shape that produced them, and the next live capture of any scenario
   records the new shape naturally. The re-measurement of the contradictory-docs miss under this
   shape is sweep follow-up work, tracked with the recall items on #589's evidence.
+
+## DEC-142: No model-facing package renders a wall clock
+
+Date: 2026-08-20
+
+Status: Accepted
+
+Decision:
+
+**A model-facing input package renders no wall-clock value, and the threat package's
+`approved_at` field — the one such value any package carried — is removed.** The #332
+comparison attempt is the reproduction (#639): a journaled re-drive served its extraction entry,
+then missed on `call_sha256` at the very next call despite pinned inputs, recorded checkpoint
+decisions, and identical fresh stores. The miss is definitional, not incidental: `approved_at`
+is written by `approve_context` at checkpoint application from `domain.base.now()`, so two
+otherwise-identical runs *cannot* compose the same threat request, and DEC-139's divergence rule
+— correct, and unchanged by this entry — fired on a difference no analysis input produced.
+
+**The survey behind the rule, so the fix is the field list and not the first field.** Every
+model-facing composition point was swept: the context-extraction, mapping, evidence-validation,
+critique, and report-prompt assemblies render no datetime; the threat package's trusted region
+rendered exactly one, `approved_at`. The critique package's dismissal precedents use
+`decided_at` for ordering only and render identifiers, dispositions, and rationales — no
+instant. The field stays on `SystemContext` (data-model.md section 9) and in the audit trail;
+what changes is only that it no longer enters a prompt.
+
+**The approval fact is structural; the approval instant is provenance.** `assemble_threat_input`
+refuses an unapproved context (`UnapprovedContextError`), so the package's existence already
+asserts approval — the agent loses nothing it could legitimately reason from. The precedent is
+`GENERATED_AT` (the report render stamp, pinned wherever reproducibility is claimed): where a
+wall clock would make equal things unequal, the corpus keeps it out of the reproducible surface.
+
+Why:
+
+- DEC-139's "an interrupted phase re-drives without re-spending" held only for runs that died
+  before checkpoint 1, and nobody had decided that boundary — it was an accident of one rendered
+  field. The journal's hash check exists to catch real divergence; a per-process timestamp made
+  every post-checkpoint entry unservable by construction.
+- The request-composition determinism this entry buys is now pinned twice: byte-equal threat
+  instruction text across contexts differing only in `approved_at`, and a full journaled
+  pipeline run replaying end-to-end on a fresh root with every entry consumed and the fallback
+  model never reached.
+
+Alternatives Considered:
+
+- Rendering a stable stored timestamp instead of dropping the field (rejected: `approved_at` is
+  re-minted on every fresh application of the same decisions, so it is not stable across the
+  re-drives the journal exists for; and an instant the agent should not reason from does not
+  earn a place in the prompt by being reproducible).
+- Hashing the request with volatile fields masked (rejected: a hash that ignores parts of the
+  request is a hash of something other than the request, and the next volatile field would need
+  the mask maintained; making the request deterministic fixes the cause).
+- A workflow-version bump (rejected: DEC-134's boundary is call structure, which is unchanged —
+  recorded responses replay by consumption order and stay valid as replays of the shape that
+  produced them).
+
+Tradeoffs:
+
+- The four #332 journals' post-checkpoint entries keep hashes computed over text containing the
+  old field; those hashes were already unreproducible in any future process — that is the defect
+  — so nothing servable is lost, and the entries remain usable as consumption-order recordings
+  (`parse_recorded_response` ignores `call_sha256`). Journals written after this entry replay
+  hash-verified across checkpoints.
+- Live runs after this entry compose slightly different threat prompts than the recorded
+  captures did; as with DEC-141, replay is by consumption order and the next capture records the
+  new text naturally.
