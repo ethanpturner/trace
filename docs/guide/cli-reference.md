@@ -432,7 +432,8 @@ trace evaluate [scenario] [--all] [--condition CONDITION]
                [--baseline {generic,structured}] [--ablation-set]
                [--stability N] [--model-profile MODEL_PROFILE]
                [--ablate NAME] [--label LABEL] [--work-root WORK_ROOT]
-               [--diff-against LABEL] [--results-root RESULTS_ROOT]
+               [--diff-against LABEL] [--live-workflow-version VERSION]
+               [--results-root RESULTS_ROOT]
                [--report {scorecard,comparison,ablation}] [--out OUT] [--json]
 ```
 
@@ -447,6 +448,12 @@ refused by name.
 - `--ablate NAME` (repeatable) applies an ablation; the run is marked non-authoritative.
 - `--stability N` runs one scenario N times live; it refuses the offline profile, which would
   measure nothing.
+- `--model-profile` with a live profile runs one named scenario live through the harness —
+  checkpoints follow DEC-077's default policy with recorded answers matched first, the run is
+  priced by the operator, and `--all` is refused so a single flag cannot bill the corpus. The
+  offline-fake default replays recordings and spends nothing.
+- `--live-workflow-version VERSION` pins a live run to a named earlier workflow shape — the
+  DEC-134 experiment arm (#331). Refused on a replay, whose version is the recording's fact.
 - `--label`, `--condition`, `--work-root`, `--results-root`, and `--diff-against` control where
   the feed lands and what it is compared against.
 - `--report scorecard|comparison|ablation` runs the offline sweep and renders one evaluation

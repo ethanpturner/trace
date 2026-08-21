@@ -573,6 +573,10 @@ Compare
 
 Only keep changes that improve overall performance.
 
+First executed 2026-08-20 (#331): the `validate-evidence` v1/v2 pair, both arms on the same
+gateway model with the run diff landing per scenario — the record is
+`docs/eval/prompt-comparison-331.md`, and the verdict kept v2.
+
 # 13. Model Evaluation
 
 Different models should be compared using the same benchmark scenarios.

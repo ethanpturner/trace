@@ -1636,6 +1636,15 @@ def test_evaluate_requires_a_scenario_or_all(
     assert "name one scenario or pass --all" in capsys.readouterr().err
 
 
+def test_evaluate_refuses_all_scenarios_under_a_live_profile(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A live profile prices each scenario; a single flag must not bill the corpus. The refusal
+    fires before any profile resolution, so it needs no key and spends nothing."""
+    assert invoke(data_root, "evaluate", "--all", "--model-profile", "openrouter-economy") == 1
+    assert "prices each scenario" in capsys.readouterr().err
+
+
 def test_evaluate_all_names_the_scenarios_it_skips(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
