@@ -20,6 +20,25 @@ Nothing in the package requires a provider key. The recordings are the point: a 
 the committed responses and reproduces the committed scores without spending anything or holding
 credentials.
 
+### What ships alongside
+
+The corpus is the substrate; the measurements taken from it are separate artifacts, and anyone
+evaluating the corpus should read them rather than the scores alone:
+
+| Artifact | What it holds |
+|---|---|
+| [`scorecard.html`](scorecard.html) | Per-scenario results, pooled by stratum rather than across models and workflow shapes (DEC-143). |
+| [`comparison.md`](comparison.md) | The pipeline against the three one-call baselines, live against live. |
+| [`ablation.md`](ablation.md) | Each component removed in turn, with the ablated runs marked non-authoritative. |
+| [`stability-633.md`](stability-633.md) | Run-to-run variance: two scenarios, five live runs each, on the model the corpus uses. |
+| [`prompt-comparison-331.md`](prompt-comparison-331.md) | The evidence-validation prompt pair, pre- and post-batching. |
+| [`model-comparison-332.md`](model-comparison-332.md) | Three model profiles, cost beside quality, with its confound stated. |
+
+These are deliberately **not** in the manifest, and the boundary is the point. The manifest
+establishes which corpus you hold, so re-rendering a score must not move the corpus digest. The
+corpus and the numbers measured from it change on different cadences, and covering both would make
+the digest answer a question nobody asked of it.
+
 ## Version, and what it promises
 
 The package version is `MAJOR.MINOR` and is authored rather than generated, because only a person
@@ -129,21 +148,35 @@ author wrote. The instrument for measuring inter-annotator agreement is built (D
 no data, because no independent second annotation pass has been authored (#565). Until one exists,
 "precision 40%" means "40% against this author's reading", and the reading itself is unvalidated.
 
-**Recall varies from run to run; not-inventing is the stable behaviour.** The committed stability
-measurement (`docs/eval/live-stability.json`, DEC-077) ran one scenario five times on
-`claude-opus-5`: the expected finding was matched in 2 of the 5 runs, and 3 runs failed outright.
-A single-run match or miss is therefore weak evidence about the pipeline rather than a property of
-it. *A re-measurement on the current capture model and the current batched call shape is in flight
-as #633; when it merges, this paragraph cites it and this sentence is removed.*
+**Recall varies from run to run; not-inventing is the measured-stable axis.** DEC-077's protocol
+was re-run on the model and call shape the corpus actually uses — `openai/gpt-5.1` through the
+gateway under workflow 0.2, two scenarios, five runs each, identical inputs
+(`docs/eval/stability-633.md`). Ten runs, none failed, `evidence_assessment_coverage` 1.0 every
+time. `missing-docs`, the zero-finding path, produced **zero spurious findings in all five runs**.
+`reply-tuner` reproduced its one expected finding in **three of five**, and the two runs that
+missed it were healthy runs that reached the end with full coverage and simply did not surface it;
+the number of unexpected findings proposed varied from zero to three across the same five runs.
+The pipeline is therefore stable where its headline claim lives — it does not read silence as a
+weakness — and variable on recall.
+
+The earlier measurement, five `claude-opus-5` runs of `unsigned-webhooks` with the expected finding
+in two of five and three attempts failing (`live-stability.json`), is retained and **superseded,
+not compared**: a different model, a different workflow shape, and a different scenario. No trend
+is claimed between the two, and the scorecard lists stability rows rather than differencing them.
+
+**A single-run scenario result is weak evidence about recall.** Every committed metric feed comes
+from one replay. The replay itself is deterministic — the same recording produces the same score —
+but that recording is one draw from a distribution with measured spread in both directions: a
+scenario recorded as missing its expected finding may match on a re-run, and one recorded as
+matching may miss. Reading any single scenario's recall result as a property of the pipeline is
+reading one sample as a summary.
 
 **The recall misses are not settled facts.** The sweep's captures missed expected findings on
-several scenarios, and whether those are systematic lens divergences or run-to-run variance is
-under reconciliation (#653). Do not read a miss in this corpus as an established weakness of the
-pipeline until that closes.
-
-**Scores are single-run per scenario.** The committed metric feeds come from one replay each. The
-replay is deterministic — the same recording produces the same score — but the recording itself is
-one sample of a nondeterministic process.
+several scenarios. The lens explanations recorded in the provenance — a finding surfacing as
+questions or gaps, the DEC-066 component-name split — are real and individually evidenced, but the
+stability measurement forbids inferring from one run per scenario that any given miss was
+systematic rather than a draw. Separating the two for a particular scenario requires re-running it,
+not re-reading it, and the reconciliation is open as #653.
 
 **Two scenarios' recordings predate the batched evidence-validation shape.** ForgeFlow and husky-ai
 carry workflow version 0.1, where evidence validation made a single call that could silently

@@ -9624,6 +9624,14 @@ renamed file moves the digest as surely as an edited one. The manifest describes
 a rename changes it. Group digests roll up to a scenario digest and those to a corpus digest, so a
 consumer can compare one line to establish they hold the same corpus.
 
+**The manifest covers the corpus and stops there.** The measurement artifacts taken from it — the
+scorecard, the comparison and ablation tables, the stability record, the prompt and model
+comparisons — are listed in the specification and excluded from the manifest. The manifest answers
+"which corpus do you hold", and re-rendering a score must not change that answer; the two move on
+different cadences, and a digest covering both would report a corpus change every time a page was
+regenerated. A consumer pairing a number with a corpus version gets that pairing from the number's
+own record, which states the version it was measured against.
+
 **The version is `MAJOR.MINOR`, and it is the one authored value.** MAJOR moves when previously
 reported scores stop being comparable: a truth set's expectations change, a scenario leaves, or the
 identity rule the matcher scores on moves. MINOR moves when the corpus grows or its provenance
@@ -9658,6 +9666,9 @@ Alternatives Considered:
   distinction a consumer needs).
 - Semantic versioning with a patch level (rejected: nothing in the corpus changes without changing
   either comparability or contents, so a third component would never be the honest answer).
+- Covering the measurement artifacts in the manifest as well (rejected: the corpus digest would
+  move whenever a page was re-rendered, so it would stop answering the one question it exists to
+  answer; the specification lists them instead).
 - Shipping before the sweep and the comparisons existed (rejected at filing, #574's own sequencing:
   a benchmark published before its own live numbers exist undercuts the point).
 
