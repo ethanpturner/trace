@@ -1,0 +1,188 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 29455,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 45688,
+    "estimated_cost": "0.615426",
+    "duration_seconds": 304.30630891700275
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "A model is fine-tuned on collected data (evd-002) and the corpus is written to by a runtime pipeline, matching this requirement's applicable_conditions. The threat's entire scenario turns on who is permitted to write to the training store, which is exactly what this requirement asks documentation to state.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "The requirement asks only that the write path be governed and documented, not that the governing identity be resistant to compromise; the threat's residual risk -- what happens if that sole identity is itself obtained or abused -- is outside what this requirement's statement tests, and is addressed separately below."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data derives from customer content (closed-ticket transcripts containing names, emails, and message bodies per evd-002), matching this requirement's applicable_conditions, and the corpus is not synthetic, public, or free of sensitive elements, so the non_applicable_conditions do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [
+          "Neither common_false_positives entry applies: this is not a case of documented minimization lacking differential-privacy or unlearning detail, and it is not a stated, justified decision to train on named fields -- evd-003 is an explicit statement that no redaction or filtering step exists at all ('what the customer wrote is what the model trains on')."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Tuned artifacts are produced weekly and served to agents via the reply service (evd-004), matching this requirement's applicable_conditions directly. The threat's impact is that a poisoned artifact would be promoted and served as most recent, which is exactly the scenario lineage tracking exists to make answerable.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The training store (cmp-002) is an internal datastore that is not itself a public interface, matching this requirement's first applicable_conditions entry. Whether it -- and the exporter's execution context -- are reachable only from the intended workload bears directly on how plausible the threat's precondition (obtaining or abusing the exporter's identity) is.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Absence of documented network placement is not evidence the components are publicly reachable (per this requirement's own common_false_positives); it is simply unestablished either way."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the exporter's job identity constitutes a held credential or key rather than a purely ephemeral, platform-native workload identity; evd-002 states only that write access is 'granted through the platform's access policy', which does not distinguish a stored secret from an identity requiring no stored credential (the requirement's own non_applicable_conditions entry).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Assuming, pending confirmation, that the mechanism could be either a stored credential or a workload identity; this distinction changes whether the requirement applies at all and is central to how plausible the threat's compromise precondition is."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface is described anywhere in the system overview -- all listed components are automated jobs, a datastore, and a service consumed by agents through generated suggestions (evd-001, evd-002) -- matching this requirement's non_applicable_conditions entry 'no administrative interface exists'.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Network reachability of the training store and the exporter's execution environment is undocumented",
+        "description": "The documentation states that the exporter's job identity is the sole writer to the training store through the platform's access policy (evd-002), but does not describe the network placement of either the training store or the exporter's execution context -- whether either is reachable from anything beyond the intended nightly job.",
+        "importance": "Whether the write restriction is the only barrier, or is reinforced by network isolation, materially affects how plausible it is that an external party could obtain or abuse the exporter's identity, which is this threat's central precondition.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-002",
+          "req-NET-001"
+        ],
+        "requested_evidence": [
+          "network or firewall/IAM configuration showing which components can reach the training store",
+          "description of the exporter job's execution environment and its network exposure"
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Custody and lifecycle of the exporter's job identity is undocumented",
+        "description": "Evd-002 states write access is 'granted through the platform's access policy' but does not state whether this identity involves a stored, long-lived credential (e.g., a service account key) or a short-lived, platform-issued workload identity with nothing to steal, nor how the identity or its execution context is protected.",
+        "importance": "This distinction determines both whether req-SECRET-001 applies and how plausible the threat's core precondition -- obtaining or abusing this identity -- actually is.",
+        "related_object_ids": [
+          "ast-003",
+          "cmp-001",
+          "req-SECRET-001"
+        ],
+        "requested_evidence": [
+          "description of how the exporter's job identity is provisioned (service account key, workload identity federation, or similar)",
+          "confirmation of whether any long-lived credential exists for this identity and, if so, where it is held"
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog addresses detecting or limiting the impact of compromise of a training corpus's sole authorized write identity. req-TRAIN-001 is satisfied by restricting writes to one named pipeline identity and treats that restriction as sufficient governance; it does not ask what happens once that identity itself is obtained or abused -- no content-level anomaly detection on incoming records, no secondary review or sampling step, no tamper-evident logging distinguishing an anomalous write from the legitimate nightly export. req-TRAIN-003 only helps after the fact, by letting a poisoned artifact be traced back once poisoning is already suspected.",
+        "suggested_category": "fine_tuning",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TRAIN-001",
+            "why_not": "Covers who may write to the training corpus and is satisfied by a single named pipeline identity; it does not require any control that would detect or bound the impact of that identity's own compromise."
+          },
+          {
+            "requirement_id": "req-TRAIN-003",
+            "why_not": "Provides lineage so a poisoned artifact can later be traced to a training-data snapshot, which is a forensic aid after discovery, not a control that prevents or detects a poisoned write as it happens."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "d006e5cd3b9ecc0666da20c4d6f3cba76597bf8678a4fe1dc458b34943b4bfeb"
+}

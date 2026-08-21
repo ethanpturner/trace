@@ -1,0 +1,212 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 21013,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 15330,
+    "estimated_cost": "0.3835125",
+    "duration_seconds": 207.01431599992793
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system fine-tunes a vendor base model weekly and serves the resulting artifact to every agent (evd-002, evd-004), so tuned model artifacts are produced and served, which is exactly this requirement's applicable_conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The tuning job writes an artifact that the reply service automatically serves with no described human step in between (evd-004), and the tuning job's output incorporates the vendor's third-party base model (evd-002). This resembles an automated build-and-deploy pipeline for the model, but the documentation does not establish whether this flow is understood by the organization as the system's deployment pipeline in the sense this requirement addresses, so applicability is conditional on that characterization.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [
+          "Assuming the tuning-job-to-artifact-bucket-to-reply-service flow is treated as the system's deployment path for the tuned model, for the purpose of testing this requirement's applicability."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-OPS-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "If the tuning job, artifact bucket, and reply service together constitute the system's automated deployment path for the model, this requirement would ask how a change to that path, or an artifact reaching the bucket outside the ordinary tuning job, would become visible. The threat's own precondition is that no write-access restriction or validation step is described for the artifact bucket (evd-004), which is the exact fact this requirement would want documented; whether such visibility exists is not established.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [
+          "Assuming the tuning-job-to-artifact-bucket-to-reply-service flow is treated as the system's deployment pipeline, for the purpose of testing this requirement's applicability."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement governs the write path into the training corpus itself (the Training Store, cmp-002), which the documentation describes as restricted to the exporter job's identity (evd-002). This threat's attack path and affected components (cmp-003 through cmp-006) concern the downstream artifact bucket, a distinct component this requirement's 'training corpus' does not encompass.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses minimizing sensitive content within training data before training, a data-exposure concern. This threat concerns tampering through an unvalidated or unauthorized model artifact reaching production, not the sensitivity of what the corpus contains, so the requirement's subject matter is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AGENT-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Suggested replies are drafts an agent may edit or discard before use (evd-001, evd-002), which matches this requirement's non_applicable_conditions that all outputs are drafts a person publishes manually. This threat concerns which model artifact generates the draft, not whether an autonomous action requires approval.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The agent reviews and decides whether to use or discard each suggested reply before it reaches a customer (evd-001), which matches this requirement's non_applicable_conditions that a human approves each publication. This threat concerns the integrity of the artifact producing the draft, not the publication-review step downstream of it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Tuned artifact lineage is not recorded beyond a date",
+        "description": "The tuning job writes each week's artifact to the artifact bucket named only by date (evd-004). Documentation does not state that the base model identity or the training-data snapshot version is recorded against each artifact, so an artifact's provenance cannot be traced from the bucket alone.",
+        "importance": "Without recorded lineage, if a flawed or corrupted artifact is served (as this threat describes), there is no stated way to determine which base model or training-data version produced it, which blocks both incident diagnosis and any rollback decision.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-005",
+          "ast-002",
+          "ctl-002"
+        ],
+        "requested_evidence": [
+          "Documentation or registry metadata showing the base model identity recorded per artifact",
+          "Documentation or registry metadata showing the training-data snapshot version recorded per artifact"
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Whether the tuning-job-to-reply-service flow is governed as a deployment pipeline is unclear",
+        "description": "The tuning job automatically writes an artifact to the artifact bucket and the reply service automatically serves whichever artifact is most recent (evd-004), with no described authentication model for this write path, no described control over the vendor's base model as a third-party component entering the tuned artifact, and no described mechanism for detecting an out-of-band or unauthorized write to the bucket.",
+        "importance": "If this flow is the system's effective deployment path for the model, then the absence of pipeline authentication description, third-party component control, and out-of-band visibility directly enables the threat's precondition that an unauthorized or corrupted artifact could reach the bucket and be served without any checkpoint.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-005"
+        ],
+        "requested_evidence": [
+          "Description of what principal(s) or process(es) can write to the artifact bucket besides the tuning job",
+          "Description of how an out-of-band or unexpected write to the artifact bucket would be detected",
+          "Description of how the vendor's base model is verified or controlled before it is incorporated into the tuned artifact"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog asks for a validation, testing, or approval gate between the production of a fine-tuned model artifact and its automatic promotion to serve all users. Lineage recording (req-TRAIN-003) asks only that an artifact's provenance be traceable after the fact; it does not ask that the artifact be checked, tested, or approved before it begins serving. Deployment-pipeline requirements (req-CICD-001, req-OPS-004) address software build/deploy authentication and visibility into pipeline-definition changes, not a quality or authorization gate applied to a produced model weight artifact. Agent- and code-review gates (req-AGENT-002, req-CODEGEN-002) require human approval for agent actions or generated code/config changes respectively, not for a fine-tuned model artifact itself. The threat here -- a flawed, corrupted, or unauthorized artifact silently becoming the version served to every user because selection is 'most recent by date' with no described checkpoint -- falls into that seam.",
+        "suggested_category": "model_deployment_gating",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TRAIN-003",
+            "why_not": "Requires that a served artifact's lineage (base model, training-data version) be recorded and traceable, but does not require any validation, testing, or approval step before the artifact is served."
+          },
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "Addresses how a deployment pipeline authenticates to environments and how third-party components entering a software build are identified and controlled; it does not address a quality or authorization gate on a produced model artifact before it begins serving."
+          },
+          {
+            "requirement_id": "req-OPS-004",
+            "why_not": "Addresses visibility into changes to a deployment pipeline's own definition and detection of out-of-band deployments of that pipeline; it does not address gating or validating the content of an artifact the pipeline produces."
+          },
+          {
+            "requirement_id": "req-AGENT-002",
+            "why_not": "Requires human approval for privileged, irreversible, or outward-facing agent actions; the concern here is the integrity of the underlying model artifact that generates suggested replies, not approval of an individual agent action."
+          },
+          {
+            "requirement_id": "req-CODEGEN-002",
+            "why_not": "Requires generated code, configuration, or infrastructure changes to pass the same review gates as human-authored ones; a fine-tuned model weight artifact is neither code, configuration, nor an infrastructure definition."
+          }
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "377e92c6bd9403c87061bae1664bebbe3afe94d4f3eed1a10391a81aadb980fd"
+}

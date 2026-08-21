@@ -1,0 +1,114 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 18584,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 15676,
+    "estimated_cost": "0.348375",
+    "duration_seconds": 191.36464116699062
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The tuning job is an automated pipeline that incorporates the vendor's base model as a third-party component before producing the served artifact (evd-002), which is exactly the second applicable_conditions entry -- 'builds incorporate third-party components' -- read broadly enough to cover an ML fine-tuning job rather than only a code build.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Treating the weekly fine-tuning run as a 'build' that incorporates a third-party component, consistent with the catalog's instruction that acceptable_implementations are non-exhaustive and the question is whether the mechanism the documentation describes meets the statement -- here, the documentation describes no mechanism at all for identifying or controlling the incoming base model."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Tuned artifacts are produced weekly and served to every agent via the reply service (evd-002, evd-004), meeting the applicable condition that tuned artifacts are produced and served; the non_applicable_conditions entry ('no tuned artifact leaves the experiment that produced it') does not hold because artifacts are actively served.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Base model provenance and transfer integrity are undocumented",
+        "description": "The system overview states that the tuning job fine-tunes the vendor's base reply model (evd-002), but it does not describe how that base model is authenticated or verified before use -- no version pin, checksum, signature, or provenance check is mentioned, and the transfer's authentication and encryption are not addressed anywhere in the document.",
+        "importance": "A base model substituted or tampered with in transit or at the vendor would carry that tampering into the tuned artifact and every suggested reply served to agents; whether any check exists at the point the model enters the tuning job determines whether this dependency is controlled or simply trusted.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-008"
+        ],
+        "requested_evidence": [
+          "Description of authentication used for the base-model transfer from the vendor",
+          "Description of any integrity or provenance verification (checksum, signature, pinned version) applied to the base model before fine-tuning"
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Tuned artifacts are named by date only, not by lineage",
+        "description": "The artifact bucket names each week's artifact by export date and serves whichever is most recent (evd-004); the documentation does not state that the base model identity or the training-data snapshot version used to produce each artifact is recorded anywhere.",
+        "importance": "Without recorded lineage, a served artifact traced back to a compromised base model or poisoned training snapshot cannot be identified or scoped after the fact, which matters directly to containing an incident of the kind this threat describes.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-004",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "A registry or metadata record naming the base model version and training-data snapshot associated with each artifact"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No catalog requirement asks that an externally supplied AI base model be verified for integrity or provenance before it is incorporated into a fine-tuning pipeline. The tuning job here receives the vendor's base model across a trust boundary with no documented authentication, encryption, or integrity check (evd-002), and a compromised base model would propagate silently into every tuned artifact and every suggested reply -- a supply-chain risk distinct from training-corpus governance or generic dependency management.",
+        "suggested_category": "model_supply_chain_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "Addresses how a deployment pipeline authenticates to its environments and how third-party software components enter a build (e.g., pinned dependency manifests); it is written for code/dependency supply chains and does not name integrity verification of an externally supplied model's weights as its own artifact class."
+          },
+          {
+            "requirement_id": "req-TRAIN-003",
+            "why_not": "Asks that a served tuned artifact's lineage -- its base model and training-data version -- be recorded after the fact, which helps trace an incident but does not ask that the incoming base model be verified for integrity or provenance before training begins."
+          },
+          {
+            "requirement_id": "req-AGENT-004",
+            "why_not": "Covers adoption and per-request authentication of external tool servers reached over a defined protocol (e.g., MCP); a base model transferred once for fine-tuning is not a tool server and no such protocol is in use here."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "da6d624433af37f89a9445e235f6c08333970aca03181b8d46aee83af7b2c8e7"
+}

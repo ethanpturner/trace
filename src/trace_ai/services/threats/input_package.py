@@ -293,6 +293,12 @@ def _trusted_region(
 
     It carries the approved architecture and a manifest of which evidence is present -- never the
     excerpt text, which appears once, inside the fence.
+
+    No wall clock renders here (DEC-142). `approved_at` used to: it is the one value in any
+    model-facing package that two otherwise-identical runs cannot reproduce, and it is what made
+    a journaled threat request unreplayable — the approval *fact* is already this function's
+    precondition (`assemble_threat_input` refuses an unapproved context), and the approval
+    *instant* is provenance for the audit trail, not analysis input.
     """
     sections = [
         "## Assessment",
@@ -305,7 +311,6 @@ def _trusted_region(
         json.dumps(
             {
                 "version": context.version,
-                "approved_at": context.approved_at.isoformat() if context.approved_at else None,
                 "system_name": context.system_name,
                 "system_purpose": context.system_purpose,
                 "business_criticality": context.business_criticality,

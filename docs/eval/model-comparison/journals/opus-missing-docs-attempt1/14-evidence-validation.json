@@ -1,0 +1,957 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 19259,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 19671,
+    "estimated_cost": "0.60522875",
+    "duration_seconds": 211.16376412508544
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-095",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note establishes that kiosks submit order records inbound and that the service stores them for the fulfillment system to read, so an inbound, state-changing submission path is documented (explicit architecture documentation, though only one short note). Two parts are not established: that the fulfillment system 'acts on' the records is an inference beyond 'read', and the exclusion of the non-applicable limb rests on idempotency being undocumented rather than on any passage. The same silence about idempotency is treated in map-120 as making the mapping conditional rather than applicable, so the batch is inconsistent about how that gap is handled.",
+        "missing_evidence": [
+          "Documentation stating whether repeated submission of the same order record is handled idempotently",
+          "Documentation stating whether the sync service authenticates or verifies the origin of kiosk submissions"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-096",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The note states directly that order records carry the customer's name, delivery address, and order contents, that kiosks send them to the sync service over the store network, and that the service stores them. That establishes the applicability condition (confidential data stored and transmitted across a boundary) without inference. The 'unverified' half is consistent with the note, which says nothing about encryption in transit or at rest; that silence is not evidence that encryption is absent.",
+        "missing_evidence": [
+          "Documentation or configuration showing whether kiosk-to-service transport is encrypted and whether stored records are encrypted at rest"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Order records carry the customer's name, delivery address,\nand order contents."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-097",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That a copy of customer data persists after receipt is supported: the note says records are stored for the fulfillment system to read, which is a copy held between submission and the hourly poll. The second limb of the rationale \u2014 order data cached on the kiosk \u2014 appears nowhere in evd-001 and is not established by any passage in this batch, so the applicability argument should rest on the server-side copy alone.",
+        "missing_evidence": [
+          "Documentation of a retention period or deletion step for records after the fulfillment system collects them",
+          "Documentation of whether kiosks retain a local copy of submitted order records"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-098",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The conclusion claims only that the tenancy condition can be neither established nor excluded, and that is an accurate reading of the note, which records neither the number of kiosks nor whether stored records are scoped per store or operator. The evidence is contextual: it describes the storage arrangement without addressing separation, so it supports the conditional framing rather than any applicability determination.",
+        "missing_evidence": [
+          "Documentation stating whether the sync service serves one operator or several distinct organizations, and whether stored records are scoped per kiosk or per store"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-099",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The conditional framing is the honest reading of a note that says records are stored without saying for how many organizations. One phrase overstates the source: evd-001 does not describe 'a single shared store', only that the service stores records, so the characterisation of the storage arrangement is inferred rather than documented.",
+        "missing_evidence": [
+          "Documentation of the storage design for order records, including whether records from different organizations share a store and how access is separated"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-100",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That ingest is triggered by events the service does not originate is supported by the note (kiosks call the service and the service receives records). The cost or capacity limb is genuinely unaddressed by evd-001, so the conditional status is honest \u2014 but map-117 treats the same undocumented fact as an assumption sufficient to make TPI-002 applicable for thr-006, so the batch handles one silence two ways.",
+        "missing_evidence": [
+          "Documentation of the storage or compute cost of processing a kiosk submission, including any metered service or capacity limit"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-101",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note records that kiosks call the sync service over the store network and says nothing whatever about how, or whether, that call is authenticated, so 'unknown' applicability is the accurate reading and the missing fact is indeed the applicability condition. The evidence is contextual only: it locates the call path without addressing identity or delegation.",
+        "missing_evidence": [
+          "Documentation of the authentication mechanism on the kiosk-to-sync-service call, including whether any credential is locally held or issued by an identity provider"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-102",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The scope limb holds on the material given: the threat path described runs kiosk to sync service, and no operator action appears in evd-001 or in the threat. The absence limb \u2014 that no administrative interface exists \u2014 is not established by a ten-line deployment note, and the rationale is right to hedge it to 'the architecture recorded here'; silence about an admin interface is not evidence that none exists.",
+        "missing_evidence": [
+          "A component or interface inventory for the sync service stating whether any administrative or operator interface exists"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-103",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The non-applicability rests mainly on the threat's own scope (a spoofed device caller, no operator action), which is application data rather than something evd-001 establishes. The note contributes only contextually: it names a kiosk, a sync service and a polling fulfillment system and mentions no privileged interface, which is silence rather than confirmation that none exists.",
+        "missing_evidence": [
+          "Documentation of whether the sync service exposes an administrative or operator interface whose actions affect customer data, and whether such actions are logged"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-104",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That the documented call path is machine-to-machine (kiosks calling the service over the store network) is supported by the note, which makes the multi-factor requirement a poor fit for this threat's path. The further claim that no privileged human interface appears in the recorded architecture is drawn from silence in a short note and should not be read as establishing that none exists.",
+        "missing_evidence": [
+          "Documentation of any interactive human access to the sync service, privileged or otherwise, and the authentication required for it"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-105",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The scope argument is coherent \u2014 the threat's path and impact concern credential reuse, fabricated records and data on a seized kiosk, none of which involves a log destination. The note is contextual at best: it describes no logging at all, and that absence neither confirms nor excludes a logging path that could carry the name, address and order contents it does document.",
+        "missing_evidence": [
+          "Documentation of what the sync service logs, at what level of detail, and where logs are sent"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-106",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "This is a scope determination \u2014 deletion on request does not bear on spoofed submission \u2014 and it is defensible, with the retention aspect correctly routed to map-097 rather than duplicated here. The note supplies only contextual support (records are stored); it says nothing about deletion, so nothing here should be read as establishing that a deletion capability is absent.",
+        "missing_evidence": [
+          "Documentation of any deletion-on-request capability for stored order records"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-107",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The scope distinction between an inbound device credential and an outbound platform credential is reasoning over the threat, not over the note, and recording the mismatch as a catalog-gap candidate rather than stretching the requirement is the right handling. The supporting claim that no external platform credential appears in the recorded architecture rests on silence: evd-001 mentions no credentials of any kind, inbound or outbound.",
+        "missing_evidence": [
+          "Documentation of any credentials or signing keys held by the sync service, including any used to authenticate outward to an external platform"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-108",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note describes only inbound kiosk calls and an outbound hourly poll by the fulfillment system, which is consistent with there being no delegated outbound access whose credential lifetime this requirement governs. It does not establish that no such access exists; a ten-line note is silent on far more than it excludes, so the non-applicable condition is inferred from absence rather than documented.",
+        "missing_evidence": [
+          "Documentation of whether the sync service holds delegated access to any external platform on a customer's behalf"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-109",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Nothing in the threat path or in evd-001 involves an installation grant, OAuth scope, or platform application, so the scope reasoning is sound as far as the recorded material goes. The assertion that the system 'holds no external delegated access' is nevertheless an absence inferred from a note that never raises the subject, and should be carried as such rather than as an established architectural fact.",
+        "missing_evidence": [
+          "Documentation of any external platform integrations and the scopes or grants the system holds"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-110",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note does place the described flow inside one deployment picture \u2014 kiosks to sync service in the operations subnet, read by the fulfillment system \u2014 but it never says the fulfillment system sits within the same trust boundary or is operated by the same party. The claim that no customer data leaves the boundary to an external processor therefore goes slightly beyond the passage; the fulfillment system's status is unestablished.",
+        "missing_evidence": [
+          "Documentation of who operates the fulfillment system and whether it lies inside the sync service's trust boundary",
+          "Documentation of any third-party processor receiving order records"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-111",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The threat's steps are runtime credential reuse over the kiosk call path, and a build or deployment step forms no part of them, so the scope reasoning holds against the threat as stated. The note records only that the service runs on a virtual machine and describes no pipeline; that silence is not evidence that no pipeline exists, only that none is documented here.",
+        "missing_evidence": [
+          "Documentation of the build and deployment pipeline for the sync service and how third-party components are introduced"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-112",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The recorded architecture is a kiosk, a sync service and a polling fulfillment system, with no model mentioned, so the determination is consistent with the only passage available. It rests entirely on that passage's silence about models, and this is one of four AI-requirement mappings for this threat all resting on the same sentence \u2014 one passage, not four corroborating ones.",
+        "missing_evidence": [
+          "Documentation confirming whether any component in this system passes content to a model"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-113",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "No model output appears anywhere in the note or in the threat's path, so the requirement's premise does not arise on the recorded material. As with the other AI mappings, the support is the same single passage read for what it does not mention; it is contextual, not direct.",
+        "missing_evidence": [
+          "Documentation confirming whether any model output is produced or published by this system"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-114",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note ends the described path at storage in the operations subnet with no external model provider named, which is consistent with the determination. The phrase 'holds in substance' acknowledges that the conclusion is drawn from what the note omits rather than from anything it states, and it should be carried at that strength.",
+        "missing_evidence": [
+          "Documentation confirming whether customer content is sent to any external model provider"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-115",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The integrity concern in this threat is fabricated order records rather than rendered model output, and no model output exists anywhere in the recorded architecture, so the scope reasoning is coherent. The evidence contributes only contextually, by describing an architecture in which no model appears.",
+        "missing_evidence": [
+          "Documentation confirming whether model output is rendered into any interface or submitted as markup to an external platform"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-116",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note supports the core of the applicability condition: the sync service is an internal component in the operations subnet that holds order records between kiosk submission and the hourly poll. The claim that it is 'not described as a public interface by design' is silence rather than documentation, and the stated assumption that the ingest interface is the only call path is correctly flagged; reachability from other network positions is unestablished.",
+        "missing_evidence": [
+          "Network documentation stating which positions can reach the sync service's ingest interface and whether it is restricted to the store network"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-117",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The trigger limb is supported \u2014 kiosk submissions are events the service does not originate, and ingest is not operator-initiated on anything the note says. The capacity limb rests on the flagged assumption that storing a record consumes a capacity-limited resource, which evd-001 does not establish; map-100 treats that same gap as making TPI-002 only conditionally applicable, so the two mappings should be reconciled.",
+        "missing_evidence": [
+          "Documentation of the storage backing the sync service and any capacity, quota, or metering limits on record ingest"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-118",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note states that records are stored for the fulfillment system to read, which supports a retained copy arising as a by-product of the handoff. Whether that store is durable or in-memory is not established, and the mapping flags exactly that; the non-applicable reading remains open on the evidence.",
+        "missing_evidence": [
+          "Documentation of where records are held between submission and the hourly poll, and whether they are removed after collection"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-119",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That inbound kiosk events cause a state change and cross into the operations subnet is supported by the note. What the note does not settle \u2014 whether kiosks count as external senders and whether the ingest path is reachable only from a trusted segment \u2014 is precisely what the conditional status records; placement in a subnet is documented, reachability is not.",
+        "missing_evidence": [
+          "Documentation stating whether the ingest interface is reachable only from within a trusted network segment",
+          "Documentation of any origin verification applied to kiosk submissions"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-120",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The conditional framing around undocumented idempotency is the honest reading of the note, and it conflicts with map-095, which treats the same silence as sustaining plain applicability for thr-005. One element overreaches: 'stored records drive deliveries' goes beyond the passage, which says only that records are stored for the fulfillment system to read.",
+        "missing_evidence": [
+          "Documentation stating whether repeated submission of the same order record is idempotent",
+          "Documentation of what the fulfillment system does with the records it polls"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-121",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The threat's path \u2014 submission, storage, hourly poll \u2014 involves no operator action, and the note describes an ingest call and a poll and nothing else, so the determination is consistent with the material. It is nonetheless an absence read out of a short note; 'no administrative interface exists' is not something evd-001 can establish.",
+        "missing_evidence": [
+          "A component or interface inventory stating whether the sync service exposes an administrative or operator interface"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-122",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note describes receipt, storage and polling of order records with no model anywhere in the path, consistent with the non-applicable condition. This is the same single passage that carries the three other AI mappings for this threat; four determinations from one silent sentence are one piece of contextual evidence, not four.",
+        "missing_evidence": [
+          "Documentation confirming whether any component passes content to a model"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-123",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The only outbound flow the note records is the fulfillment system's hourly poll of stored order records, and no model output is described, so the applicable condition cannot be met on the recorded material. The support is the note's silence about models rather than a positive statement, so the strength is contextual.",
+        "missing_evidence": [
+          "Documentation confirming whether any model output is published outside the system"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-124",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The described flow runs from kiosks to the sync service and out to the polling fulfillment system, with no model provider named, which is consistent with the determination. As with the other AI mappings, the conclusion follows from what the note omits rather than from what it states.",
+        "missing_evidence": [
+          "Documentation confirming whether customer content is sent to an external model provider"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-125",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "No model output and no rendering surface appear in the note, so neither applicable condition can be met on the recorded architecture. The evidence bears contextually only; it says nothing about interfaces at all, and absence of mention is not confirmation of absence.",
+        "missing_evidence": [
+          "Documentation of any user interface or external markup destination associated with this system"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-126",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The participants the note records in this path are field kiosks and a polling fulfillment system, not interactive end users, and the rationale properly disclaims any conclusion that authentication is absent. Note that map-101 leaves AUTH-001's applicability 'unknown' for the other threat on the same silence about authentication mechanisms; the divergence is defensible on threat scope but is worth a reviewer's eye.",
+        "missing_evidence": [
+          "Documentation of whether any human user authenticates to the sync service and whether that authentication is delegated"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-127",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The threat concerns records failing to reach the fulfillment system, which does not engage a privileged login, so the scope reasoning holds against the threat as stated. The accompanying claim that no privileged interface is described is accurate about the note but establishes nothing about the system.",
+        "missing_evidence": [
+          "Documentation of any privileged or externally reachable human access to the sync service"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-128",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The scope limb is sound: this threat is loss of records, not one tenant reading another's. The tenancy limb is not: evd-001 never states that the system serves a single tenant, and map-098 and map-099 treat exactly that question as unresolvable from the same passage, so asserting single tenancy here as 'the reading the material supports' both overreaches the note and contradicts the batch's own handling.",
+        "missing_evidence": [
+          "Documentation stating whether the sync service serves one organization or several"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-129",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The path described in the note is inbound submission and outbound polling, with no permissions held on any external platform mentioned, which is consistent with the determination. The statement that the system holds no external delegated access is inferred from silence and should be carried as such.",
+        "missing_evidence": [
+          "Documentation of any external platform access held by the system on a customer's behalf"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-130",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "This threat's steps are runtime failure, accumulation and ingest flooding, none of which traverse a build or deployment step, so the scope reasoning holds. The note records only that the service runs on a virtual machine; that it describes no pipeline is silence, not confirmation that none exists, and the mapping states this correctly.",
+        "missing_evidence": [
+          "Documentation of the build and deployment pipeline and dependency intake for the sync service"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-131",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The argument is analytic and reasonable: encryption addresses disclosure, while this threat's impact is records never delivered or never durably held, and the mapping explicitly declines to read this as encryption being absent. The note supports it only contextually, by establishing what the records are and where they travel; it does not itself decide the scope question.",
+        "missing_evidence": [
+          "None required for the scope determination; encryption coverage itself is addressed under map-096"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-132",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That separation of artifacts by customer does not bear on records being lost before collection is a sound scope argument. The supporting assertion that the note describes one organization's kiosks and fulfillment system is not what the note says \u2014 it says nothing about how many organizations there are \u2014 and it sits at odds with map-099, which treats that question as unresolvable.",
+        "missing_evidence": [
+          "Documentation stating whether stored order records belong to more than one customer organization"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-133",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Deletion on request does not bear on records being lost before collection, and routing the accumulation concern to map-118 rather than duplicating it here is correct handling. The note contributes contextually \u2014 records are stored pending an hourly poll \u2014 and says nothing about deletion either way.",
+        "missing_evidence": [
+          "Documentation of any deletion-on-request capability for stored order records"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-134",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Keeping restricted data out of logs addresses exposure rather than availability, and this threat is about records not reaching the fulfillment system, so the scope reasoning holds. The parenthetical that evd-001 describes no logging path is accurate but is silence; it establishes nothing about whether logging exists or what it captures.",
+        "missing_evidence": [
+          "Documentation of what the sync service logs and where those logs are sent"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      }
+    ]
+  },
+  "call_sha256": "afce853fe5935dd8ddc76c91d4305f4c880a4b2284fc4cf6c0275786a7708b9e"
+}

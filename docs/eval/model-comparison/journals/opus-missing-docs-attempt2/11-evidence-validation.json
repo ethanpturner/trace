@@ -1,0 +1,1005 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 19038,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 20877,
+    "estimated_cost": "0.60724125",
+    "duration_seconds": 213.27813691704068
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The non-applicability call is a scoping argument about what req-LOG-001 governs (log content and log destination) versus what thr-001 concerns (attribution of a submission), and that argument stands on the requirement text rather than on any passage. evd-001 says nothing about logging at all, so it is contextual only: it neither establishes nor refutes the mapping. The conclusion is defensible as a scope exclusion, but nothing in the evidence positively supports it.",
+        "missing_evidence": [
+          "Documentation of what cmp-001 writes to logs and where those logs are sent, which would settle req-LOG-001's applicability to the system generally."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Two claims are bundled. That the fabricated record arrives on the ordinary ingest path is indirectly supported: evd-001 describes only kiosk submission and hourly polling as the ways cmp-001 is reached. The second claim \u2014 that 'no administrative interface exists' is 'the condition the material supports' \u2014 converts silence into a fact; a ten-line deployment note that does not mention an operator interface is not evidence that none exists. The mapping should be reworded so the administrative-interface condition is recorded as unestablished rather than as supported.",
+        "missing_evidence": [
+          "Documentation stating whether cmp-001 exposes an administrative or operator interface, and to whom."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly establishes both limbs of the applicability determination: cmp-001 is an internal service holding order records on the system's behalf, and it is reached by kiosks over the store network. It states no restriction on which store-network hosts may reach it, which is exactly what the mapping's recorded assumption says and why the status is unverified rather than met. This is explicit architecture documentation (hierarchy level 3) used for what it actually says.",
+        "missing_evidence": [
+          "Firewall, security-group, or subnet ACL configuration showing which hosts on the store network may reach cmp-001's submission interface."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping concludes that the non-applicable condition 'the system holds no credentials of its own' is the one supported here, but evd-001 makes no statement about credentials, keys, or shared secrets in either direction. This is silence, not evidence of absence; the mapping's own assumption concedes as much. Unsupported here is a statement about the documentation only and must not be read as a claim that credentials are or are not held.",
+        "missing_evidence": [
+          "Documentation or configuration stating whether cmp-001 holds any outbound credential, signing key, or shared secret used with the kiosks."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 describes the direction of every flow it records \u2014 cmp-001 receives from kiosks, stores, and is polled \u2014 and names no outbound access to an external platform, which indirectly supports the exclusion. It remains an argument from a brief note's silence rather than from a statement that no such access exists, so the support is partial.",
+        "missing_evidence": [
+          "An outbound dependency or integration list for cmp-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 directly establishes that order records carrying names and addresses are read by the fulfillment system, and it says nothing whatever about who operates that system \u2014 precisely the hedge the mapping records. Whether the applicable condition holds turns on an ownership fact a person can supply and the documents cannot, so the conditional applicability is honest but unresolvable on this material.",
+        "missing_evidence": [
+          "A statement of who operates and where the fulfillment system runs, and whether df-002 crosses an organizational boundary."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "Order records carry the customer's name, delivery address,"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "That cmp-001 stores whatever the kiosks submit and that cmp-003 acts on it hourly is stated outright, which indirectly but soundly establishes the applicable condition that work is triggered by events cmp-001 does not originate. The unverified status is correctly grounded in the note's silence on rate limits or queue bounds, and the mapping's assumption says so rather than asserting absence.",
+        "missing_evidence": [
+          "Configuration or design documentation showing any rate limit, volume cap, queue bound, or retry policy on kiosk submissions and downstream fulfillment work."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for"
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That kiosks push submissions to cmp-001 is an inference from 'The kiosks call it over the store network', which the mapping records as an assumption rather than presenting as documented \u2014 correctly. The conditional framing (senders are the operator's own kiosks, not an external platform) is also an inference, since evd-001 never states who owns the kiosks. The unverified status rests on the note saying nothing about origin verification, which is silence and is labelled as such.",
+        "missing_evidence": [
+          "Interface documentation for cmp-001's submission endpoint stating whether submissions are pushed or pulled and whether caller origin is verified.",
+          "A statement of who owns and operates the field kiosks."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 establishes that submissions are stored and later acted on, which makes repeated processing meaningful, but it addresses neither duplicate detection nor idempotency, so the applicability call rests on the same single passage already carrying map-021 and map-022 and adds no independent corroboration. The mapping states the silence rather than converting it into a defect, which is the right handling.",
+        "missing_evidence": [
+          "Documentation of submission identifiers, duplicate detection, or idempotent handling in cmp-001 and downstream fulfillment."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The applicability determination is directly documented: the records are transmitted from the kiosks to the sync service, stored for the fulfillment system, and carry name, delivery address, and order contents. That makes the data neither public nor merely transient, and the unverified status follows from the note saying nothing about protection in transit or at rest.",
+        "missing_evidence": [
+          "Documentation or configuration showing whether the kiosk-to-sync-service transport is encrypted and whether stored records are encrypted at rest."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Order records carry the customer's name, delivery address,"
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the internal sync service holds order data and is called by kiosks over the store network, which establishes the applicable condition for a component reachable across a shared segment. Note that this is the same single passage relied on by map-017 and map-032; three mappings resting on one sentence is one piece of evidence, not three, though the sentence is sufficient for each applicability call.",
+        "missing_evidence": [
+          "Network segmentation and access-control configuration for the store network and the operations subnet."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The exclusion is a scoping judgment about thr-002's path (interception and in-flight alteration) rather than a claim the evidence could settle; evd-001 is contextual, confirming only that a stored copy exists. The reasoning is coherent and asserts no weakness, but no passage supports it directly.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The exclusion depends on the assumption that the order-record customers are end customers of one operating organization rather than tenants, and the mapping says so rather than asserting it. evd-001 describes a single deployment and no tenancy model at all, so the support is contextual and thin; a person could settle the tenancy question directly.",
+        "missing_evidence": [
+          "A statement of the tenancy model: whether cmp-001 serves one operating organization or several."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "This rests on the same single-tenancy assumption as map-027 and on the same passage; the second mapping adds no independent evidence. The threat-path element (passive capture rather than a request escaping tenant scope) is a scoping argument, not an evidentiary one.",
+        "missing_evidence": [
+          "A statement of the tenancy model for cmp-001."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 refers to 'the field kiosks' but never states who owns or operates them, so the assertion that they are 'the operator's own' and therefore components of the system rather than an external platform is an inference presented here as settled. It also sits awkwardly beside map-022, which treats the same endpoint as conditionally applicable to req-WEBHOOK-001 for thr-001; the two should be reconciled on one reading of kiosk ownership.",
+        "missing_evidence": [
+          "A statement of who owns, provisions, and operates the field kiosks, and whether they are inside the system's trust boundary."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 names kiosks, a sync service, and a polling fulfillment system and mentions no model, which is weak contextual support only \u2014 a brief deployment note is not a component inventory. The mapping's own low confidence is the appropriate reading, and the exclusion asserts no weakness.",
+        "missing_evidence": [
+          "A component inventory or design document confirming whether any content is passed to a model."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That the sync service runs on a virtual machine in the operations subnet indirectly supports the claim that the kiosk-to-service flow stays within the operator's own infrastructure. It does not state ownership outright, and the same ambiguity about kiosk ownership noted for map-029 applies, so the exclusion is reasonable but not documented.",
+        "missing_evidence": [
+          "Confirmation that the operations subnet and the kiosk fleet are operated by the same organization."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The note states directly that the sync service stores customer order records and that the fulfillment system polls it, which establishes an internal component holding data on the system's behalf and exposing a read interface \u2014 the applicable condition. Nothing in the note restricts who may reach that interface, which is why unverified is the right status.",
+        "missing_evidence": [
+          "Access-control configuration for the read interface consumed on df-002."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "the fulfillment system to read."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "'stores them for the fulfillment system to read' directly establishes that customer data is retained beyond the moment of submission, which is the applicable condition. The note states no retention period or deletion behaviour, so unverified is correct and no absence of control is asserted.",
+        "missing_evidence": [
+          "Retention and deletion policy or configuration for stored order records in cmp-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for"
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "the fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The record contents \u2014 customer name, delivery address, order contents \u2014 and the fact that they are both stored and transmitted are stated outright, establishing the applicable condition. The note says nothing about protection at rest or on the polling path, which the unverified status correctly reflects.",
+        "missing_evidence": [
+          "Encryption configuration for the record store and for the fulfillment polling transport."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Order records carry the customer's name, delivery address,"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "As with map-020, the ownership of the fulfillment system is the hinge and evd-001 says only that it polls hourly; the two mappings rest on the same single passage, so the second is not corroboration of the first. The conditional applicability is honestly stated, and only a person can settle whether df-002 leaves the trust boundary.",
+        "missing_evidence": [
+          "Confirmation of who operates the fulfillment system and where it runs relative to the system's trust boundary."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 indirectly supports that the access on df-002 is an automated hourly poll rather than an end-user session, which cuts against applicability rather than for it. Nothing in the material indicates any federated identity provider, so the conditional applicability rests on a possibility the documents do not raise; the condition should be settled by asking rather than carried forward as conditional.",
+        "missing_evidence": [
+          "Documentation of how the fulfillment poll authenticates to cmp-001, and whether any human or federated identity is involved."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The mapping is candid that evd-001 describes no credential at all, so the conditional applicability hangs entirely on a possibility the documentation neither raises nor excludes. That is honest hedging rather than an asserted weakness, but a single question about how the poll authenticates would resolve it.",
+        "missing_evidence": [
+          "Documentation of any shared secret, API key, or certificate used on the fulfillment polling path, and where it is held."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That the interface in thr-003's path is a machine-to-machine hourly poll is indirectly supported by the note. The mapping is careful to scope the exclusion to this threat and to disclaim any general finding about administrative interfaces, which is the correct handling of the note's silence.",
+        "missing_evidence": [
+          "Documentation of whether cmp-001 exposes an administrative or operator interface at all."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The exclusion rests on the access in this threat being automated rather than a privileged human session, which the hourly-poll description indirectly supports. It relies on the same passage as map-038 and adds no separate evidence, but no weakness is asserted and the scope limitation is stated.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Single-tenancy is inferred from a note describing one deployment; the mapping says so and states the contingency if the inference fails. That is an assumption resting on silence rather than an inference from what is written, and it is the same assumption already carried by map-027, map-028, and map-041 from the same passage.",
+        "missing_evidence": [
+          "A statement of whether cmp-001 serves more than one retailer organization."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Identical basis to map-040: the tenancy model is unrecorded and the exclusion proceeds on an acknowledged assumption. Four mappings now rest on the same absence of a tenancy statement, which is one gap, not four supporting observations.",
+        "missing_evidence": [
+          "Documentation of the storage layout and tenancy model for stored order records."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The exclusion is a scoping argument distinguishing deletion-on-request from unauthorized retrieval, and it explicitly limits itself to this threat while routing the accumulation concern to req-DATA-002. evd-001 bears on it only contextually, by confirming that records are retained.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note describes the sync service as the party read from rather than one reaching out under a delegated grant, which indirectly supports the exclusion for this threat's path. It remains an argument from a brief description of flows rather than from a statement that no delegated access exists.",
+        "missing_evidence": [
+          "An integration list showing whether cmp-001 holds any delegated access grant to an external platform."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "the fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Same basis as map-043 and drawn from the same sentences: the direction of the documented flows indirectly supports the exclusion, and nothing states outright that cmp-001 accesses no external customer resources.",
+        "missing_evidence": [
+          "An outbound integration list for cmp-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The exclusion is scoped to this threat's runtime read path, which is a defensible scoping call; evd-001 describes deployment but no build or release process, so it supports the mapping only contextually. No claim about the pipeline's existence or quality is being made, which is correct.",
+        "missing_evidence": [
+          "Build and deployment documentation for cmp-001, for threats that engage it."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "A scoping exclusion \u2014 log content is a separate exposure path from retrieval on df-002 \u2014 with an explicit caveat that the requirement may be engaged elsewhere. evd-001 confirms only that names and addresses are handled, which is contextual to the mapping.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The exclusion turns on the read being an automated poll rather than an operator action, which the note indirectly supports, and the mapping declines to stretch an administrative-audit requirement to cover general detection \u2014 the right call. The detection concern it sets aside is noted but not evidenced by this passage.",
+        "missing_evidence": [
+          "Documentation of whether reads of the record store are recorded anywhere."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The mapping itself records that whether repeated polling consumes a capacity-limited resource is not established, so the exclusion rests on a characterisation of thr-003's stated impact rather than on evidence. That characterisation is reasonable, but evd-001 contributes nothing beyond describing the hourly poll.",
+        "missing_evidence": [
+          "Documentation of any metered or capacity-limited resource consumed by the read path."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "'The fulfillment system polls it hourly' states directly that df-002 is a pull rather than a delivered event, so the applicable condition for an inbound event endpoint is not met on this path. This is documentation used for exactly what it says.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same sentence that supports map-049 supports this exclusion directly: replay of inbound events presupposes an inbound delivery path, and df-002 is documented as a poll. One passage carrying two mappings is one piece of evidence, and it is sufficient for both.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 names only kiosks, a sync service, and a polling consumer, which is contextual support at best for the claim that no content is passed to a model; a short deployment note is not an exhaustive component inventory. The exclusion asserts no weakness and is low-cost to confirm.",
+        "missing_evidence": [
+          "A component inventory confirming whether any model inference occurs anywhere in the system."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Rests on the same absence of any model in the note as map-051 and map-030; that is one silence supporting several exclusions, not several pieces of evidence. Reasonable as a scoping call, contextual as evidence.",
+        "missing_evidence": [
+          "A component inventory confirming whether any model output is produced or published."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The note records the fulfillment poll as the only outbound flow it mentions and names no model provider, which is contextual support for the exclusion. It is the same silence relied on by the other AI mappings and should be confirmed once rather than treated as separately established each time.",
+        "missing_evidence": [
+          "Confirmation that no customer content is sent to an external model provider."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The exclusion follows from there being no model output in the system as described, which evd-001 supports only by not mentioning one. Consistent with the other AI mappings and asserting no weakness, but the support is contextual and the same single gap underlies all four.",
+        "missing_evidence": [
+          "Confirmation that no model output is rendered into any interface or downstream markup."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      }
+    ]
+  },
+  "call_sha256": "97b2cb1a4d4d13fecf6ab1d594951e5c98ee71b909328b010714c05ad724ca38"
+}

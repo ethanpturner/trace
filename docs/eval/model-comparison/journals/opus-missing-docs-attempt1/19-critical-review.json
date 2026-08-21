@@ -1,0 +1,65 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 15667,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 29088,
+    "estimated_cost": "0.574285",
+    "duration_seconds": 197.6593915000558
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-017",
+        "critique_type": "duplicate",
+        "description": "gap-017, gap-005, gap-022 and gap-027 each record the same single undocumented fact: evd-001 states the sync service's placement in the operations subnet and the kiosks' call over the store network, and names no firewall policy, security group, private link or mesh rule that enforces reachability of the ingest interface. All four cite only evd-001, all four point at cmp-001 and ctl-001, and all four request substantially the same evidence (the subnet or security-group policy, and which sources may reach the ingest interface). They differ only in the threat each is attached to and in severity, which is medium in gap-005, gap-017 and gap-022 but low in gap-027 for the identical absence.",
+        "rationale": "One missing document should generate one evidence request. Left as four gaps, the same question is put to the same owner four times and reaches findings as four separate items about one absent network policy, and the severity split (low in gap-027, medium in the others) makes the same absence look like different problems. Merging into a single gap about what enforces reachability of cmp-001's ingest interface, carrying each threat's importance statement and the highest severity, preserves everything the four say. gap-009 covers the same ground but adds the fulfillment system's location and operating party, so it should be reconciled with the merged gap rather than folded in wholesale.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "critique_type": "unsupported_claim",
+        "description": "The description closes with 'This scenario rests on a documented fact, that this VM holds the records'. evd-001 documents two separate things: that the sync service 'stores them for the fulfillment system to read', and that 'The service runs on a virtual machine in the operations subnet'. It does not state where the stored records actually rest - a volume attached to that VM, a managed database the service reaches from it, or a shared store - and map-076, gap-011 and eas-191 all treat the storage mechanism as unestablished. The load-bearing premise of the threat is therefore inferred from two adjacent sentences, not documented.",
+        "rationale": "An inference presented as a documented fact is precisely what a downstream reader cannot check, and a finding repeating 'documented: this VM holds the records' would misstate the source. The threat's own first precondition already hedges correctly ('the storage mechanism and any at-rest protection are unestablished'), so the fix is to align the description with the preconditions and mark the co-location as inferred with its rationale and confidence. The scenario is not weakened by this: snapshot, backup and host-credential exposure hold on either storage arrangement.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "critique_type": "unsupported_claim",
+        "description": "The threat carries category elevation_of_privilege alongside information_disclosure and tampering, but no step of the attack path and no precondition describes an actor acquiring privilege it did not already hold: step one has the actor already in possession of administrative, filesystem, snapshot or backup access, and every later step is a read, copy, alteration or deletion at that level. evd-001 describes no account model, service user or hypervisor separation on the host, so nothing cited bears on a privilege boundary being crossed. No mapping in this group analyses an escalation route either - map-070, map-071 and map-081 all concern access that the path assumes rather than gains.",
+        "rationale": "A STRIDE category with no corresponding step, precondition or mapping is an unanalysed claim that will nonetheless propagate into findings and remediation scope. Either drop the elevation_of_privilege limb, leaving disclosure and tampering which the path does support, or add the escalation step being asserted (for example service account to root on the host, or subnet pivot to host credential) with its own precondition, so that the requirement mappings can be assessed against it.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-085",
+        "critique_type": "contradictory_analysis",
+        "description": "map-085 concludes req-TPI-001 not_applicable because 'the only outbound flow is the fulfillment system's hourly poll (df-002), which the approved context records as crossing no trust boundary'. gap-009, in this same group, records that 'the fulfillment system's network position and operating party are unstated' and says explicitly that ownership of the fulfillment system 'decides whether records cross a third-party trust boundary (req-TPI-001)'. Both rest on evd-001, which says only 'The fulfillment system polls it hourly' and never names the party that operates it.",
+        "rationale": "The two objects cannot both stand. Either the approved context settles the boundary, in which case gap-009's importance statement and its req-TPI-001 request need correcting; or the operating party is unrecorded, in which case a not_applicable is resting on silence about the one flow that carries names, delivery addresses and order contents out of the service. eas-111 arrived at the same doubt from a different direction. A reviewer can settle both objects at once by confirming who operates the fulfillment system and where it sits relative to the operations subnet, so this should be investigated rather than resolved by choosing the more convenient reading.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "call_sha256": "d030b0f85ec167de380c62984840182e6d3efb950b7ebe5bb268271af17b9a58"
+}

@@ -1,0 +1,441 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 12282,
+    "cache_read_tokens": 14308,
+    "cache_creation_tokens": 15415,
+    "estimated_cost": "0.41135775",
+    "duration_seconds": 143.52308170800097
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The sync service (cmp-001) is an internal service that holds order records on behalf of the system and is not described as a public interface, and no authentication mechanism for its ingest interface is recorded, so it may be relying on network position. Its ingest interface is the entry point of this attack path (df-001), so how far that interface is reachable bounds who can submit crafted order records.",
+        "suppressed_conclusion": "That reachability of the sync service ingest interface is unrestricted or inadequately enforced, widening the population able to submit crafted order records.",
+        "suppressed_by": "req-NET-001 common_false_positives entry 'absent detail of the enforcing mechanism, where placement itself is stated': evd-001 states the service runs on a virtual machine in the operations subnet and that kiosks call it over the store network, so the missing firewall, security-group, or private-link detail is silence about the mechanism rather than evidence that the component is broadly reachable.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that the field kiosks (cmp-002) and the fulfillment system (cmp-003) are the only intended callers of the sync service; the note names no others but does not state exclusivity."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Kiosk submissions are inbound, pushed events that cause a state change in the sync service (df-001, evd-001), which matches the condition 'an inbound event triggers processing or state change'. Whether the other condition holds \u2014 that the events arrive from a party outside the receiver's trust boundary rather than from managed first-party devices on a segment documented as trusted \u2014 is not established, and evd-001 says only that the kiosks call the service over the store network.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Origin verification would narrow who can place records into the store but would not by itself address this threat's core mechanism, in which a person operating a genuine kiosk supplies hostile field values."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat's attack path is a single submission carrying crafted field values, not the re-submission of a previously delivered event; the requirement's condition that delivery uniqueness be established does not bear on content that is hostile on first delivery.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path runs kiosk entry to sync service storage to hourly fulfillment poll (df-001, df-002) and involves no administrative or operator interface; no operator interface appears in the extracted architecture for this threat, so the requirement's applicable conditions ('the system exposes an administrative or operator interface') do not hold on this path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement covers recording of privileged actions taken through an administrative interface; this threat is initiated by a person entering field values at a kiosk (act-001), not by an operator, and no privileged interface is part of the path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's conditions concern administrative or privileged access crossing an untrusted network; this threat concerns the content of ordinary order records submitted through the normal ingest path, and no privileged interface features in it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement applies where user authentication is delegated to an external identity provider; no identity provider or federated identity appears anywhere in the extracted architecture, and this threat turns on the content a submitter supplies rather than on establishing who they are.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's condition is that the system serves more than one customer or organization with data in shared storage; here the 'customers' are the subjects of order records within one operating organization's store estate, not tenants whose requests must be scoped, and this threat is content injection rather than cross-tenant access.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Non-applicable condition 'the system holds no external delegated access' fits the described path: the sync service receives records and is polled (df-001, df-002); it holds no delegated grant on an external platform, and this threat does not involve acting on a customer resource elsewhere.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is carried by runtime data entered at a kiosk, not by the build or deployment path; nothing in the attack path touches pipeline authentication or third-party build components.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Encryption in transit and at rest protects records against interception or unauthorised reading; this threat's values are authored at the source by a legitimate submitter and travel the intended path, so confidentiality or transport protection would not bear on it. Transport protection for df-001 remains a question for a separate confidentiality threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns how long working copies of customer data are retained; this threat concerns the integrity and downstream interpretation of record content, and retention duration neither enables nor prevents it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Non-applicable condition 'the system serves a single tenant' fits: order records belong to one operating organization's fulfillment process, so separation of stored artifacts by tenant is not the boundary this threat crosses.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Deletion of customer data on request has no bearing on this attack path, in which a crafted value is submitted, stored, and read by the fulfillment system within an hourly poll cycle.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement addresses restricted data reaching application logs and log destinations outside the trust boundary; this threat's path is kiosk to store to fulfillment poll and does not involve log handling.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Non-applicable condition 'the system holds no credentials of its own' is consistent with the described path: no signing key or provider credential appears in the architecture, and this threat exploits record content rather than a credential.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Non-applicable condition 'the system accesses no customer resources on external platforms' holds for this path: the sync service is polled by the fulfillment system rather than reaching out to a customer resource with a token.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement governs retention and usage terms where customer data is handed to an external processor; this threat concerns whether downstream processing interprets record content, not what a processor does with data it holds. Whether the fulfillment system (cmp-003) is an external processor is unestablished and is a separate confidentiality question.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement bounds consumption of a metered external service or significant compute; this threat's impact is integrity of record content and downstream interpretation, and no metered resource or retry loop is part of the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Non-applicable condition 'the system passes no content to a model' fits the extracted architecture: the path is kiosk to sync service to fulfillment system (cmp-001, cmp-002, cmp-003), with no model in it. The requirement's treatment of untrusted content is conceptually adjacent to this threat but is scoped to model input, which is recorded separately as a catalog-gap candidate.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement governs validation of model output before external publication; no model output exists on this path, so the applicable condition 'model output is published to a destination outside the system' does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Non-applicable condition 'the model runs within the system's own trust boundary' is moot because no model appears at all; no customer content is described as crossing a model provider boundary in this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement asks for encoding of model output at its rendering destination; the content at risk here is kiosk-authored field data rather than model output, so the applicable conditions do not hold even though the rendering concern is analogous. The analogous uncovered concern is recorded as a catalog-gap candidate.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Handling of order record field values by the sync service and the fulfillment system is not described",
+        "description": "evd-001 states that the sync service receives order records carrying customer name, delivery address, and order contents, stores them, and that the fulfillment system polls hourly. It says nothing about whether field values are validated, normalised, length-bounded, or encoded on storage or on read, and nothing about how the fulfillment system or anything behind it interprets record content (as query fragment, template input, print or label instruction, or rendered markup). Trace therefore cannot determine whether any control stands between kiosk entry and downstream interpretation. This records an inability to verify and asserts nothing about whether such handling exists.",
+        "importance": "Whether crafted field values can affect downstream processing depends entirely on this handling, and the threat's likelihood and impact cannot be assessed without it.",
+        "related_object_ids": [
+          "thr-007",
+          "cmp-001",
+          "cmp-003",
+          "ast-001",
+          "df-001",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "A description of what the sync service does to record fields on receipt and on storage (validation, normalisation, escaping, length limits, or none)",
+          "A statement of how the fulfillment system and any consumer behind it interpret record content, including any label, document, or screen rendering path",
+          "A statement of whether any validation step or human review sits between kiosk submission and fulfillment"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Reachability of the sync service ingest interface is stated as a placement, not as an enforced restriction",
+        "description": "evd-001 records that the sync service runs on a virtual machine in the operations subnet and that kiosks call it over the store network, which ctl-001 already captures as a stated placement. No firewall policy, security group, private link, or service mesh rule is described, and the note does not say from which positions the ingest interface can be reached. Trace cannot determine whether submission of order records is confined to the field kiosks.",
+        "importance": "The set of positions from which records can be submitted determines how large the population able to inject crafted field values is, and whether the threat is limited to people physically at a kiosk.",
+        "related_object_ids": [
+          "thr-007",
+          "cmp-001",
+          "ctl-001",
+          "df-001"
+        ],
+        "requested_evidence": [
+          "Network or deployment documentation identifying the boundary around the operations subnet and what admits traffic from the store network",
+          "A statement of which workloads are permitted to call the sync service ingest interface"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "low"
+      },
+      {
+        "title": "Whether kiosk submissions are authenticated or their origin verified is not established",
+        "description": "df-001 records the kiosk submission flow with authentication 'unknown', and evd-001 says only that the kiosks call the service over the store network. Nothing states whether the sync service establishes that a submission came from a managed kiosk, nor whether the kiosks hold any credential. Trace cannot determine whether an origin control exists; silence here is not evidence that one is absent.",
+        "importance": "The answer decides whether req-WEBHOOK-001 applies at all and whether the population able to place records into the store is bounded to the kiosk estate.",
+        "related_object_ids": [
+          "thr-007",
+          "cmp-001",
+          "cmp-002",
+          "df-001"
+        ],
+        "requested_evidence": [
+          "A statement of whether the sync service verifies the origin of a kiosk submission and by what mechanism (signature, mutual TLS, or none)",
+          "A description of who manages the field kiosks and whether they hold device credentials"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog has no requirement covering untrusted human-supplied content that is stored and later interpreted by a downstream consumer where no model is involved. Here, field values entered at a kiosk (customer name, delivery address, order contents) are persisted by the sync service and read hourly by the fulfillment system (evd-001), with no requirement in the catalog asking that such content be treated as data, validated, or encoded for the context that eventually interprets it. The catalog's input-handling and output-encoding expectations are all scoped to model input and model output, so a conventional injection path through ordinary data fields falls between them.",
+        "suggested_category": "input_validation",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "Scoped to content passed into a model; its applicable conditions require that content be given to a model, and no model appears on this path."
+          },
+          {
+            "requirement_id": "req-AI-004",
+            "why_not": "Asks for encoding at the rendering destination but only for model output; kiosk-authored field values are not model output, so the requirement's conditions do not hold."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "Addresses whether an inbound event genuinely originated from the expected sender, not whether its payload content is safe for a downstream consumer to interpret; origin verification would not stop a person at a genuine kiosk entering crafted values."
+          },
+          {
+            "requirement_id": "req-AI-002",
+            "why_not": "Concerns validation of model output before external publication; the publication concern is analogous but the requirement is bounded to model-generated content."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "14716060cfdb6e789c2fd3283b01e5dd05d143a0db308ddb0e87f103f58f9ff8"
+}

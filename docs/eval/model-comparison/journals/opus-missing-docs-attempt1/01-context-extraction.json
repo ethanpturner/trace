@@ -1,0 +1,601 @@
+{
+  "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 9843,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 12858,
+    "estimated_cost": "0.3272475",
+    "duration_seconds": 101.13830512505956
+  },
+  "response": {
+    "system": {
+      "system_name": "Kiosk Sync Service",
+      "system_purpose": "Receives customer order records from field kiosks and stores them so the fulfillment system can read them.",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": "virtual machine in the operations subnet (per the note); no wider deployment model stated",
+      "data_classifications": [],
+      "access_model": "unknown"
+    },
+    "claims": [
+      {
+        "key": "claim-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Receives customer order records from the field kiosks and stores them for the fulfillment system to read.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-service-stores-records",
+        "subject_type": "component",
+        "subject_key": "sync-service",
+        "predicate": "stores_asset",
+        "value": "The sync service stores order records received from the kiosks.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-record-contents",
+        "subject_type": "asset",
+        "subject_key": "order-records",
+        "predicate": "contains_data_fields",
+        "value": [
+          "customer name",
+          "delivery address",
+          "order contents"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-records-personal-data",
+        "subject_type": "asset",
+        "subject_key": "order-records",
+        "predicate": "contains_personal_data",
+        "value": "Records identify individual customers by name and delivery address, so they constitute personal data about identifiable people.",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The note states the records carry the customer's name and delivery address; a name paired with a delivery address identifies an individual. The note itself applies no classification label.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-record-classification",
+        "subject_type": "asset",
+        "subject_key": "order-records",
+        "predicate": "data_classification",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note lists the fields the records contain but assigns no classification, sensitivity label, or regulatory regime to them.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-deployment",
+        "subject_type": "component",
+        "subject_key": "sync-service",
+        "predicate": "deployment",
+        "value": "Runs on a virtual machine in the operations subnet.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-kiosk-call-path",
+        "subject_type": "data_flow",
+        "subject_key": "kiosk-to-sync",
+        "predicate": "network_path",
+        "value": "The kiosks call the sync service over the store network.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-poll-cadence",
+        "subject_type": "data_flow",
+        "subject_key": "sync-to-fulfillment",
+        "predicate": "cadence",
+        "value": "The fulfillment system polls the sync service hourly.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-poll-direction",
+        "subject_type": "data_flow",
+        "subject_key": "sync-to-fulfillment",
+        "predicate": "data_direction",
+        "value": "Order records move from the sync service to the fulfillment system, initiated by the fulfillment system's poll request.",
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The note says the records are stored 'for the fulfillment system to read' and that the fulfillment system 'polls it hourly'; polling to read implies the payload travels from the service to the poller, even though the request travels the other way.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-kiosk-auth",
+        "subject_type": "data_flow",
+        "subject_key": "kiosk-to-sync",
+        "predicate": "authentication",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note says the kiosks call the service but names no mechanism by which the service authenticates a caller. Silence here is not evidence that no authentication exists.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-kiosk-encryption",
+        "subject_type": "data_flow",
+        "subject_key": "kiosk-to-sync",
+        "predicate": "encryption_in_transit",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note names the store network as the path but states no protocol or transport protection.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-fulfillment-auth",
+        "subject_type": "data_flow",
+        "subject_key": "sync-to-fulfillment",
+        "predicate": "authentication",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note describes the hourly poll but states nothing about how the fulfillment system is authenticated or authorized to read the stored records.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-storage-mechanism",
+        "subject_type": "component",
+        "subject_key": "sync-service",
+        "predicate": "storage_mechanism",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note says the service 'stores' order records but names no database, file store, or other storage technology, and does not say whether storage is local to the virtual machine or a separate component.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-encryption-at-rest",
+        "subject_type": "asset",
+        "subject_key": "order-records",
+        "predicate": "encryption_at_rest",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note states that records are stored but says nothing about protection of stored data.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-retention",
+        "subject_type": "asset",
+        "subject_key": "order-records",
+        "predicate": "retention",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note does not say how long records are held after the fulfillment system reads them, or whether they are ever deleted.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-internet-exposure",
+        "subject_type": "component",
+        "subject_key": "sync-service",
+        "predicate": "internet_accessible",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The note places the service on a virtual machine in the operations subnet and describes only internal callers, but does not state whether the service is reachable from outside those networks.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-access-model",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "access_model",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note states no authorization posture for the service or its stored records.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-network-boundary",
+        "subject_type": "trust_boundary",
+        "subject_key": "store-to-operations-network",
+        "predicate": "exists",
+        "value": "A boundary exists between the store network, from which kiosks call, and the operations subnet, where the service runs.",
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The note names two distinct networks \u2014 kiosks calling 'over the store network', the service running 'in the operations subnet' \u2014 which implies traffic crosses between them. The note does not state that any control enforces separation, so the boundary's controls are unknown.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-boundary-controls",
+        "subject_type": "trust_boundary",
+        "subject_key": "store-to-operations-network",
+        "predicate": "controls",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note names the two networks but describes no firewall, segmentation rule, gateway, or other control between them.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-fulfillment-location",
+        "subject_type": "component",
+        "subject_key": "fulfillment-system",
+        "predicate": "network_zone_and_ownership",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note says the fulfillment system polls the service but does not say where it runs, who operates it, or whether its traffic crosses a network boundary.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-kiosk-management",
+        "subject_type": "component",
+        "subject_key": "field-kiosks",
+        "predicate": "ownership_and_management",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note establishes that kiosks are in the field and call the service, but says nothing about who owns or manages them, how many there are, or what physical protection they have.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-customer-interaction",
+        "subject_type": "actor",
+        "subject_key": "customer",
+        "predicate": "relationship_to_system",
+        "value": "Customers are the subjects of the order records; order data about them originates at the field kiosks.",
+        "status": "inferred",
+        "confidence": "low",
+        "rationale": "The note calls the records 'customer order records' carrying the customer's name, address, and order contents, and says they come from the kiosks. Whether customers operate the kiosks themselves or staff enter the orders on their behalf is not stated.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-availability",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "availability_requirement",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note states an hourly polling cadence but no uptime expectation, recovery requirement, or consequence of the service being unavailable.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-logging",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "logging_and_monitoring",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note describes no logging, auditing, or monitoring of the service or of access to the stored records.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-admin-access",
+        "subject_type": "component",
+        "subject_key": "sync-service",
+        "predicate": "administrative_access",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "high",
+        "rationale": "The note says the service runs on a virtual machine but does not describe who administers that machine or how administrative access is obtained.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "sync-service",
+        "name": "Sync Service",
+        "component_type": "service",
+        "description": "Receives customer order records from the field kiosks and stores them for the fulfillment system to read. Runs on a virtual machine in the operations subnet.",
+        "technology": [
+          "virtual machine"
+        ],
+        "ownership": null,
+        "deployment_zone": "operations_subnet",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "inter_system_interface"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "field-kiosks",
+        "name": "Field Kiosks",
+        "component_type": "client_device",
+        "description": "Kiosks in the field that send customer order records to the sync service, calling it over the store network. The note does not describe how many there are, who manages them, or how they are hardened.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "store_network",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "fulfillment-system",
+        "name": "Fulfillment System",
+        "component_type": "external_system",
+        "description": "Consumes order records by polling the sync service hourly. The note states nothing about its ownership, network location, or how it authenticates.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "customer",
+        "name": "Customer",
+        "actor_type": "end_user",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "order-records",
+        "name": "Customer Order Records",
+        "asset_type": "data",
+        "description": "Order records carrying the customer's name, delivery address, and order contents. Received from the kiosks and stored by the sync service for the fulfillment system to read.",
+        "confidentiality_impact": "Records contain customer names and delivery addresses; disclosure would expose personal information about identifiable customers. The note does not state a classification or impact level.",
+        "integrity_impact": "The fulfillment system acts on these records, so alteration or injection of records would affect what is delivered and to whom. The note does not discuss integrity protections.",
+        "availability_impact": "The note does not state any availability requirement for the records or the service.",
+        "data_classification": "unknown",
+        "owner": null,
+        "component_keys": [
+          "sync-service",
+          "field-kiosks",
+          "fulfillment-system"
+        ],
+        "stored_in_component_keys": [
+          "sync-service"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "kiosk-to-sync",
+        "name": "Kiosk order submission to sync service",
+        "source_component_key": "field-kiosks",
+        "destination_component_key": "sync-service",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "order records",
+          "customer name",
+          "delivery address",
+          "order contents"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "store-to-operations-network"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "sync-to-fulfillment",
+        "name": "Fulfillment system hourly poll of order records",
+        "source_component_key": "sync-service",
+        "destination_component_key": "fulfillment-system",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "order records",
+          "customer name",
+          "delivery address",
+          "order contents"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "store-to-operations-network",
+        "name": "Store network to operations subnet",
+        "boundary_type": "network",
+        "description": "Inferred boundary between the store network, from which the kiosks call the service, and the operations subnet, where the service's virtual machine runs. The note names the two networks but does not state that any control separates them.",
+        "inside_component_keys": [
+          "sync-service"
+        ],
+        "outside_component_keys": [
+          "field-kiosks"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "key": "q-kiosk-auth",
+        "question": "How does the sync service authenticate a calling kiosk, and how are kiosk credentials or certificates issued, stored, and rotated?",
+        "rationale": "The note establishes that kiosks in the field push order records to the service but names no caller authentication. Whether any party on the store network can submit records determines whether forged or altered orders can reach the fulfillment system, which changes the exposure of the ingestion flow substantially.",
+        "related_object_key": "kiosk-to-sync",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-transport-protection",
+        "question": "What protocol and transport protection are used for the kiosk-to-service calls and for the fulfillment system's hourly poll?",
+        "rationale": "Both flows carry customer names, delivery addresses, and order contents. Whether these traverse the store network in cleartext determines whether interception on that network exposes personal data.",
+        "related_object_key": "kiosk-to-sync",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-storage",
+        "question": "Where and how are order records stored \u2014 local disk on the virtual machine, a database, or a separate datastore \u2014 and is any at-rest protection applied?",
+        "rationale": "The note says records are stored but names no storage technology. The answer determines whether an additional component and its own access controls belong in the architecture, and where the records at rest can be reached from.",
+        "related_object_key": "sync-service",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-fulfillment-authz",
+        "question": "How is the fulfillment system authenticated and authorized when it polls, and can any other client read the stored records through the same interface?",
+        "rationale": "The read path exposes the full set of stored order records. Whether the read interface distinguishes the fulfillment system from any other caller changes who can obtain the personal data held by the service.",
+        "related_object_key": "sync-to-fulfillment",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-fulfillment-location",
+        "question": "Where does the fulfillment system run, who operates it, and does its poll cross a network or organisational boundary to reach the operations subnet?",
+        "rationale": "The note gives no location or ownership for the fulfillment system, so it is not possible to say whether the read flow crosses a trust boundary. The answer determines whether a second boundary belongs in the model.",
+        "related_object_key": "fulfillment-system",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-network-controls",
+        "question": "What controls separate the store network from the operations subnet, and what is permitted to reach the sync service's virtual machine?",
+        "rationale": "The note names two networks without describing any control between them. Whether the service is reachable only from kiosks, or from anything on the store network, changes who can reach the ingestion interface.",
+        "related_object_key": "store-to-operations-network",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-retention",
+        "question": "How long are order records retained after the fulfillment system has read them, and are they deleted?",
+        "rationale": "Retention determines the volume of personal data held on the service at any moment and the scope of a compromise of the stored data.",
+        "related_object_key": "order-records",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-classification",
+        "question": "Is there a data classification or regulatory regime (for example a privacy regime covering customer names and delivery addresses) that applies to these order records?",
+        "rationale": "The note describes the fields but assigns no classification. A stated classification would set the handling expectations against which the storage and transport arrangements should be judged.",
+        "related_object_key": "order-records",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-kiosk-ownership",
+        "question": "Who owns and manages the field kiosks, how many are there, and what physical or software protection do they have?",
+        "rationale": "The kiosks are the source of every order record and sit in the field. Their manageability and physical exposure determine how much trust the ingestion flow can place in them.",
+        "related_object_key": "field-kiosks",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-admin-and-logging",
+        "question": "Who administers the virtual machine hosting the sync service, and what logging exists for record submission and record retrieval?",
+        "rationale": "The note describes neither administration nor logging. Without knowing who can reach the host and whether access to records is recorded, it is not possible to reason about insider access or about detection of misuse.",
+        "related_object_key": "sync-service",
+        "priority": "medium",
+        "blocking": false
+      }
+    ],
+    "observations": []
+  },
+  "call_sha256": "1af8a2adbfbdc5b1d38f6455b1f71576105142cc24a3c6ddd896aaf36aabf2ab"
+}

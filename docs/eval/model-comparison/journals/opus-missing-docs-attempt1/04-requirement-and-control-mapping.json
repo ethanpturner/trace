@@ -1,0 +1,519 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 262,
+    "output_tokens": 15798,
+    "cache_read_tokens": 28929,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.4107245",
+    "duration_seconds": 181.75066637503915
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ops-subnet-placement",
+        "name": "Sync service deployed on a virtual machine in the operations subnet",
+        "description": "The note states the sync service runs on a virtual machine in the operations subnet, that kiosks call it over the store network, and that the fulfillment system polls it hourly (evd-001). Network placement is recorded; nothing is recorded about what enforces or restricts reachability of the ingest interface from the store network or from any other position, so this is a stated placement rather than an established access restriction.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "unknown",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "owner": null,
+        "limitations": [
+          "Placement is stated but no enforcing mechanism (firewall policy, security group, private link, service mesh) is described.",
+          "The note does not state whether the ingest interface is reachable from positions other than the store network and operations subnet."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's applicable conditions require an administrative or operator interface through which operators act on customer data. This threat's attack path is machine-to-machine submission of order records on df-001 into cmp-001 and the hourly read by cmp-003; no operator interface appears anywhere in it, and none is described for cmp-001 (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes that the impersonation path described in thr-001 does not pass through an operator interface; the note neither describes nor excludes the existence of such an interface elsewhere in the system."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system passes no content to a model' holds on the evidence available: the note describes the sync service as receiving and storing order records for the fulfillment system to read, with no model in the path (evd-001), and the threat's attack path contains no model invocation.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes no model processing exists in the ingest or fulfillment path; the note is silent rather than explicit on this."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require model output published to a destination outside the system. Nothing in the threat's flows (df-001 kiosk submission, df-002 fulfillment poll) involves model output; the records moving on both flows are order records authored by the kiosks (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require customer content to be sent to an external model provider. The only outbound path in this threat is the fulfillment system's hourly poll of stored records (df-002), which is not a model provider call (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require model output rendered into a user interface or submitted as markup elsewhere. No model output and no rendering surface figure in this threat; the injected artefact is a stored order record consumed by a polling system (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern delegation of end-user authentication to an external or federated identity provider. This threat turns on how cmp-001 authenticates a calling device on df-001, which is machine-to-machine caller authentication rather than user identity delegation, and the note names no identity provider or user-facing sign-in path (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes kiosk submissions are made by devices rather than by authenticated end users of an identity provider; the note does not describe the submission mechanism."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require administrative access or privileged access crossing an untrusted network by an interactive principal. The access this threat abuses is an automated ingest submission from a field kiosk (df-001), for which a multi-factor policy is not the applicable control, and no privileged interactive interface for cmp-001 is described (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require the system to serve more than one customer or organization with data in shared storage. The note describes one operator's field kiosks, one sync service, and one fulfillment system (evd-001); customers here are the subjects of order records rather than tenants of the platform, so the non-applicable condition 'the system serves a single tenant' holds on the evidence available.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes single-tenant operation, inferred from the note describing a single set of kiosks feeding a single fulfillment system; the note does not state tenancy either way."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require the system to hold delegated access to an external platform or act on a customer resource on the customer's behalf. In this threat cmp-001 is the receiving party on df-001 and the polled party on df-002; the note describes no outbound delegated grant held by the sync service (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern an automated deployment pipeline and third-party build components. This threat's attack path runs entirely through the runtime ingest interface of cmp-001; no build or deployment step appears in it, and the note describes only that the service runs on a virtual machine (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system stores or transmits confidential or restricted data' holds: order records carrying customer names, delivery addresses, and order contents are transmitted on df-001 and stored by cmp-001 (evd-001, ast-001). Transport protection bears directly on this threat, because an unauthenticated and unprotected submission channel is what makes a fabricated submission indistinguishable from a genuine one.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Treats customer name, delivery address, and order contents as at least confidential; the note states no classification."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement addresses how long a by-product copy of customer data is retained and whether the stated period matches what customers are told. This threat concerns the authenticity of records at the point of ingest and the fulfillment action taken on them; retention duration neither enables nor mitigates the injection path described, so the requirement does not bear on this threat even though cmp-001 does store records (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' holds on the evidence available: the note describes one operator's kiosks and one fulfillment consumer (evd-001), so stored artefacts are not shared between distinct customer organizations and no per-tenant separation question arises in this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes single-tenant storage, inferred from the note; tenancy is not stated."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement covers removal of customer data on customer or operator request across primary and derived stores. This threat is the injection of fabricated records and their downstream fulfillment; a deletion path is not a control on that path, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement addresses restricted data leaking into application logs and log destinations outside the trust boundary. This threat is an integrity and spoofing concern on the ingest path; log content classification does not figure in its attack path or impact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require an administrative or operator interface whose privileged actions must be attributed. The unattributable actions in this threat are automated record submissions by an impersonating caller on df-001, not operator actions through a privileged interface, and no such interface is described for cmp-001 (evd-001). The attribution concern this threat raises is recorded separately as a catalog-gap candidate rather than stretched onto this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "ops-subnet-placement"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable conditions hold: cmp-001 is an internal service holding customer order records on behalf of the system and is not described as a public interface, and this threat's first precondition is precisely that an attacker obtains a network position from which its ingest interface is reachable (df-001). Whether cmp-001 relies on network position in place of caller authentication is unestablished, which is the condition the requirement is written for.",
+        "suppressed_conclusion": "That reachability of the sync service's ingest interface is unrestricted, and that network segmentation between the store network and the operations subnet is absent or inadequate.",
+        "suppressed_by": "req-NET-001 common_false_positives: 'absent detail of the enforcing mechanism, where placement itself is stated' \u2014 the note states cmp-001 runs in the operations subnet and is called by kiosks over the store network (evd-001), so silence about the enforcing mechanism is not evidence that no restriction exists. The entry 'absent description of network placement for an internal component' likewise bars reading silence as public reachability.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require the system to hold a credential authenticating it to an external platform or a private signing key. This threat concerns inbound caller authentication at cmp-001, and the note describes no outbound platform credential or signing key held by the sync service (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes no verification key or shared ingest secret is currently held; if kiosk submissions are found to be authenticated by a shared secret or signature, custody of that material would bring this requirement into scope."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require the system to access customer resources held on an external platform using platform-issued credentials. No such access appears in this threat: cmp-001 receives records (df-001) and is polled for them (df-002), and the note describes no credential used to reach a customer resource elsewhere (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement addresses what an external processor does with customer data it receives \u2014 retention, secondary use, and terms. This threat is the injection of fabricated records and their fulfillment; the handling terms applying to cmp-003 do not enable or mitigate that path. That cmp-003's ownership and network location are unstated (evd-001) is a live question for other threats, not a condition of this one.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The condition 'work is triggered by an event the system does not originate' holds \u2014 cmp-001 acts on submissions it receives from kiosks (df-001, evd-001) \u2014 but whether that processing consumes a metered or capacity-limited resource is unestablished, and the non-applicable condition 'processing consumes no metered or capacity-limited resource' may hold. The requirement applies to this threat only insofar as an impersonating caller can submit records at volume rather than singly.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes an impersonating caller could repeat submissions; the note states nothing about submission rate limits, storage bounds, or downstream fulfillment cost."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'an inbound event triggers processing or state change' holds directly: cmp-001 accepts order-record submissions from kiosks and stores them, and cmp-003 acts on the stored records at its next hourly poll (evd-001, df-001, df-002). Kiosks are devices outside the receiving zone rather than a named commercial platform, but the control the requirement asks for \u2014 establishing that an inbound submission genuinely originated from a legitimate sender before acting on it \u2014 is exactly the control this threat's second precondition concerns. The non-applicable condition 'reachable only from within a trusted network segment and this is documented' does not hold, because no such documentation exists.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "The note is wholly silent on what cmp-001 requires of a caller; it neither claims validation nor describes its absence, so silence resolves to unverified rather than unmet. The common false positive 'documentation stating only that requests are validated, where the mechanism is unstated' does not arise here, because no validation claim is made at all."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'inbound event processing is costly, externally visible, or state-changing' holds: a submission on df-001 causes a record to be persisted and subsequently acted on by the fulfillment system, which dispatches goods (evd-001, ast-001). The second condition also holds in the weaker sense that neither authenticity nor delivery uniqueness is established. Nothing documents idempotent handling, so the non-applicable condition does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumes duplicate submissions would each be stored and read; the note describes storage and hourly polling without stating any deduplication or idempotency behaviour."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "What the sync service requires of a caller before accepting an order submission is not established",
+        "description": "The note states that the kiosks call the sync service over the store network and that the service stores what it receives for the fulfillment system to read (evd-001). It says nothing about whether cmp-001 authenticates the caller on df-001, and if so by what mechanism \u2014 mutual TLS, a per-kiosk credential, a shared secret, a request signature, or nothing. Trace therefore cannot determine whether an origin-authentication control exists. This is the fact that decides both req-WEBHOOK-001 and the second precondition of thr-001.",
+        "importance": "Whether a caller other than a genuine kiosk can submit order records that the fulfillment system will act on turns entirely on this answer. Without it, the assessment cannot distinguish a service with per-device authentication from one that accepts any well-formed submission, and the two have very different consequences for the integrity of ast-001.",
+        "related_object_ids": [
+          "cmp-001",
+          "df-001",
+          "ast-001",
+          "thr-001"
+        ],
+        "requested_evidence": [
+          "Documentation or configuration stating whether kiosk submissions are authenticated, and by what mechanism",
+          "A source-code or configuration reference to any verification step performed on an inbound submission",
+          "A statement of whether any credential or verification key is shared across all kiosks or issued per device",
+          "A statement of whether repeated delivery of the same submission is rejected or absorbed idempotently"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "What restricts reachability of the sync service ingest interface is not established",
+        "description": "The note records the sync service's placement \u2014 a virtual machine in the operations subnet, called by kiosks over the store network (evd-001) \u2014 but names no mechanism enforcing which sources may reach the ingest interface, and does not state whether the interface is reachable from anywhere beyond the store network and operations subnet. Placement is stated; enforcement is not, so Trace cannot determine whether a segmentation control exists. Consistent with req-NET-001's common false positives, this is recorded as an inability to verify and not as an absent control.",
+        "importance": "The first precondition of thr-001 is that an attacker can obtain a network position from which the ingest interface is reachable. If the ingest path relies on network position in place of caller authentication, the boundary control is the only control, and its scope needs to be established rather than assumed.",
+        "related_object_ids": [
+          "cmp-001",
+          "df-001",
+          "thr-001"
+        ],
+        "requested_evidence": [
+          "A network or deployment description stating what traffic is admitted into the operations subnet from the store network",
+          "Firewall, security-group, or service-mesh policy governing access to the sync service ingest interface",
+          "A statement of whether the ingest interface is reachable from any network other than the store network and operations subnet"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Protection of order records in transit and at rest is not established",
+        "description": "Order records carry customer names, delivery addresses, and order contents, are transmitted from the kiosks to the sync service and stored on a virtual machine for the fulfillment system to read (evd-001). The note states nothing about transport protection on df-001 or df-002, nor about encryption of the stored records. Trace cannot determine whether these protections exist or are inherited from the hosting platform.",
+        "importance": "An unprotected submission channel makes the records both readable and modifiable by anything on the path, which compounds the injection concern in thr-001: an attacker able to alter records in flight needs no ingest interface of their own. Encryption is also frequently inherited and simply undocumented, so confirmation rather than assumption is required.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001",
+          "df-001",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "A statement of the transport protocol and whether transport encryption is applied on df-001 and df-002",
+          "A statement of whether the store holding order records encrypts at rest, and which party provides that protection"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog has no requirement that a system ingesting records from field devices retain per-submission provenance \u2014 which device submitted a given record, when, and over what authenticated identity \u2014 so that stored records remain attributable after the fact. thr-001's impact turns on this: if injected records cannot be separated from genuine ones once stored, disputed deliveries are unattributable even after the injection is discovered. The existing logging requirements cover a different question, and the webhook requirements cover verification at the moment of receipt rather than a durable record of it.",
+        "suggested_category": "ingest_provenance",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "Scoped to actions taken through a privileged or administrative interface by an operator identity. The submissions at issue here are automated device-to-service ingest calls, not operator actions, and cmp-001 is not described as exposing an administrative interface."
+          },
+          {
+            "requirement_id": "req-LOG-001",
+            "why_not": "Concerns keeping restricted data out of logs and identifying where logs are sent. It constrains what must not be recorded, and says nothing about what provenance must be recorded or retained alongside ingested records."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "Requires that an inbound event's origin be verified before acting on it, which is a check performed at receipt. It does not require that the outcome of that check be persisted with the resulting record, so a system could satisfy it fully and still leave stored records unattributable later."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-002",
+            "why_not": "Requires that re-submission of a previously valid event not repeat the work, which addresses duplication rather than attribution. A system could deduplicate perfectly and still be unable to say which device originated a given stored record."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "ceb2d3469e71e160b238a191c3573869a563ec0aeb1fdef7fad2aec82ca5edb6"
+}

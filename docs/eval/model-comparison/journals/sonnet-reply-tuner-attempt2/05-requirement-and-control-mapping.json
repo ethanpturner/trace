@@ -1,0 +1,102 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 17818,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 14757,
+    "estimated_cost": "0.33343875",
+    "duration_seconds": 181.79528108402155
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The exported transcripts contain PII (customer names, emails, full message bodies) and the flow crosses the helpdesk/pipeline trust boundary (tb-001), satisfying req-DATA-001's applicable_conditions that confidential data is transmitted and crosses a network boundary the system does not control. Neither non_applicable_conditions ('all data handled is public', 'the component neither stores nor transmits sensitive data') holds, since the data is PII and cmp-001 both receives and stores it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [
+          "No assumption made beyond the documented text; the documentation is treated as silent on transit and at-rest encryption for this specific flow rather than as evidence either way."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Transcript Exporter is an internal job holding data on the system's behalf, and its authentication_mechanisms are undocumented for the inbound flow from the Helpdesk, matching req-NET-001's applicable_conditions that the component 'authenticates callers weakly or relies on network position.' Whether the exporter's reachability is restricted to the Helpdesk specifically, rather than open to a broader untrusted network, is exactly what would determine whether a party could be positioned on the path as this threat describes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Applicability is inferred from the absence of any stated authentication mechanism on cmp-001 for this flow, taken as consistent with reliance on network position rather than as direct evidence that such reliance exists."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Authentication and transit encryption for the nightly transcript export are undocumented",
+        "description": "The system overview describes the Transcript Exporter's write-side access control to the training store (evd-002) and states transcripts are exported in full without redaction (evd-002, evd-003), but nowhere describes how the nightly export from the Helpdesk to the Exporter is authenticated or whether it is encrypted in transit. Both the authentication and encryption fields for this data flow are recorded as unknown.",
+        "importance": "This flow carries full ticket transcripts including direct customer identifiers across a documented trust boundary. Without knowing whether the channel is authenticated and encrypted, it cannot be established whether a party positioned on the path, or one able to impersonate the Helpdesk or the Exporter, could read or alter transcripts before they reach the training store -- which is the exact mechanism this threat describes.",
+        "related_object_ids": [
+          "df-001",
+          "cmp-001",
+          "cmp-007",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "A description of the transport protocol and encryption mechanism used for the nightly helpdesk-to-exporter export",
+          "A description of how the exporter authenticates the source of the export, or how the helpdesk authenticates the exporter as recipient",
+          "A statement of the network path or placement between the helpdesk and the exporter"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The nightly export between the Helpdesk and the Transcript Exporter is a service-to-service data transfer where the source is described as pulling/exporting from an external system, rather than a delegated user sign-in, a browser redirect, or a discrete webhook-style event delivery. No catalog requirement asks that the identity of either endpoint in such a batch export be authenticated as distinct from encrypting the channel or restricting network reachability, leaving impersonation of either party (the spoofing element of this threat) without a directly corresponding control class.",
+        "suggested_category": "service_to_service_authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "Addresses confidentiality and integrity of the channel through encryption, but encryption in transit -- particularly one-sided TLS -- does not by itself authenticate which party is on either end of the connection, so it does not cover spoofing of the source or destination."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "Addresses restricting which workloads can reach an internal component over the network, which reduces exposure but is a reachability control, not a verification of the connecting party's identity once a connection is permitted."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "Requires cryptographic verification of inbound event origin, but its own non_applicable_conditions exclude flows where the system polls or pulls data rather than receiving delivered events, and the documentation describes the exporter as exporting/pulling transcripts from the helpdesk rather than the helpdesk pushing to an exposed endpoint."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "9d79cc818df78cbfab0908a22aa9113933fde6d5beb7d423e6786a9370a6a633"
+}

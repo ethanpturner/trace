@@ -1,0 +1,1041 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 34203,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 18936,
+    "estimated_cost": "0.586326",
+    "duration_seconds": 300.69174249994103
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states directly that the pipeline fine-tunes a suggested-reply model on closed support tickets and serves the tuned model to support agents, matching the assertion exactly.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "fine-tunes a suggested-reply model on closed\nsupport tickets and serves the tuned model to support agents."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states the exporter's job identity is the only principal with write access to the training store, granted through the platform's access policy, directly matching the assertion.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly lists the PII types exported (customer names, email addresses, complete message bodies); evd-003 indirectly reinforces the unredacted nature by stating there is no filtering step and what the customer wrote is what the model trains on.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "Transcripts are exported in full, including customer names, email addresses, and complete\nmessage bodies."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states directly that there is no redaction or filtering step between the helpdesk and the training store.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 describes only that the most recent artifact is served, with no mention of any validation, testing, or approval step; this silence is correctly captured by the claim's 'unknown' status rather than asserted as an absent control.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the tuning job fine-tuning the vendor's base model without stating where execution occurs; the claim correctly reflects this as unknown rather than inferring a location.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-005",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states the support agent sees and edits suggested replies; evd-002 confirms one suggested reply is generated per open ticket and may be edited or discarded by the agent, matching the assertion.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "- **Support agent** \u2014 the internal user who sees and edits suggested replies."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "Serves the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states directly that the customer writes the ticket messages that become training data.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "- **Customer** \u2014 writes the ticket messages that become training data."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 documents only the training store's write-access restriction; no overall system authorization model is described, so the claim's 'unknown' status is an accurate reflection of the documentation's silence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 refers to 'the helpdesk' as the transcript source without stating whether it is operated internally or by a third party; the claim's 'unknown' status accurately reflects this silence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A nightly job that exports closed-ticket transcripts from the helpdesk into the training"
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly lists the contents of the exported transcript asset: customer names, email addresses, and complete message bodies.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "Transcripts are exported in full, including customer names, email addresses, and complete\nmessage bodies."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly documents that the exporter's job identity is the sole principal with write access to the training store via the platform's access policy, matching the control description exactly.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 directly confirms artifacts are written to the artifact bucket named by date, giving each a distinguishable identifier. The documentation does not state that base model identity or training-data snapshot version is recorded against each artifact, so the stated limitation is an accurate reflection of silence rather than an established gap.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 and evd-002 both directly describe agents viewing a suggested reply beside the open ticket and deciding whether to use, edit, or discard it before any reply reaches a customer. The stated limitation regarding content-shaping effects is an honest gap statement, not an evidenced weakness.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "one suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly establishes both the applicability trigger (fine-tuning on collected closed-ticket data from many customers) and the write-access control (ctl-001) that would satisfy a requirement of this kind, supporting applicability and the satisfied determination.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 supports applicability (training data derives directly from customer content) but it also directly states there is no redaction or filtering step, which is a definite negative fact bearing on sensitive-content minimization, not merely an unresolved question. Labeling the satisfaction status 'unverified' appears inconsistent with a passage that directly answers whether minimization occurs.",
+        "missing_evidence": [
+          "Clarification of req-TRAIN-002's precise satisfaction criteria to reconcile with evd-003's direct statement that no redaction step exists."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 directly documents that tuned artifacts are produced weekly and the most recent is served to agents, matching the applicability trigger; the partial-satisfaction characterization is consistent with the passage's limited detail on artifact provenance.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly establishes that the training store holds PII, matching the applicability trigger. No passage addresses at-rest protection, so the 'unverified' satisfaction status accurately reflects the documentation's silence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "Transcripts are exported in full, including customer names, email addresses, and complete\nmessage bodies."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly names both the training store and artifact bucket as retained copies produced by the pipeline; evd-003 indirectly reinforces that transcripts are retained as exported. No passage addresses copy-limitation controls, so 'unverified' is an accurate reflection of silence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "contents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly establishes multiple data stores (helpdesk, training store). evd-004 only confirms the existence of tuned artifacts; it says nothing about whether those artifacts memorize or otherwise retain identifiable customer PII, which the applicability_reason's premise depends on. That portion rests on an assumption not established by the cited passage.",
+        "missing_evidence": [
+          "Documentation or testing evidence on whether tuned model artifacts retain or can regenerate identifiable customer content from training data."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 refers only to 'the vendor's base reply model' without specifying execution location, which is exactly the ambiguity the mapping's stated assumption identifies; the conditional applicability and explicit assumption are well grounded in this silence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Same passage and same unresolved fact as map-007: whether the vendor relationship constitutes external processing turns on execution location, which evd-002 does not establish; the conditional framing and stated assumption are appropriate given this silence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly states agents see a suggested reply and decide whether to use it, matching the non-applicable condition that every output is a draft a person may edit, discard, or send manually.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly establishes agent review and decision before use, matching the non-applicable condition that a human approves each publication.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 directly documents weekly artifact production and serving of the most recent artifact; evd-002 directly documents the tuning job that produces it, jointly matching the applicability trigger.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 and evd-004 directly establish the automated tuning-job-to-artifact-bucket-to-reply-service flow with no described human step, and the conditional applicability is explicitly qualified by the stated assumption about how this flow is characterized, which is appropriate given the documentation does not settle that characterization.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 directly documents that no write-access restriction or validation step is described for the artifact bucket, which is the exact precondition the applicability_reason cites; the conditional framing appropriately flags this as unverified.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly distinguishes the training store's write-restricted corpus from the tuning job's artifact bucket, supporting the claim that this requirement's scope (training corpus write path) does not encompass the downstream artifact bucket at issue in thr-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "contents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "This mapping cites no evidence, and no passage in this batch describes thr-002's affected components or attack path in enough detail to verify the claimed scope boundary between req-TRAIN-002's subject matter and thr-002's tampering concern.",
+        "missing_evidence": [
+          "A description of thr-002's affected components and attack path sufficient to confirm req-TRAIN-002 does not apply."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 and evd-002 both directly establish that suggested replies are drafts an agent may edit or discard before use, matching the non-applicable condition.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "one suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly establishes agent review before any reply reaches a customer, matching the non-applicable condition that a human approves each publication.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "No evidence was cited for this mapping. evd-002's component list (Transcript Exporter, Training Store, Tuning Job, Reply Service) names no administrative interface, which is contextually suggestive but does not affirmatively establish that no such interface exists; absence of mention is not proof of absence.",
+        "missing_evidence": [
+          "Explicit documentation confirming whether any administrative or operator interface exists in the system architecture."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly describes the workflow as generating a suggestion that is rendered to the agent, who decides whether to use it, with no autonomous action described, matching the non-applicable condition.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly establishes that the suggested reply is a draft the agent decides on before use, matching the non-applicable condition that outputs are drafts a person publishes manually.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly describes the reply service generating one text suggestion per ticket, consistent with a text-only, non-tool-invoking workflow matching the non-applicable condition.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "one suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "No evidence was cited for this mapping. evd-002's full component list mentions no external tool protocol or MCP-style integration, which is contextually suggestive but does not affirmatively establish its absence.",
+        "missing_evidence": [
+          "Explicit documentation confirming whether the system uses any external tool protocol."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No evidence was cited, and this batch carries no passage describing thr-003's attack path (df-004) or req-AI-001's scope in enough detail to verify the claimed distinction between untrusted-content task redirection and base-model integrity.",
+        "missing_evidence": [
+          "A description of thr-003's attack path (df-004) and req-AI-001's applicability scope."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly establishes that agents decide whether to use each suggested reply before publication, matching the non-applicable condition that a human approves each publication.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "beside each open ticket and decide whether to use it."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No evidence was cited, and this batch carries no passage describing the data flow (df-004) that this mapping characterizes as internal-only, so the claimed distinction cannot be verified against the evidence given.",
+        "missing_evidence": [
+          "A description of df-004 and confirmation that it does not carry customer content to an external model provider."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No evidence was cited, and this batch carries no passage describing thr-003's impact or the agent console's rendering behavior needed to verify that markup injection at render time is out of scope.",
+        "missing_evidence": [
+          "Documentation of thr-003's impact and of how the agent console renders suggested-reply content."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      }
+    ]
+  },
+  "call_sha256": "78f688f593c555affa1a6ee82b7a811cfafc76ab2aa234d3b99e459f26539a94"
+}

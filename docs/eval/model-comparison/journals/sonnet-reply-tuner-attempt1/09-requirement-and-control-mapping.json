@@ -1,0 +1,103 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 16436,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 14504,
+    "estimated_cost": "0.31176",
+    "duration_seconds": 166.0559994999785
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The nightly export carries confidential PII (customer names, emails, message bodies) and the flow crosses the helpdesk/pipeline trust boundary (tb-001), which is exactly the pair of applicable_conditions this requirement names: sensitive data being transmitted, and a boundary the system does not fully control on both sides.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat's own attack path describes the exporter pulling transcripts from the helpdesk on a nightly schedule, not the helpdesk delivering events to an endpoint the system exposes. This matches req-WEBHOOK-001's non_applicable_conditions entry for events polled by the system rather than delivered to it, so inbound-event authenticity verification is out of scope for this flow.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses documentation of retention and usage terms where customer data is sent outward to an external provider that processes it. The described flow (evd-002) is the reverse: the pipeline's exporter pulls data from the Helpdesk into its own training store, so no customer data is being sent to an external processor in this direction.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The nightly export is a batch job moving data between the Helpdesk and the Transcript Exporter, with no end user in the path. req-AUTH-001's non_applicable_conditions covers components not reachable by end users, which describes this service-to-service flow (evd-002).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption and authentication of the nightly transcript export are undocumented",
+        "description": "The system overview names the nightly export job and states the sensitivity of what it carries -- full transcripts including customer names, email addresses, and message bodies (evd-002, evd-003) -- but does not state whether the connection between the Helpdesk and the Transcript Exporter is encrypted in transit, or how either side authenticates the other.",
+        "importance": "Because full, unredacted PII traverses this path every night, whether the channel is encrypted and authenticated is what separates a benign internal data pull from a viable interception path (req-DATA-001). Without this, the assessment cannot distinguish an inherited transport protection from an absent one.",
+        "related_object_ids": [
+          "df-001",
+          "cmp-001",
+          "cmp-007"
+        ],
+        "requested_evidence": [
+          "Network or transport configuration for the nightly export job, e.g. TLS version and certificate validation in use",
+          "The authentication mechanism used between the Transcript Exporter and the Helpdesk, such as an API credential, mutual TLS, or a service identity"
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "af9f980bd9f8ec82826e70251be8a44a5a876fce0fc123aabb4324347b5e5ecc"
+}
