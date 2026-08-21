@@ -1,0 +1,65 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 15513,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 29544,
+    "estimated_cost": "0.573285",
+    "duration_seconds": 191.69184274994768
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-020",
+        "critique_type": "duplicate",
+        "description": "gap-020 and gap-002 record the same undocumented fact about the same component and the same flow. Both rest solely on evd-001, which places cmp-001 on a virtual machine in the operations subnet and says 'The kiosks call it over the store network' while naming no firewall policy, security group, private link or service-mesh rule governing which store-network hosts may reach the submission interface on df-001. Both are severity medium, both name cmp-001 and df-001, and their requested-evidence lists ask for the same three artifacts: a network or deployment description identifying the boundary, firewall or security-group policy showing which sources may reach the submission port, and a statement that access is restricted to the named kiosk workloads. gap-025 is a third instance of the same request, and gap-011 (read interface on df-002) and gap-018 (reachability from within the operations subnet) are adjacent facets of the identical silence in the same ten-line note.",
+        "rationale": "gap-020 asks for nothing gap-002 does not already ask for, and both would be answered by one firewall or security-group configuration. Left separate, a single silence in evd-001 is counted five times across the gap set, which downstream reads as five distinct deficiencies in network segmentation rather than one unanswered question. Merging preserves the request while keeping the count of evidence requests equal to the number of artifacts a person would actually have to supply.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-025",
+        "critique_type": "duplicate",
+        "description": "gap-025 states the same undocumented fact as gap-002 and gap-020: evd-001 records cmp-001's placement in the operations subnet and that kiosks call it over the store network, and names no mechanism enforcing which hosts may cross to the submission interface on df-001. Same single evidence reference, same severity, same component, same flow, and requested evidence that repeats gap-002's boundary description and permitted-workload items. Its only distinct request is 'a statement of what else in the operations subnet is reachable from the store network', which is one additional line on the same artifact rather than a separate question. Its links to cmp-002 and thr-006 should be carried into whichever gap survives so that the other threat's chain does not lose the request.",
+        "rationale": "Three gaps asking one operator for one firewall configuration is redundancy the reviewer pays for, not coverage. The distinct clause is worth keeping, but it belongs inside the consolidated gap rather than as a third standalone request built on the same passage.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "critique_type": "missing_evidence",
+        "description": "map-011 is one of only three mappings in this group with applicability_status 'applicable', and eas-043's counterpart assessment eas-037 rates evd-001 as direct support for that determination and names exactly what is absent: the protocol and TLS configuration used on df-001, and whether the hourly poll on df-002 uses protected transport. No documentation gap in this group records that request. gap-001 covers caller authentication on df-001; gap-002, gap-011, gap-018, gap-020 and gap-025 all cover network reachability. The result is that an applicable requirement over records that evd-001 says carry 'the customer's name, delivery address, and order contents' travelling from the store network into the operations subnet will reach the reviewer as unverified with no evidence request attached, while the reachability question is requested five times. eas-047 leaves map-021 (bounding of triggered work) in the same position, with no gap recording the absent rate limit, queue bound or retry policy.",
+        "rationale": "I am not challenging the unverified status, which is the correct reading of evd-001's silence on protocol, and no conclusion that transit is unprotected is available or wanted. What is missing is the request that would resolve it: the gap objects are the mechanism by which unrecorded facts become questions a person can answer, and this one was not raised even though the assessment identified the exact artifacts. Silence that nobody is asked about stays silent through to the finding stage.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-001",
+        "critique_type": "contradictory_analysis",
+        "description": "gap-001's importance field states that if callers are not authenticated the described injection 'succeeds with no other precondition'. thr-001 itself records four preconditions, two of which are independent of authentication: that controls on the store-network-to-operations-subnet boundary permit a submission from an arbitrary store-network host to reach the service (tb-001, ctx-019), and that no independent check exists by which the fulfillment system could distinguish a stored record that did not originate at a kiosk. gap-002, raised over the same passage, states expressly that 'no negative conclusion about segmentation may be drawn from the silence'. gap-001's importance therefore settles in passing the boundary question that gap-002 records as undetermined, and does so on the basis of evd-001, which describes only placement and the fact that kiosks call the service over the store network.",
+        "rationale": "The high severity is not what I am challenging: authentication on df-001 is the pivotal unknown, and map-006, map-022 and map-023 all turn on it. The wording is what carries risk. 'Succeeds with no other precondition' reads as exploitability established, and if it flows into a finding it converts two unrecorded facts into assumed-open conditions, which is the reading thr-001 and gap-002 both deliberately avoid. Rewording the importance to state that absent authentication is necessary but not by itself sufficient on this material would keep gap-001 consistent with the threat it supports.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "call_sha256": "c2729b1a0b9705b8ba4b51b26cfc50462f436402f99cb597589ee09266a44365"
+}

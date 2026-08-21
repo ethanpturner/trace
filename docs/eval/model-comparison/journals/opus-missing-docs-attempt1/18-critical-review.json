@@ -1,0 +1,65 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 14096,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 27049,
+    "estimated_cost": "0.52226625",
+    "duration_seconds": 183.24683974997606
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-009",
+        "critique_type": "duplicate",
+        "description": "gap-009 records that the enforcing mechanism for the sync service's network reachability is unestablished, citing evd-001. gap-005, gap-017, gap-022 and gap-027 record the same fact from the same single passage and request substantively the same artefacts (firewall or security-group policy for the operations subnet, a statement of which sources may reach the service, whether the interface is reachable from positions other than the store network). Five separate gap records will produce five separate evidence requests that one document would answer at once. Consolidation should preserve the one request that is unique to gap-009 and appears in none of the others: the network location and operating party of the fulfillment system (cmp-003).",
+        "rationale": "evd-001 is a ten-line note whose only reachability content is 'The service runs on a virtual machine in the operations subnet. The kiosks call it over the store network.' Every one of the five gaps derives from that one sentence pair and no other passage exists to distinguish them; the differences between them are which threat cited them, not what evidence they need. Merging reduces reviewer and evidence-owner effort without losing any distinct question, provided the fulfillment-system ownership request survives.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-009",
+        "critique_type": "missing_evidence",
+        "description": "gap-009's importance statement addresses only the first of thr-003's four preconditions ('the set of parties able to reach the read path cannot be bounded'), and its requested_evidence list is entirely network-topology material. Preconditions two, three and four -- what the read path requires of a caller on df-002, whether a poll returns the accumulated set or a set scoped to a verified caller, and whether records are removed after collection -- have no documentation gap anywhere in this group, although eas-078, eas-084, eas-085 and eas-190 each name exactly those items as missing evidence, and map-052, map-054, map-058, map-060 and map-064 all rest on them. eas-083 likewise names at-rest and in-transit protection of the stored records as unevidenced with no gap recording it.",
+        "rationale": "The threat's decisive unknown is not reachability but what the service requires of a reader: evd-001 says only that the service 'stores them for the fulfillment system to read' and that 'the fulfillment system polls it hourly', and says nothing about caller authentication, response scoping, or deletion after collection. If the only evidence request that leaves this chain is a firewall policy, the answer will not move any of the five mappings that hinge on the other three preconditions, and the threat will remain at low confidence for the same reasons after the request is satisfied.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "critique_type": "unsupported_claim",
+        "description": "map-057 suppresses its negative encryption conclusion by citing the common_false_positives entry 'absent encryption detail for a managed service that encrypts by default'. That entry's premise is not established here and the mapping's own text contradicts it: evd-001 states 'The service runs on a virtual machine in the operations subnet', which is a self-managed deployment, and no managed data store or platform service is named anywhere in the note. The correct and sufficient ground for declining the conclusion is the second half of the same sentence -- silence about transport and storage cannot support a negative finding -- which stands on its own. The recorded satisfaction_status of unverified is right and should not change; only the suppression rationale is at fault.",
+        "rationale": "Citing a managed-service-defaults pattern against a VM-hosted service invites a downstream reader to treat encryption as probably present by platform default, when nothing in evd-001 supports that either way. That converts an honest unknown into an implied positive, which is the mirror image of the failure the false-positive catalog exists to prevent. Re-grounding the suppression on silence alone keeps the same outcome with a defensible audit trail.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "critique_type": "missing_evidence",
+        "description": "ctl-001 is the only control cited anywhere in this group, and map-063 credits it for req-NET-001 on a threat whose entire attack path runs over the read interface the fulfillment system polls (df-002). But ctl-001's description and both of its limitations are written exclusively about the ingest interface ('nothing is recorded about what enforces or restricts reachability of the ingest interface'; 'whether the ingest interface is reachable from positions other than the store network'), and eas-026's missing_evidence list likewise asks only 'what may reach the ingest interface of cmp-001'. Nothing in the control record states whether its coverage boundary was examined for the read path at all.",
+        "rationale": "The underlying fact in evd-001 -- 'The service runs on a virtual machine in the operations subnet' -- is host-level and does bear on both interfaces, so crediting the control here is not wrong in substance. The defect is that the recorded coverage boundary names only one of the two flows evd-001 describes ('The kiosks call it over the store network. The fulfillment system polls it hourly.'), so a reviewer reading map-063 through to ctl-001 could take read-path reachability as considered when the record shows it was not. Extending the limitations and the evidence request to name df-002 explicitly would make the coverage boundary match the use.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  },
+  "call_sha256": "931352b5a7e2494e4d4cbb570175238918500f339a98c9a559255e6b532d2dcd"
+}

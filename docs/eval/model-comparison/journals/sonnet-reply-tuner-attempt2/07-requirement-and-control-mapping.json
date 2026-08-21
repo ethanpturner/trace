@@ -1,0 +1,140 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 17120,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 15374,
+    "estimated_cost": "0.3252825",
+    "duration_seconds": 172.6540872079786
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "training-store-write-governance",
+        "name": "Training store write access restricted to the exporter job identity",
+        "description": "The transcript exporter is the only writer to the training store; its job identity is the only principal granted write access to the bucket, through the platform's access policy.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "Governs who may write to the training store but does not describe any review or validation of transcript content before it becomes training data."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [
+          "training-store-write-governance"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The tuning job (cmp-003) fine-tunes the vendor's base model on the training store's contents (evd-002), which satisfies this requirement's applicable condition that a model is fine-tuned on collected data. The threat's description names poisoned training data as one possible cause of the compromised artifact this threat concerns, so how the training corpus's write path is governed bears on that path into the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Tuned model artifacts are produced weekly and served to agents (evd-002, evd-004), meeting this requirement's applicable condition. This requirement bears directly on the threat: it asks whether a served artifact can be traced to the training data and base model it came from, which is exactly the traceability that would matter if a bad promotion under this threat needed to be diagnosed or rolled back.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [
+          "The date-based artifact name is the only identifying metadata recorded, because no passage describes any additional field; this is inferred from the naming scheme being the only mechanism documented, not from silence alone."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat's impact concerns a compromised artifact shaping suggested replies; whether that ultimately reaches a customer unreviewed is what req-AI-002 governs. Documentation states agents see each suggested reply beside its ticket and may edit or discard it before any reply is sent to a customer (evd-001), which matches this requirement's non-applicable condition that a human approves each publication and this is documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "No described validation, testing, or approval step before a new artifact is served",
+        "description": "The documentation states that the tuning job writes each week's artifact to the artifact bucket by date and that the reply service serves whichever artifact is most recent (evd-004), but no passage states whether any validation, testing, or approval occurs between those two events.",
+        "importance": "Without this fact established, it cannot be determined whether a defective or compromised weekly artifact would be caught before it is served to every agent for a full cycle, which is the mechanism this threat describes.",
+        "related_object_ids": [
+          "ast-002",
+          "cmp-003",
+          "cmp-004",
+          "cmp-005"
+        ],
+        "requested_evidence": [
+          "A description of any staging, testing, or approval step applied to a newly written artifact before it is served",
+          "A description of any rollback procedure if a served artifact is later found defective or compromised"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog addresses whether a newly produced model artifact is validated, tested, or approved before being promoted to serve production traffic. The closest requirements address recording an artifact's lineage after the fact, or gating code/configuration/infrastructure changes before integration -- neither covers a gate on promoting a trained model artifact itself, which is the exact mechanism this threat describes: automatic promotion by recency with no described intervening check.",
+        "suggested_category": "model_release_validation",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TRAIN-003",
+            "why_not": "Requires artifacts to carry recorded lineage (base model and training-data version) so an affected artifact can be traced after an incident, but does not require any validation, testing, or approval before an artifact is promoted to serve traffic in the first place."
+          },
+          {
+            "requirement_id": "req-CODEGEN-002",
+            "why_not": "Requires generated code, configuration, or infrastructure definitions to pass the same review gates as human-authored changes before integration, but its applicable_conditions are scoped to code, configuration, and infrastructure artifacts; a fine-tuned model weight file is none of those, so it does not reach the artifact-promotion decision this threat concerns."
+          },
+          {
+            "requirement_id": "req-AGENT-002",
+            "why_not": "Requires a human approval gate before high-impact autonomous agent actions, but its applicable_conditions concern actions an agent executes with external or irreversible effects, not the automated selection and serving of a newly trained model artifact by an application service."
+          }
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "9ef6321a3035be6feddd0e167e271f3989e8248f7059ba374620aa1b7b59c5e6"
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 17598,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 28943,
+    "estimated_cost": "0.62165375",
+    "duration_seconds": 226.93822441692464
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-020",
+        "critique_type": "duplicate",
+        "description": "gap-020 and gap-025 record the same missing fact about the same interface: what enforces which hosts may reach the sync service submission interface (df-001) across the store-network to operations-subnet boundary. Both cite evd-001 alone, both name cmp-001, df-001 and ctl-001, and their requested-evidence lists ask for the same artefacts \u2014 a network or deployment description of the boundary around the operations subnet, and a statement of which named workloads may reach the submission interface. gap-025 additionally carries cmp-002 and thr-006, so it is the more complete of the two.",
+        "rationale": "evd-001 states only 'The service runs on a virtual machine in the operations subnet' and 'The kiosks call it over the store network'; no enforcing mechanism appears in the passage. One missing artefact (the segmentation or security-group policy for that subnet) is what both gaps turn on, and gap-011 and gap-018 ask for that same configuration from two further angles, so this package puts four separate requests to a reviewer for one document set. Merging gap-020 into gap-025 loses no requested fact and consolidates where the eventual answer will be recorded.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-011",
+        "critique_type": "duplicate",
+        "description": "gap-011 and gap-018 both concern reachability of the same host \u2014 the virtual machine running cmp-001 in the operations subnet \u2014 both cite evd-001 and ctl-001 as their only basis, and both request firewall or security-group configuration for the operations subnet plus a statement of which named workloads may reach the component. gap-011 frames this around the read interface (df-002) and gap-018 around lateral movement from another host in the same subnet, but the artefact that would settle either is the same one.",
+        "rationale": "The two gaps differ in framing rather than in the evidence they ask for, and a reviewer answering one will answer the other. One request in gap-011 is genuinely distinct \u2014 the network location the fulfillment system's poll originates from and whether it crosses an operator-controlled boundary \u2014 and must survive any merge rather than being dropped with the record. Consolidating avoids two partial answers to one segmentation question, both anchored to the single sentence in evd-001 that states placement without stating enforcement.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "critique_type": "unsupported_claim",
+        "description": "map-062 records req-DATA-002 as applicable with confidence high and grounds the applicable condition \u2014 'the system retains a copy of customer data after processing completes' \u2014 on the reasoning that 'nothing establishes that records are removed once read'. evd-001 says only that the service 'stores them for the fulfillment system to read' and that 'The fulfillment system polls it hourly'. It does not say whether a record survives a successful poll, so the condition is reached from the absence of a deletion statement rather than from anything written. The mapping's assumptions list is empty, unlike map-055, map-058 and map-063, which declare weaker assumptions than this one.",
+        "rationale": "gap-017 records the same fact as undetermined ('does not say whether records are removed after a successful poll, expired on a schedule, or retained indefinitely'), which is the honest reading of the passage; map-062 resolves it in one direction, then carries high confidence and no declared assumption, so a downstream reader cannot see that applicability rests on silence. eas-088 noted the evidence problem but left the status, the confidence and the empty assumptions list untouched and recommended continue, so this has not already been handled. The challenge is not to pursuing retention \u2014 that is worth asking about \u2014 but to applicability being recorded as settled: declaring the retention assumption explicitly, or recording the mapping as conditionally applicable, preserves the substance and makes the reasoning checkable.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "critique_type": "missing_precondition",
+        "description": "The tampering half of thr-004 \u2014 attack path step four and the impact clause 'silent alteration or deletion of records before the fulfillment system reads them, corrupting what is delivered and to whom' \u2014 depends on the fulfillment system acting on altered records without detecting the change. The threat's preconditions enumerate four unestablished facts (storage mechanism, record contents, administrative access, at-rest protection and retention) but not this one, and no documentation gap in this group requests evidence about validation, reconciliation or integrity checking on the read side (df-002). evd-001 says only 'The fulfillment system polls it hourly'.",
+        "rationale": "The information-disclosure half of the threat stands on the two premises evd-001 establishes directly. The integrity half asserts a downstream consequence that turns on the fulfillment system's behaviour, which the material does not describe either way, and the threat is otherwise scrupulous about listing exactly this kind of unestablished dependency as a precondition. Recording it in the same form as the others \u2014 unestablished rather than absent \u2014 holds both halves of the impact statement to the same evidential standard and names a further fact that would bound the tampering consequence.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  },
+  "call_sha256": "b2023064af6c0336af238fc35cb9b094888585fdb888f2876d3318898732cd7a"
+}

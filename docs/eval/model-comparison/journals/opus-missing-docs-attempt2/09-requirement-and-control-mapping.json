@@ -1,0 +1,504 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 19565,
+    "cache_read_tokens": 14308,
+    "cache_creation_tokens": 15118,
+    "estimated_cost": "0.5915765",
+    "duration_seconds": 226.51358075009193
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The sync service is a component holding order records on behalf of the system and is not described as a public interface, and this threat's final step is a compromised kiosk probing what else in the operations subnet answers from the kiosk's permitted network position. The applicable condition that a component holds data and may rely on network position holds: evd-001 states the service runs on a VM in the operations subnet and that kiosks call it over the store network, and no caller authentication is established.",
+        "suppressed_conclusion": "That reachability of the sync service is unrestricted, i.e. that arbitrary store-network hosts can reach the submission interface and that no segmentation control exists.",
+        "suppressed_by": "req-NET-001 common_false_positives: 'absent detail of the enforcing mechanism, where placement itself is stated' \u2014 evd-001 states the operations-subnet placement (recorded as ctl-001) without describing the enforcing firewall, security group, or private link.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The sync service exposes an endpoint that accepts order submissions delivered from outside its trust boundary (df-001 crosses tb-001 from the store network) and each submission causes a state change, since evd-001 states the records are stored for the fulfillment system to read. That matches the applicable condition that an inbound event triggers processing or state change; the threat turns precisely on whether the service can tell a genuine submission from a fabricated one.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Kiosk submissions are treated as inbound events from an event source outside the receiving component's trust boundary; the kiosks are the operator's own devices rather than a third-party platform, but their ownership and management are not established."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Inbound submission processing is state-changing \u2014 evd-001 says records are stored and then read by the fulfillment system \u2014 so the applicable condition holds, and the threat includes re-submission of records under a genuine kiosk identity. No non-applicable condition holds: nothing in the material documents that repeated processing of the same submission is idempotent.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "evd-001 states that order records carry customer names, delivery addresses and order contents, and that they are transmitted from kiosks over the store network and stored by the sync service, so the applicable condition that the system stores and transmits confidential data holds. Transit protection bears on this threat because the submission path crosses tb-001 and altered records are its stated impact.",
+        "suppressed_conclusion": "That order records are transmitted and stored without encryption.",
+        "suppressed_by": "req-DATA-001 common_false_positives: 'absent application-implemented cryptography where managed services provide it' \u2014 evd-001 describes only deployment location and says nothing either way about transport or storage encryption.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "evd-001 states that the sync service stores order records for the fulfillment system to poll, so the system retains a copy of customer data after receiving it and the non-applicable condition 'processed only in memory and never persisted' does not hold. Retention bears on this threat because records injected under a genuine kiosk identity persist for as long as the store retains them.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition that the system stores customer data holds on evd-001, which records order records being stored by the sync service. This threat makes the removal path material: fabricated or altered records under a genuine kiosk identity have to be removable from the primary store and from anything the fulfillment system has already taken.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition that the system handles restricted or confidential data holds \u2014 evd-001 records customer names and delivery addresses \u2014 and this threat introduces attacker-chosen record content submitted through a compromised kiosk, which would reach any log that captures submission payloads. The non-applicable condition 'handles only public data' does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if the sync service or the kiosk fleet exposes an operator interface through which privileged action on order records is possible; evd-001 describes only deployment and data flow and establishes neither that such an interface exists nor that it does not. The threat's attribution impact concerns records of data-plane submissions rather than of operator actions, so engagement rests entirely on that unestablished fact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if the system exposes an administrative or operator interface able to reach customer order records \u2014 for example on the sync service VM or for managing the kiosk fleet. evd-001 says nothing about operator access, so neither the applicable condition nor the non-applicable condition 'no administrative interface exists' can be established, and the threat's first step (administrative access to a kiosk) concerns a field device rather than an operator interface over customer data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if authentication on the submission path is delegated to an external identity provider; df-001's authentication is recorded as unknown and evd-001 names no provider, so neither the applicable condition (delegation to an external provider) nor the non-applicable condition (the system maintains its own credential store) can be established. The threat depends on the service treating a kiosk-position caller as genuine, which makes the identity of whoever owns that authentication decision the question here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if privileged human access exists to the sync service VM or to kiosk management \u2014 the threat's attack path posits remote administrative access to a kiosk \u2014 but evd-001 establishes no privileged interface and no factor policy owner, so the applicable conditions cannot be tested. Device-to-service submission on df-001 is workload traffic and is not itself in scope of a multi-factor expectation.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if the kiosks and the stored order records span more than one customer organization; evd-001 describes one operator's field kiosks, one sync service and one fulfillment system, and the word 'customer' in the material denotes an order recipient rather than a tenant. Whether stores or kiosks correspond to distinct organizations is not established, so the non-applicable condition 'the system serves a single tenant' cannot be confirmed either. If they do, this threat's injection of records under one kiosk's identity raises the question of whether submissions are constrained to that kiosk's scope.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies only if stored order records belong to more than one customer organization sharing the sync service's storage. evd-001 describes a single store of records read by one fulfillment system and does not establish multiple organizations, so neither the applicable condition nor the non-applicable single-tenant condition can be confirmed; per-tenant separation of stored artifacts is otherwise not engaged by a kiosk-identity injection threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if the system holds a credential of its own \u2014 in particular whatever a kiosk presents to call the sync service, which the threat assumes can be extracted from a device taken over in the field. evd-001 says nothing about credentials or a secret store, so neither the applicable condition (a credential authenticating to another party) nor the non-applicable condition (no credentials, or short-lived workload identity only) can be established.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if the sync service VM or the kiosk software is delivered by an automated pipeline or incorporates third-party components; evd-001 describes only that the service runs on a virtual machine and establishes neither a pipeline nor the non-applicable condition that deployment is manual and performed by named operators. Its bearing on this threat is limited to how kiosk software is provisioned, since the attack path involves a device being re-flashed rather than the server build path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies if the fulfillment system that polls the sync service is operated by an external party, since order records containing names and addresses would then cross a trust boundary. evd-001 states the fulfillment system polls hourly but records nothing about its ownership or location, so the applicable condition cannot be tested; this threat reaches cmp-003 because injected records propagate to whoever consumes them.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Submissions are work the system does not originate, which matches one applicable condition, and a kiosk under attacker control can trigger that work repeatedly. Whether the processing consumes a metered external service or otherwise capacity-limited resource is not established by evd-001, so the non-applicable condition 'processing consumes no metered or capacity-limited resource' can be neither confirmed nor excluded.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system holds no external delegated access' holds on the material available: evd-001 describes kiosks submitting to the sync service and a fulfillment system polling it, with no installation on, or delegated grant from, an external platform, and this threat's path involves no such grant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds: evd-001 describes the sync service as the recipient and holder of records, polled by the fulfillment system, with no outbound access to a customer resource on an external platform. The related question of how long a kiosk's own credential remains valid is raised under req-SECRET-001 and the catalog-gap candidate rather than here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system passes no content to a model' holds on the approved context: evd-001 describes kiosks, a sync service on a virtual machine and a polling fulfillment system, and no model appears in any component, data flow or step of this threat's attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output exists to publish: the approved context contains no model, and this threat concerns fabricated order records submitted from a kiosk, not model-generated content reaching an external destination. The applicable condition 'model output is published to a destination outside the system' does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition 'customer content is sent to an external model provider' does not hold: evd-001 records order records moving from kiosks to the sync service and onward to a polling fulfillment system, and no model provider appears in the context or in this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern rendering or submitting model output, and there is no model in the approved context; the records this threat manipulates are kiosk-submitted data consumed by the fulfillment system, not model output rendered into an interface or markup.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "How the sync service authenticates kiosk submissions is not established",
+        "description": "evd-001 describes kiosks calling the sync service over the store network but records nothing about how the service establishes that a submission came from a legitimate kiosk, nor whether a repeated submission is detected. df-001's authentication is recorded as unknown. Trace cannot determine whether an authenticity control exists on this path, and this is not a statement that one is absent.",
+        "importance": "This threat turns on whether a caller in a kiosk's position is treated as genuine; without knowing what, if anything, the service verifies, neither req-WEBHOOK-001 nor req-WEBHOOK-002 nor req-AUTH-001 can be resolved.",
+        "related_object_ids": [
+          "df-001",
+          "cmp-001",
+          "cmp-002",
+          "thr-006"
+        ],
+        "requested_evidence": [
+          "A statement of whether kiosk submissions are cryptographically authenticated (for example signature verification or mutually authenticated transport) rather than only structurally validated",
+          "Sync service endpoint or receiver configuration showing the verification step",
+          "A statement of whether duplicate submissions are detected, for example by persisting a submission identifier or by idempotent downstream processing"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Enforcement of the store-network to operations-subnet boundary is not established",
+        "description": "evd-001 states the sync service runs on a virtual machine in the operations subnet and that kiosks call it over the store network (recorded as ctl-001), but names no firewall policy, security group, private link or service mesh that constrains which hosts may reach the submission interface, and says nothing about what else in the operations subnet is reachable from a kiosk's position. Trace cannot determine whether such enforcement exists.",
+        "importance": "The final step of this threat is lateral probing from a kiosk's permitted network position; whether the boundary admits only the submission interface, and only from named kiosks, decides how far a device takeover reaches.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-002",
+          "df-001",
+          "ctl-001",
+          "thr-006"
+        ],
+        "requested_evidence": [
+          "A network or deployment description identifying the boundary between the store network and the operations subnet and the mechanism that enforces it",
+          "A statement of which workloads or addresses are permitted to reach the sync service submission interface",
+          "A statement of what else in the operations subnet is reachable from the store network"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Ownership, management and credential custody of the field kiosks are not established",
+        "description": "evd-001 says only that kiosks in the field call the sync service. It does not record how many there are, who owns or manages them, how they are hardened or physically protected, or what credential or configuration a kiosk holds in order to make the call. Trace cannot determine what an attacker gains by taking over a device.",
+        "importance": "The whole of this threat's precondition set rests on these facts; they also determine whether req-SECRET-001 is engaged and whether a compromised device's access can be revoked without touching every other kiosk.",
+        "related_object_ids": [
+          "cmp-002",
+          "df-001",
+          "thr-006"
+        ],
+        "requested_evidence": [
+          "A statement of who owns and manages the kiosk fleet and how devices are provisioned and updated",
+          "A description of any credential or key material resident on a kiosk, where it is stored on the device, and its lifetime",
+          "A statement of how an individual kiosk's access is revoked if the device is lost, stolen or re-flashed"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Protection, retention and removal of stored order records are not established",
+        "description": "evd-001 records that order records carrying customer names, delivery addresses and order contents are transmitted from kiosks and stored by the sync service, but states nothing about transport or storage encryption, how long records are retained, or how records can be removed. Trace cannot determine whether these controls exist; the platform or virtual machine configuration may provide some of them.",
+        "importance": "Records injected under a genuine kiosk identity persist for as long as the store retains them and propagate to the fulfillment system; the retention and removal path determines how a tampered record set is corrected, and the transport question bears on whether submissions can be altered in flight across tb-001.",
+        "related_object_ids": [
+          "ast-001",
+          "cmp-001",
+          "df-001",
+          "thr-006"
+        ],
+        "requested_evidence": [
+          "A statement of whether df-001 uses encrypted transport and which party provides it",
+          "A statement of whether stored order records are encrypted at rest, including any protection inherited from the hosting platform",
+          "The retention period applied to stored order records and how it is enforced",
+          "A description of how records can be deleted from the sync service store and from any derived copy held by the fulfillment system"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog has no requirement covering the trustworthiness of an operator-deployed endpoint device that sits outside the operator's controlled premises and yet holds a legitimate credential and network position \u2014 that is, physical protection, tamper resistance, fleet inventory, hardening baseline, software provenance on the device, and per-device revocation. Every control in the catalog assumes the authorized caller is honest; evd-001 describes field kiosks whose ownership, count, management and physical protection are unrecorded, and this threat consists entirely of an authorized caller ceasing to be honest.",
+        "suggested_category": "endpoint_device_trust",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "Constrains which components may reach an internal component; it says nothing about whether a device already permitted to reach it is still under the operator's control."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "Governs custody of the system's credentials in a managed secret store within the system's own environment; it does not address key material that must reside on a device in an unattended physical location."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "Covers operator interfaces into the system and the reach of operator privilege, not the physical or administrative security of a field-deployed client device."
+          },
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "Covers the build and deployment path for the system's own components and third-party build inputs; it does not reach device firmware provenance or re-flashing of deployed hardware."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "Asks that an inbound event be shown to originate from the expected sender; a submission from a compromised kiosk satisfies exactly that check, which is why this threat survives it."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "0838d6491f40c39f659353a105e900757618e9c608ff97bd91ca347f12b26c7c"
+}

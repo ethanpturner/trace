@@ -1,0 +1,53 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 17807,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 26272,
+    "estimated_cost": "0.610185",
+    "duration_seconds": 224.6491465830477
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "critique_type": "missing_precondition",
+        "description": "The exhaustion limb of the attack path \u2014 step 2's 'sustained submissions that fill the store or the host's disk' \u2014 has no matching precondition. The four preconditions listed cover the interval structure, the absence of established replay/recovery, the absence of established monitoring, and the network position needed to reach the service. None declares what the flooding limb actually requires: that the record store is capacity-bounded on the host and has no quota, rate limit, admission control, or removal-after-read lifecycle that would bound submission-driven growth.",
+        "rationale": "evd-001 says only that the service 'receives customer order records from the field kiosks and stores them for the fulfillment system to read' and that it 'runs on a virtual machine in the operations subnet'. It describes the store not at all \u2014 no medium, no capacity, no lifecycle, no admission control. map-079 declares precisely this as an assumption ('Assumed that stored order records consume persistent capacity on the host, since evd-001 says the service stores records but does not describe the store'), so the assumption is on record downstream in a mapping but absent from the threat that depends on it. None of gap-011, gap-018, gap-020 or gap-025 requests any documentation of the store; all four request network-reachability artifacts, so nothing in this group will test the assumption. The threat is otherwise scrupulous about naming its unestablished facts, which is what makes the omission consequential: the deliberate-flooding path currently reads as better founded than the accidental-failure path it is bundled with.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-020",
+        "critique_type": "duplicate",
+        "description": "gap-020 requests firewall or security-group policy and a boundary description for the virtual machine hosting cmp-001. gap-011, gap-018 and gap-025 request the same artifacts about the same host, each citing evd-001 alone \u2014 gap-011 for the read interface, gap-018 for reachability from another host inside the operations subnet, gap-025 for the store-network-to-operations-subnet boundary. One network or deployment description plus the security-group configuration for that host would close all four.",
+        "rationale": "The requested_evidence lists overlap almost verbatim across the four ('Firewall or security-group configuration for the operations subnet host', 'A deployment or network description identifying the boundary', 'A statement of which workloads may reach the interface'), and all four rest on the same single sentence in evd-001: 'The service runs on a virtual machine in the operations subnet. The kiosks call it over the store network.' Four separate medium-severity gaps against one undocumented fact inflates the apparent number of unverifiable areas and sends whoever must answer them four requests for one document. Merging into a single gap covering reachability of the host \u2014 retaining the distinct sub-questions of submission path, read path, and intra-subnet lateral reach as parts of it \u2014 asks once without losing any question. Which record survives the merge is a reviewer's decision; gap-020 is named as subject only because it is the one raised on this threat's chain.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-085",
+        "critique_type": "contradictory_analysis",
+        "description": "map-085 reaches not_applicable on the ground that 'the threat is that records vanish before the fulfillment system's next poll', which characterises only one of thr-005's two limbs. The attack path also includes 'sustained submissions that fill the store or the host's disk', and map-079 in this same group accepts that stored records consume capacity-limited storage on the host and treats submission-driven accumulation as engaged. A requirement bounding how long working copies of customer data are kept governs whether records accumulate at cmp-001 or are removed once read, which is the lifecycle the accumulation limb turns on.",
+        "rationale": "Two mappings in this group read the same threat differently: map-079 treats storage consumption at cmp-001 as an engaged condition, while map-085 restates the threat as loss-before-poll only and never mentions the exhaustion step. eas-111 endorsed map-085 with 'continue' while recording in its own missing_evidence that 'The thr-005 threat description' was not supplied to it, so this characterisation has not yet been checked against the threat text by any step before this one. evd-001 establishes that records are stored for the fulfillment system to read and polled hourly, but says nothing about whether records are removed after retrieval, so the lifecycle question is open rather than settled by the cited material. The determination may survive re-examination \u2014 a maximum-retention bound is not a durability guarantee, and accumulation is already carried by map-079 \u2014 but the applicability reason as written misstates the threat and should be restated or the determination reconsidered.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  },
+  "call_sha256": "c4e5bd1fa7f47e964937918e3fcd02534086e8dd198d1d22c55f9fda675681a1"
+}

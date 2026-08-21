@@ -1,0 +1,488 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 15544,
+    "cache_read_tokens": 14308,
+    "cache_creation_tokens": 15204,
+    "estimated_cost": "0.491589",
+    "duration_seconds": 174.89455729199108
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The requirement's applicable condition \"the system stores or transmits confidential or restricted data\" holds: the note states that order records carry the customer's name, delivery address, and order contents and that these travel from the kiosks to the service and on to the fulfillment system (evd-001). This threat is precisely about those records being read or altered on those paths, so transport protection is the control the requirement asks about.",
+        "suppressed_conclusion": "That sensitive data is transmitted unencrypted on df-001 and df-002 and that encryption in transit is therefore absent.",
+        "suppressed_by": "req-DATA-001 common_false_positives entry \"absent encryption detail for a managed service that encrypts by default\" \u2014 the note (evd-001) is silent on transport, and silence about transport protection that a platform or default configuration commonly supplies is not evidence of its absence.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that the personal data in the records (name, delivery address) is at least confidential in classification; the note states no classification."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition \"the component ... holds data or work on behalf of the system\" and \"relies on network position\" is engaged: the sync service stores order records for later retrieval and is reached over the store network by the kiosks and by an hourly poll from the fulfillment system (evd-001), with no caller authentication described. This threat turns on an adversary occupying a network position on those paths, which is exactly what the requirement's reachability constraint addresses.",
+        "suppressed_conclusion": "That the sync service's ingest interface is reachable from an untrusted network and that reachability restriction is therefore absent or inadequate.",
+        "suppressed_by": "req-NET-001 common_false_positives entry \"absent detail of the enforcing mechanism, where placement itself is stated\" \u2014 the note states placement in the operations subnet (evd-001, recorded as ctl-001) and simply does not name the firewall, security-group, or private-link policy enforcing it.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The applicable condition \"customer data is sent to an external provider\" holds only if the fulfillment system is operated outside this system's trust boundary. The note establishes that order records containing personal data are read by the fulfillment system on an hourly poll (evd-001) but states nothing about its ownership or network location, so whether that poll crosses a boundary to another party \u2014 the same uncertainty that makes this threat's path to the fulfillment system unbounded \u2014 cannot be settled.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Applicability assumes the fulfillment system may be third-party operated; if it is a first-party system inside the same trust boundary, the non_applicable condition \"no customer data leaves the system's trust boundary\" would hold instead."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require an administrative or operator interface through which operators act on customer data. This threat's attack path consists solely of an on-path network position between the kiosks, the sync service, and the fulfillment system; no operator interface appears in it, and the note describes none (evd-001). Non-applicability here is scoped to this threat and is not a claim that the system has no administrative interface.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition \"the system passes no content to a model\" holds for this threat: the documented processing is receipt, storage, and retrieval of order records (evd-001), and no model, prompt construction, or analysis of untrusted content features anywhere in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition requires model output published to a destination outside the system. The only outbound flow in this threat is the hourly delivery of stored order records to the fulfillment system (evd-001); no model output exists to validate or publish.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition \"customer content is sent to an external model provider\" does not hold for this threat: the paths under attack carry order records between kiosks, the sync service, and the fulfillment system (evd-001), and no model provider boundary is crossed in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern model output rendered into an interface or submitted as markup. No model output exists in this threat, whose subject is order records in transit on df-001 and df-002 (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern delegation of end-user authentication to an external identity provider. This threat involves no user sign-in: the flows are device-to-service submission and a machine poll (evd-001), and the adversary's position is on the network path rather than at an authentication boundary. Non-applicability is scoped to this threat and asserts nothing about how users elsewhere authenticate.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require administrative access or privileged access crossing an untrusted network. This threat's actor is a passive or on-path observer of order-record traffic, not an authenticating principal, and no privileged interface appears in the note (evd-001) or in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require the system to serve more than one customer organization with data in shared storage. The note describes a single retailer's kiosk-to-fulfillment pipeline (evd-001) with no tenant construct, and in any case this threat is interception on a network path rather than a request escaping its tenant scope.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that the \"customers\" named in the records are the retailer's end customers rather than distinct tenant organizations; the note does not state a tenancy model."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require delegated access held on an external platform on a customer's behalf. Neither flow in this threat involves a delegated grant: the kiosks submit records and the fulfillment system polls for them (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern an automated deployment pipeline and third-party build components. This threat's attack path begins with an on-path network position and does not traverse a build or deployment step; the note records only that the service runs on a virtual machine in the operations subnet (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement governs how long working copies of customer data persist after processing. The exposure in this threat occurs while records are in flight on df-001 and df-002 (evd-001); a retention period neither enlarges nor bounds an on-path attacker's window, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require artifacts from multiple customers sharing a storage system with predictable addressing. This threat concerns records travelling between components, not access to stored objects, and the note describes no multi-organization storage layout (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed the pipeline serves one operating organization; the note states no tenancy model."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Deletion of stored customer data on request does not bear on an adversary reading or altering records as they cross a network path (evd-001). The requirement's applicable conditions concern data at rest across primary and derived stores, which is not the exposure this threat describes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern restricted data reaching application logs or a log platform outside the trust boundary. This threat's disclosure occurs on the wire between kiosks, the service, and the fulfillment system (evd-001); no logging path is part of the attack path and the note mentions none.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require a privileged interface whose operator actions affect customer data or security configuration. The actor in this threat is an on-path network adversary rather than an operator, and no administrative interface appears in the note (evd-001) or in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require the system to hold a credential authenticating it to an external platform or a private signing key. No such credential appears in this threat's attack path, which turns on network position rather than credential custody, and the note records none (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that any transport certificates or keys implied by an as-yet-unestablished transport protection are out of scope for this threat's mapping; if transport protection is later documented, key custody may become engaged."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require the system to access customer resources held on an external platform using platform-issued credentials. Neither documented flow does so: records are pushed to the service and pulled from it (evd-001), and no token lifetime bears on an on-path interception.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern metered external consumption, externally triggered work, and automatic retries. This threat's impact is disclosure and silent alteration of records, not unbounded consumption, and the note describes no metered dependency or retry behaviour (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition requires an endpoint accepting events delivered by an external platform. The submissions in df-001 come from the operator's own field kiosks (cmp-002) over the store network rather than from a third-party platform (evd-001), and the fulfillment flow is polled by the consumer, which matches the non_applicable condition \"inbound events are polled by the system rather than delivered to it\" for df-002. The related but distinct question of whether the service authenticates its device callers is not covered by this requirement and is raised as a catalog-gap candidate.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay protection presupposes an inbound event channel from an external platform, which this threat does not involve: kiosk submissions are first-party device traffic and the fulfillment system polls (evd-001). The threat's tampering vector is in-flight modification of a single message rather than re-submission of a previously valid event.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Transport protection on the kiosk submission and fulfillment poll paths is not established",
+        "description": "The note states that order records carrying customer name, delivery address, and order contents travel from the kiosks to the sync service over the store network and are read hourly by the fulfillment system (evd-001), but says nothing about the protocol used, whether transport encryption is applied, or which party provides it. Whether either path is protected therefore cannot be determined from the material; this records the inability to verify and asserts nothing about whether protection exists.",
+        "importance": "Transport protection is the control that decides whether this threat's disclosure and in-flight tampering scenarios are possible at all. Until it is established, neither df-001 nor df-002 can be assessed against req-DATA-001, and the personal data carried on both paths cannot be shown to be protected.",
+        "related_object_ids": [
+          "thr-002",
+          "df-001",
+          "df-002",
+          "ast-001",
+          "req-DATA-001"
+        ],
+        "requested_evidence": [
+          "Architecture or deployment documentation stating the protocol used on the kiosk-to-service call and on the fulfillment poll, including whether TLS is required and where it terminates",
+          "A statement of which party provides transport protection where it is inherited from a load balancer, proxy, or managed platform",
+          "Configuration showing whether unencrypted connections to the sync service are refused"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "No enforcing mechanism is described for the sync service's network reachability",
+        "description": "The note records that the sync service runs on a virtual machine in the operations subnet and that the kiosks call it over the store network (evd-001, recorded as ctl-001), but does not describe a firewall policy, security group, private link, or equivalent that constrains which sources may reach the ingest interface. Placement is stated; enforcement is not established.",
+        "importance": "This threat depends on an attacker obtaining an on-path or reachable position relative to the ingest interface. Whether reachability is restricted to the kiosks and the fulfillment system, or merely a matter of subnet convention, determines how exposed that interface is and cannot be judged from the note.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-001",
+          "ctl-001",
+          "req-NET-001"
+        ],
+        "requested_evidence": [
+          "Firewall or security-group policy for the operations subnet showing which sources may reach the sync service",
+          "A network or deployment description identifying the boundary between the store network and the operations subnet",
+          "A statement that access to the ingest interface is restricted to named kiosk workloads and the fulfillment system"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Ownership and network location of the fulfillment system are unestablished",
+        "description": "The note says only that the fulfillment system polls the sync service hourly (evd-001). It does not state who operates that system, where it runs, or how it authenticates. The route the poll response travels therefore cannot be bounded, and whether the hourly flow crosses into another party's trust boundary cannot be determined.",
+        "importance": "This fact decides both the exposure of the poll path in this threat and whether req-TPI-001 applies at all, since a third-party fulfillment operator would make the flow an external transfer of personal data with its own retention and usage questions.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-003",
+          "df-002",
+          "req-TPI-001"
+        ],
+        "requested_evidence": [
+          "A statement of who owns and operates the fulfillment system and in which network it runs",
+          "A data flow description covering the poll path, including any boundary it crosses",
+          "Where the operator is a third party, a summary of the retention and usage terms applying to the order records it retrieves"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog asks whether an ingest endpoint authenticates first-party device clients, or whether submitted records carry authenticity protection the receiver checks. The note records that field kiosks call the sync service over the store network and that the records they submit drive downstream fulfillment (evd-001), but nothing in the catalog obliges the documentation to state how the service establishes that a submission genuinely came from a kiosk. This is the gap that leaves the third precondition of this threat \u2014 that payloads carry no independent integrity protection either endpoint checks \u2014 outside every applicable requirement.",
+        "suggested_category": "device_authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "It covers events delivered by an external platform and frames verification around a platform signature. The kiosks are the operating organization's own field devices inside the system's boundary, not an external platform, so the requirement's applicable conditions do not reach this flow."
+          },
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "It concerns delegation of end-user authentication to an identity provider and the documentation of that delegation. It says nothing about a machine or device client authenticating to a service, and no user sign-in occurs on the kiosk submission path."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "It constrains which network positions can reach a component, not whether the component identifies the caller once reached. A correctly segmented ingest interface can still accept a forged submission from any device already on the store network."
+          },
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "Transport encryption would protect a session in flight but is documented and assessed as a confidentiality control; it does not require the receiver to establish caller identity, and the requirement's statement makes no claim about payload authenticity."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "542d9265c20133af10ccff4998e905f925df90593d233e124f0f4ce187e5e1f2"
+}

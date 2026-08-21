@@ -1,0 +1,492 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 16393,
+    "cache_read_tokens": 14308,
+    "cache_creation_tokens": 14685,
+    "estimated_cost": "0.50957025",
+    "duration_seconds": 190.6951149579836
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement's conditions turn on an operator access path that can reach customer data. evd-001 establishes that the sync service runs on a virtual machine and stores order records containing customer names and addresses, and this threat is entirely about an actor reaching that machine at the operating-system or storage level. Whether an operator or administrative access path to that host exists, and how far it reaches, is not established in the approved context (ctx-025), so applicability rests on that unestablished fact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that a host administered as a virtual machine has some operator access path at the operating-system level; evd-001 states the deployment form but not who administers it or how."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The applicable condition 'the system exposes administrative access' is what this threat depends on: the attack path begins with administrative or operating-system access to the sync service virtual machine (evd-001). Whether such access exists as a named privileged path, and which party enforces any factor policy over it, is not established, so applicability is conditional on that fact rather than settled.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither applicable condition is engaged by this threat: the attack path bypasses the service's kiosk and fulfillment interfaces entirely and operates at the host and storage level, so no end-user authentication decision \u2014 delegated, federated, or local \u2014 stands between the actor and the records. Nothing in evd-001 describes user authentication to the sync service at all.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' appears to hold: evd-001 describes one operator's field kiosks, one sync service, and one fulfillment system, with no separation of distinct customer organizations. The records concern individual retail customers rather than tenant organizations, and this threat's path reads the store directly rather than making a tenant-scoped request.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed single-tenancy from the absence of any organization boundary in the approved context; evd-001 does not state tenancy either way."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system holds no external delegated access' holds on the available evidence: evd-001 describes only kiosks calling the sync service and the fulfillment system polling it, with no external platform on whose behalf the service acts. This threat concerns local host access, not a delegated grant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "unknown",
+        "applicability_reason": "A deployment pipeline holding credentials to the sync service virtual machine would be one route to the host-level access this threat requires, but neither applicable condition ('deployed by an automated pipeline', 'builds incorporate third-party components') nor either non-applicable condition ('deployment is manual and performed by named operators') is established: evd-001 describes the runtime deployment form only and says nothing about how the machine is built or deployed to.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system stores or transmits confidential or restricted data' holds: evd-001 states the sync service stores order records carrying customer names, delivery addresses, and order contents. At-rest protection is precisely what determines whether the storage-level read in this threat's attack path yields readable records.",
+        "suppressed_conclusion": "That at-rest encryption of the order record store is absent or inadequate, on the basis that evd-001 describes the storage of records without describing any protection over them.",
+        "suppressed_by": "req-DATA-001 common_false_positives: 'absent encryption detail for a managed service that encrypts by default' and 'absent application-implemented cryptography where managed services provide it' \u2014 volume or disk encryption inherited from the hosting platform would not be expected to appear in a short service note.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system retains a copy of customer data after processing completes' is engaged: evd-001 states the service stores order records for the fulfillment system to read hourly, and nothing establishes that records are removed once read. The unbounded accumulation this threat describes as 'the whole set the service is holding' is exactly the retention question this requirement asks.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' appears to hold; evd-001 describes a single operator's kiosks and fulfillment system with no distinct customer organizations sharing the store. The bulk read in this threat is not a cross-tenant read but a read of one operator's whole record set at the storage layer.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed single-tenancy from the absence of any organization boundary in the approved context."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither non-applicable condition holds literally, but the requirement's subject \u2014 the ability to remove customer data when a customer or operator requires it \u2014 does not bear on this threat, whose path is an unauthorized read or in-place alteration at the host and storage level. The related concern this threat does raise, that the retained corpus has no established bound, is mapped under req-DATA-002 rather than stretched over this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system handles restricted or confidential data' holds per evd-001 (names, delivery addresses, order contents). It bears on this threat because an actor with host-level access to the virtual machine reaches any local log files as readily as the record store, so order content written to logs would widen the corpus obtained by the same access.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The applicable condition 'operators can act on customer data' is what the tampering half of this threat asserts \u2014 silent alteration or deletion of stored records before the fulfillment poll (df-002). An audit record attributed to an operator is the control that would make such an action detectable. Applicability is conditional because whether a privileged operator interface or path exists over this host is not established (ctx-025).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system uses a data store... that is not itself a public interface' holds: evd-001 describes a record store held by the sync service on a virtual machine, not a public interface. It bears directly on this threat's second entry route, lateral movement from another host in the operations subnet to the machine holding the records.",
+        "suppressed_conclusion": "That network reachability of the sync service and its store is only partially controlled, on the basis that ctl-001 records placement in the operations subnet without naming any firewall policy, security group, private link, or mesh policy that enforces which hosts may reach it.",
+        "suppressed_by": "req-NET-001 common_false_positives: 'absent detail of the enforcing mechanism, where placement itself is stated' \u2014 evd-001 states the placement, so the missing mechanism description does not support a negative conclusion.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "unknown",
+        "applicability_reason": "Host-level access of the kind this threat describes would also expose any credential held on the machine, but neither applicable condition is established: evd-001 does not say whether the sync service holds a credential authenticating it to any external platform, nor whether it holds a signing key. The missing fact is whether such secrets exist at all, so applicability cannot be decided.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds on the available evidence: evd-001 describes only inbound kiosk submissions and an hourly fulfillment poll, with no external platform resource accessed on a customer's behalf. This threat's actor reaches stored records directly and uses no credential of the system's.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data leaves the system's trust boundary' holds on the evidence: evd-001 describes records moving from kiosks to the sync service and out to the fulfillment system, all within the operator's own estate, with no external processor named. This threat concerns disclosure to an actor inside that estate, not a provider relationship.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'processing consumes no metered or capacity-limited resource' holds on the evidence: evd-001 describes record storage and an hourly poll with no metered external service. This threat is a confidentiality and integrity scenario at the storage layer and involves no triggered work or consumption.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's conditions concern an endpoint accepting events from an external platform. This threat's attack path explicitly bypasses the service's kiosk submission interface and acts at the operating-system or storage level, so origin verification of inbound submissions is not a control standing between this actor and the records.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay of a previously valid inbound event is not part of this threat's path; the actor writes to or reads from the store directly rather than re-submitting an event through the kiosk interface. The non-applicable framing of the requirement \u2014 it addresses re-submission of inbound events \u2014 is not engaged here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system passes no content to a model' holds on the approved context: evd-001 describes a kiosk-to-sync-to-fulfillment record path with no model in it. This threat concerns host-level access to stored records, not model input handling.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition 'model output is published to a destination outside the system' cannot hold, since no model produces output anywhere in the approved context (evd-001). The externally visible output in this threat is the record set read by the fulfillment system, not model output.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'only non-sensitive metadata is sent' is beside the point here because no external model provider exists in the approved context at all: evd-001 records no outbound call from the sync service to any provider. This threat's disclosure occurs at the local storage layer.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable conditions concerning rendered model output hold vacuously: no model output exists in the approved context (evd-001), and this threat involves reading and altering stored records rather than rendering anything into an interface or markup.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Storage mechanism and at-rest protection of the order record store are not established",
+        "description": "evd-001 states that the sync service stores customer order records on a virtual machine in the operations subnet, but does not say what the store is (file system, embedded database, attached volume, managed service) or whether any at-rest protection applies to it. Trace cannot determine whether a storage-level read of the machine or a copy of its disk would yield readable records, and therefore cannot determine whether req-DATA-001 is satisfied. This is a determination gap, not a statement that encryption is absent \u2014 volume encryption inherited from the hosting platform would not be expected to appear in a note of this length.",
+        "importance": "The whole impact of thr-004 turns on this: if the records are protected at rest by a mechanism whose keys are not available to an actor holding a disk snapshot, the bulk-disclosure path is materially narrowed. If they are not, host or snapshot access yields the entire corpus in plaintext.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001",
+          "thr-004"
+        ],
+        "requested_evidence": [
+          "Architecture or deployment documentation stating what the record store is and where it resides relative to the virtual machine",
+          "A statement of at-rest protection over that store and which party provides it, including any hosting-platform volume or disk encryption inherited rather than implemented",
+          "Configuration of the storage volume or managed service backing the store"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Administrative access model for the sync service virtual machine is not established",
+        "description": "evd-001 describes the deployment form of cmp-001 but records nothing about who holds operating-system or storage-level access to the machine, how that access is obtained, whether it is separated from ordinary access to the operations subnet, whether a factor policy applies, or which party enforces it. Trace therefore cannot determine whether req-ADMIN-001 or req-AUTH-002 is satisfied, and cannot even settle whether those requirements apply.",
+        "importance": "Every branch of the thr-004 attack path begins with host-level access. Without the access model, neither the likelihood of that first step nor the reach of an operator once they hold it can be assessed, and the recorded likelihood for the threat is undetermined for exactly this reason.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001",
+          "thr-004"
+        ],
+        "requested_evidence": [
+          "Documentation describing the operator access path to the virtual machine and the set of operators who hold it",
+          "A statement of what customer data that access can reach",
+          "Identity provider or organization policy documentation stating which party enforces a factor policy over privileged host access"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Retention period for stored order records is not defined in the available material",
+        "description": "evd-001 states that the service stores order records for the fulfillment system to poll hourly, but does not say whether records are removed after a successful poll, expired on a schedule, or retained indefinitely. Trace cannot determine the size or age of the corpus held on the machine at any moment, and therefore cannot determine whether req-DATA-002 is satisfied.",
+        "importance": "The impact of thr-004 is stated as the whole accumulated set rather than a single order, and no bound on that set is established. A defined and enforced retention period would bound the disclosure directly.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001",
+          "thr-004",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "Operations documentation stating how long order records are held after the fulfillment system reads them",
+          "Any storage lifecycle or scheduled deletion configuration applying to the store",
+          "Any customer-facing statement about how long order data is kept"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Enforcement of network reachability within the operations subnet is not described",
+        "description": "ctl-001 records the stated placement of cmp-001 in the operations subnet from evd-001, but no firewall policy, security group, private link, or service mesh policy is described that would establish which hosts may reach the machine and its store. Trace cannot determine whether an actor who has taken another host in the same subnet is constrained from reaching cmp-001, and so cannot determine whether req-NET-001 is satisfied. Placement is stated, so this is not a conclusion that the component is broadly reachable.",
+        "importance": "Lateral movement from another host in the operations subnet is one of the three entry routes recorded for thr-004, and subnet placement alone does not speak to reachability from within that same subnet.",
+        "related_object_ids": [
+          "cmp-001",
+          "ctl-001",
+          "thr-004"
+        ],
+        "requested_evidence": [
+          "A network or deployment description identifying the boundary around the virtual machine and what enforces it",
+          "A statement that access to the machine and its store is restricted to the named kiosk and fulfillment workloads",
+          "Firewall or security-group configuration for the operations subnet"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Whether order record content reaches application logs on the host is not established",
+        "description": "evd-001 establishes that the service handles customer names, delivery addresses, and order contents, but says nothing about what the service logs, where logs are written, or whether they leave the machine. Trace cannot determine whether restricted content is excluded from log records, and therefore cannot determine whether req-LOG-001 is satisfied.",
+        "importance": "An actor holding the host- or storage-level access assumed by thr-004 reaches local log files by the same means as the record store, so order content in logs would extend the disclosure beyond the store and potentially beyond its retention period.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001",
+          "thr-004"
+        ],
+        "requested_evidence": [
+          "Operations documentation stating what the sync service logs and what is excluded from log records",
+          "A description of the log destination and its owner, including whether logs leave the virtual machine"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "ffdf6c639fe40b1b6bb8be66e3fd8815cb7c49cf5d3ee5f411c8b0d58a17b1ca"
+}

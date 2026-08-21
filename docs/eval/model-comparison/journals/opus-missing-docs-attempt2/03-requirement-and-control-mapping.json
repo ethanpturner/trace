@@ -1,0 +1,242 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 11988,
+    "cache_read_tokens": 14308,
+    "cache_creation_tokens": 14721,
+    "estimated_cost": "0.39967025",
+    "duration_seconds": 145.23939699993934
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The requirement's applicable conditions hold directly for this threat: order records carrying customer name, delivery address and order contents are transmitted from the kiosks to the sync service (evd-001, df-001), and that flow crosses tb-001 from the store network into the operations subnet, a path whose control is not established. The threat is precisely the confidentiality and integrity of that data while in transit.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that the customer name, delivery address and order contents described in evd-001 are at least confidential rather than public data; evd-001 states no classification.",
+          "evd-001 describes deployment and the call path only and says nothing either way about transport protection, so satisfaction is recorded as unverified rather than unmet: silence is not evidence of absence."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The sync service (cmp-001) is an internal service holding customer order records on behalf of the system and is not described as a public interface; it is reached from the store network by the kiosks (evd-001), and the threat turns on whether an arbitrary host occupying a position on that segment can reach the submission interface or the traffic to it. That matches the condition covering an internal component whose callers are trusted by network position.",
+        "suppressed_conclusion": "That the sync service submission interface is reachable from arbitrary store-network hosts and that the network restriction is therefore absent or inadequate.",
+        "suppressed_by": "req-NET-001 common_false_positives: 'absent detail of the enforcing mechanism, where placement itself is stated' \u2014 evd-001 states placement in the operations subnet (recorded as ctl-001) and is simply silent on the enforcing firewall, security-group or private-link policy.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "The sync service is treated as an internal component rather than a public interface, because evd-001 describes its callers as the field kiosks and the fulfillment system only."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require an endpoint that accepts events delivered by an external platform. The inbound path in this threat is df-001, submissions from the operator's own field kiosks (cmp-002), a client-device component of the described architecture rather than a third-party platform; evd-001 describes no platform-delivered events. The related concern \u2014 whether the service establishes that a submission genuinely came from a legitimate kiosk \u2014 is raised as a catalog-gap candidate rather than forced onto this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed the kiosks are part of the same operator's estate rather than a third-party platform; evd-001 does not state who manages them, which is why confidence is low."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement depends on req-WEBHOOK-001's setting of inbound events delivered by an external platform, which does not hold here: df-001 is a first-party kiosk-to-service submission path (evd-001). Replay of platform-delivered events is not the mechanism in this threat, which is passive capture and in-flight modification on the network path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' appears to hold: evd-001 describes one estate of field kiosks feeding one sync service and one fulfillment system, with the 'customers' in question being individual end consumers named on order records rather than distinct customer organizations sharing the system. This threat also concerns interception on the network path, not request-scoped authorization.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Single-tenancy is inferred from evd-001 describing a single fulfillment system reading all stored records; the note does not state the tenancy model, so this reading is low confidence."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern artifacts from multiple customers sharing a storage system in a multi-tenant sense; evd-001 describes a single operator's records stored by one sync service for one fulfillment system, so the non-applicable condition 'the system serves a single tenant' appears to hold. The threat in any case concerns records in transit on df-001, not the separation of stored artifacts.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components, flow and attack path in this threat (cmp-001, cmp-002, df-001) involve no administrative or operator interface: the exposure is a listening position on the store network path carrying kiosk submissions. Whether an administrative interface exists elsewhere in the system is not established by evd-001 and is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system passes no content to a model' holds for the architecture described: evd-001 records a sync service that stores order records for a polling fulfillment system, with no model in the path, and the threat concerns interception of that transfer.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require customer data to be sent to an external provider. The flow at issue in this threat, df-001, runs from kiosks to a sync service on a virtual machine in the operator's own operations subnet (evd-001); no external processor boundary is crossed by the data path this threat describes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Transport protection on the kiosk-to-sync-service flow is not established",
+        "description": "evd-001 states that the kiosks call the sync service over the store network and that order records carry customer name, delivery address and order contents, but says nothing about the protocol used or whether the flow is protected in transit. df-001 records encryption_in_transit as unknown. It cannot be determined from the material whether transport protection exists, who terminates it, or whether a party on the store network path could read or alter records in flight.",
+        "importance": "This is the single fact that decides whether thr-002 is realisable at all. It also governs whether req-DATA-001 can move off unverified for the flow carrying personal data about identifiable customers.",
+        "related_object_ids": [
+          "df-001",
+          "cmp-001",
+          "cmp-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "A statement of the protocol used for df-001 and whether TLS (or equivalent) is applied end to end between kiosk and sync service",
+          "Where transport protection is terminated, and by which party or platform if it is inherited rather than implemented by the service",
+          "Any statement of encryption at rest for the records the sync service stores, and the provider of that protection"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "What restricts reach to the sync service submission interface across the store-network boundary is not established",
+        "description": "evd-001 places the sync service on a virtual machine in the operations subnet and states that kiosks call it over the store network; this is recorded as ctl-001, a stated architectural position. No firewall policy, security group, private link, service mesh or equivalent enforcing mechanism is described, and what separates the store-network segment (tb-001) from the operations subnet is not stated. It therefore cannot be determined which hosts may reach the submission interface.",
+        "importance": "The threat's precondition is an attacker occupying a position on the segment carrying kiosk traffic. Whether the boundary constrains that position, and whether reach to the service is limited to named workloads, decides both the exposure and whether req-NET-001 is met.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-002",
+          "df-001",
+          "tb-001"
+        ],
+        "requested_evidence": [
+          "The network or firewall policy governing traffic from the store network into the operations subnet",
+          "A statement of which hosts or workloads are permitted to reach the sync service submission interface",
+          "A description of how the store network segment is administered and what devices share it"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog asks that a first-party device submitting data to an internal service be authenticated by that service. evd-001 describes field kiosks calling the sync service over the store network with no statement of how the service establishes that a submission came from a legitimate kiosk (df-001 authentication is unknown). Transport protection would prevent reading and modifying records in flight, but would not prevent a rogue device on the same segment from opening its own connection and submitting or overwriting order records that the fulfillment system then acts on.",
+        "suggested_category": "device_authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "Scoped to endpoints accepting events delivered by an external platform, and its mechanisms assume a platform-issued signature or public key. The kiosks are client devices of the same estate, not an external platform, so the requirement does not reach this submission path."
+          },
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "Concerns delegation of end-user authentication to an identity provider and the documenting of that delegation. It says nothing about a machine or device client authenticating itself to an internal service."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "Restricts which components may reach an internal service, but the kiosks legitimately need that reach; a rogue device on the kiosk segment would sit inside the permitted set, so network placement does not answer the sender-authenticity question."
+          },
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "Covers protection of data in transit, which addresses reading and altering records in flight but not the acceptance of records originated by an unauthorised sender."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "b27f130a9890e5b70cc3ad71e045cf5c25992cbc654847837fa15bc4acdb81b6"
+}
