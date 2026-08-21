@@ -9450,3 +9450,74 @@ Tradeoffs:
   fails soft.
 - Two new `ScorecardRow` fields ride feed version 1 additively (DEC-136's precedent): old
   history rows reload with `None` and render dashes.
+
+## DEC-144: A served journal entry is carried forward, and the match is keyed on the request
+
+Date: 2026-08-21
+
+Status: Accepted
+
+Amends: DEC-139
+
+Decision:
+
+**A journal entry served by a re-drive is copied into the active run's journal at serve time,
+and the replay scan matches on the request hash rather than on queue position.** Two halves of
+one defect (#645), both measured by the #332 completion: a re-drive spent its source entries and
+recorded nothing of its own, so a *second* re-drive found the prefix spent and the remainder
+standing against a consumption order that no longer existed — and the front-of-queue scan then
+discarded that remainder one entry at a time while looking for a match. The arms only completed
+because journals were consolidated by hand between generations.
+
+**The carried copy states the purchase, and names itself a copy.** It keeps the `usage` the call
+was bought at — model, tokens, cost, duration — and adds `replayed_from`, the source entry's
+name. Cost is not double-counted, because the two records answer different questions: the ledger
+reads the outcome, which is zero for a replayed call and stays zero (DEC-139, unchanged), while
+the journal envelope records what that response cost the run that paid for it. A copy carries the
+request hash that *matched*, not the one the source held, so a hand-assembled entry with no hash
+— matched on schema alone, the looser contract its author asserted — produces a copy that names
+the exact call it answered, and the next generation replays under the tighter contract.
+
+**Position was never the guarantee; the hash was.** `call_sha256` identifies the request, so an
+entry that carries this call's schema and a different request is simply not this call's answer —
+it is not evidence that the entries behind it are stale. The scan therefore reads the remaining
+entries in order, serves the first whose schema and hash both match, and leaves every entry it
+passes over unspent and in the queue for a later call to claim. A call the journal cannot answer
+goes live. DEC-139's rule is unchanged in substance and stronger in reach: a stale conclusion is
+still never served, and a journal whose inputs moved under it still buys every call.
+
+Why:
+
+- The re-drive promise was "an interrupted phase re-drives without re-spending". It held for one
+  generation. Nothing decided that it should hold only once; the boundary was an artifact of
+  where the writer sat in the wrapper stack.
+- Set-aside-on-mismatch was defensive against the *pop*: with a destructive scan, skipping past a
+  same-schema mismatch could spend an entry a later call needed. A non-destructive scan removes
+  the hazard the defence existed for, and keeps the diagnostic — a diverging entry is named once,
+  and stays unspent.
+- The evaluation harness and the CLI mount the journal identically (#638), so both paths get
+  continuity from one change and the stability protocol (#633) inherits it unrun.
+
+Alternatives Considered:
+
+- Journaling wrapper outside the replay wrapper, so every consumed response is written by one
+  writer (rejected: the copy would carry the replay's zeroed usage, and a promoted journal would
+  understate what its responses cost — the corpus records spend rather than rounding it away)
+- A pointer envelope instead of a copy (rejected: the journal is deliberately shaped as a
+  recording so it doubles as `--response` material; a pointer is a second shape and a second
+  reader)
+- Un-spending the source instead of copying (rejected: an entry answers one call once, within a
+  run as much as across resumes)
+- Leaving order-sensitivity and fixing only continuity (rejected: continuity makes the common
+  case work and leaves the uncommon one silently expensive; the hash already proves the match)
+
+Tradeoffs:
+
+- The journal grows by one copy per replayed call per generation. A three-generation re-drive of
+  a forty-call scenario holds roughly a hundred and twenty entries; `traces/` retention already
+  governs them, and the numbered order is now read from the number rather than the name, because
+  past ninety-nine a lexicographic sort puts `100-` between `10-` and `11-`.
+- A reader of a carried copy sees a purchase it did not make. `replayed_from` is what
+  distinguishes them, and it is the only key that does.
+- The scan is linear in remaining entries per call rather than amortised constant. At journal
+  sizes the corpus produces this is not measurable.

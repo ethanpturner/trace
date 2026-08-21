@@ -248,12 +248,14 @@ def run_scenario(
         if live:
             # The journal mounts exactly as the CLI run commands mount it (DEC-139): the wrapper
             # writes into this assessment's own `traces/journal/` area, and a supplied journal
-            # replays outside-in so a re-driven call is served without being re-journaled while
-            # a fresh one is journaled at the next index. The offline branch mounts nothing —
-            # journaling a recording replay would record responses no provider gave.
-            model = JournalingModel(model, journal_dir(handle.artifacts))
+            # replays outside-in, carrying each served entry forward into that same area so this
+            # run's journal holds its whole consumption order (DEC-144). The offline branch
+            # mounts nothing — journaling a recording replay would record responses no provider
+            # gave.
+            directory = journal_dir(handle.artifacts)
+            model = JournalingModel(model, directory)
             if replay_journal:
-                model = JournalReplayModel(list(replay_journal), model)
+                model = JournalReplayModel(list(replay_journal), model, carry_forward=directory)
         loader = DocumentLoader(handle)
         for path in entry.input_documents(condition):
             loader.load_document(
