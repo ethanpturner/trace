@@ -381,9 +381,15 @@ def test_a_conditional_expectation_is_unreached_without_a_resolution(
     assert "conditional" in rate.notes
 
 
-def test_documentation_gap_precision_matches_through_the_requirement(
+def test_documentation_gap_recall_counts_the_expected_side_and_ignores_the_rest(
     prepared: dict[str, Any],
 ) -> None:
+    """DEC-147: recall is denominated on the expected set, and an extra gap is not an error.
+
+    `gap-001` reaches an expected requirement through its mapping; `gap-002` reaches none.
+    The truth set is a must-include list, so `gap-002` is unscored rather than wrong — it
+    moves the produced count and nothing else.
+    """
     handle = prepared["handle"]
     an_evidence(handle)
     save(
@@ -436,7 +442,11 @@ def test_documentation_gap_precision_matches_through_the_requirement(
     )
 
     named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
-    assert named["documentation_gap_precision"].metric_value == 0.5
+    assert "documentation_gap_precision" not in named
+    assert named["documentation_gap_recall"].metric_value == 0.25
+    assert named["documentation_gap_recall"].sample_size == 4
+    assert named["documentation_gaps_produced"].metric_value == 2.0
+    assert named["documentation_gaps_produced"].unit == "count"
 
 
 # ------------------------------------------------------------------------------------------
@@ -541,7 +551,8 @@ def test_zero_findings_yields_a_valid_metric_set(prepared: dict[str, Any]) -> No
     assert "successful outcome" in named["finding_evidence_coverage"].notes
     assert named["reviewer_acceptance_rate"].metric_value == 0.0
     assert named["false_negative_rate"].metric_value == 1.0
-    assert named["documentation_gap_precision"].metric_value == 0.0
+    assert named["documentation_gap_recall"].metric_value == 0.0
+    assert named["documentation_gaps_produced"].metric_value == 0.0
     assert named["node_failure_rate"].metric_value == 0.0
 
 

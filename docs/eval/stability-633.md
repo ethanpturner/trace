@@ -26,10 +26,17 @@ running both is that they can disagree, and they did.
 | `missing-docs` | 5 | 0 | 55 | none expected | 0, 0, 0, 0, 0 | 1.0 every run |
 | `reply-tuner` | 5 | 0 | 134 | **FND-RT-01 in 3 of 5** | 3, 1, 1, 0, 1 | 1.0 every run |
 
-| Scenario | Cost mean | Cost range | Runtime mean | Model calls | Gap precision |
-|---|---|---|---|---|---|
-| `missing-docs` | $2.62 ± $0.27 | $2.26 – $3.01 | 2923 s ± 428 | 16.0 ± 1.3 | 0.079 ± 0.064 |
-| `reply-tuner` | $3.05 ± $0.51 | $2.45 – $3.94 | 2762 s ± 494 | 17.0 ± 1.8 | — |
+| Scenario | Cost mean | Cost range | Runtime mean | Model calls |
+|---|---|---|---|---|
+| `missing-docs` | $2.62 ± $0.27 | $2.26 – $3.01 | 2923 s ± 428 | 16.0 ± 1.3 |
+| `reply-tuner` | $3.05 ± $0.51 | $2.45 – $3.94 | 2762 s ± 494 | 17.0 ± 1.8 |
+
+These runs also recorded `documentation_gap_precision` — `missing-docs` at 0.079 ± 0.064 across
+the five. DEC-147 has since retired that metric: its denominator was produced gaps, which read the
+expected-gap file as an exhaustive enumeration it never was, so the figure measured how much the
+document set is silent about rather than anything about the run. The runs' recorded values stay in
+the committed feeds as what they were; they are not restated here as a finding about stability,
+and the wobble originally read as gap-precision variance is variance in produced gap volume.
 
 Zero runs failed. Every run read `evidence_assessment_coverage` 1.0, so nothing here is the
 pre-batching funnel failure recurring; DEC-134's guarantee reproduced ten times out of ten.

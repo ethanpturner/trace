@@ -141,7 +141,8 @@ def test_forgeflow_replays_through_the_harness_offline(
         }
         assert "finding_evidence_coverage" in names, "the pipeline's own metrics are kept"
         assert "false_negative_rate" in names, "the harness topped up the benchmark metrics"
-        assert "documentation_gap_precision" in names
+        assert "documentation_gap_recall" in names
+        assert "documentation_gaps_produced" in names
 
     assert outcome.feed_path is not None
     feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))

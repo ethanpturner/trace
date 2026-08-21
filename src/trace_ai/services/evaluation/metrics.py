@@ -633,20 +633,40 @@ def _benchmark_metrics(
     gap_matches = match_gaps(
         produced_gaps, expected_gap_requirements, requirement_by_mapping=requirement_by_mapping
     )
+    if expected_gap_requirements:
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "documentation_gap_recall",
+                _ratio(len(gap_matches.covered_requirements), len(expected_gap_requirements)),
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "expected gap requirements reached by at least one produced gap over the "
+                    "expected set; a gap matches through the requirement its related mapping "
+                    "resolves to (DEC-056). Denominated on the expected set, never on "
+                    "production: an expected-gap file is a must-include list, so a gap outside "
+                    "it is unscored rather than wrong (DEC-147)"
+                ),
+                sample_size=len(expected_gap_requirements),
+            )
+        )
     results.append(
         _metric(
             handle,
             run.id,
-            "documentation_gap_precision",
-            _ratio(len(gap_matches.matching), len(produced_gaps)),
-            unit="percentage",
+            "documentation_gaps_produced",
+            float(len(produced_gaps)),
+            unit="count",
             evaluator=EvaluatorType.BENCHMARK,
             method=(
-                "produced gaps matching an expected gap over produced gaps; a gap matches "
-                "through the requirement its related mapping resolves to (DEC-056)"
+                "documentation gaps the run produced, reported as a count and not as a ratio. "
+                "A gap declines to assert, so an unexpected one may simply be true; the claims "
+                "a correct assessment does not make are the negative set's (DEC-147)"
             ),
             sample_size=len(produced_gaps),
-            notes="no gaps produced" if not produced_gaps else None,
+            notes=f"{len(gap_matches.matching)} reached an expected gap" if produced_gaps else None,
         )
     )
     results.extend(_truth_metrics(handle, run, expected_dir))

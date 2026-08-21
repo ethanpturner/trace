@@ -263,8 +263,8 @@ def _score_assessment_extras(
     """Score the single-pass baseline's gaps and questions against the truth set, in parallel.
 
     The same shape as the finding scorer: requirement-identifier matching, no wording compared,
-    no identifiers to resolve. `documentation_gap_precision` mirrors the pipeline metric —
-    produced gaps that match an expected gap's requirement, over produced gaps — and
+    no identifiers to resolve. `documentation_gap_recall` mirrors the pipeline metric —
+    expected gap requirements reached, over the expected set (DEC-147) — and
     `question_usefulness` mirrors the pipeline's: expected questions matched by requirement,
     over the expected questions that are not another gap's `paired_question` (the pipeline's
     denominator rule, applied here so the two columns mean the same thing). Threats and
@@ -287,7 +287,7 @@ def _score_assessment_extras(
 
     expected_gap_requirements = {str(gap["requirement_id"]) for gap in expected_gaps}
     produced_gap_requirements = [gap.requirement_id for gap in value.documentation_gaps]
-    gap_hits = [req for req in produced_gap_requirements if req in expected_gap_requirements]
+    covered_gap_requirements = expected_gap_requirements & set(produced_gap_requirements)
 
     paired = {str(gap["paired_question"]) for gap in expected_gaps if gap.get("paired_question")}
     scoreable_questions = [
@@ -301,9 +301,11 @@ def _score_assessment_extras(
     ]
 
     metrics = dict(scored["metrics"])
-    metrics["documentation_gap_precision"] = (
-        len(gap_hits) / len(produced_gap_requirements) if produced_gap_requirements else 0.0
-    )
+    if expected_gap_requirements:
+        metrics["documentation_gap_recall"] = len(covered_gap_requirements) / len(
+            expected_gap_requirements
+        )
+    metrics["documentation_gaps_produced"] = float(len(produced_gap_requirements))
     metrics["question_usefulness"] = (
         len(question_hits) / len(scoreable_questions) if scoreable_questions else 0.0
     )
@@ -315,7 +317,7 @@ def _score_assessment_extras(
         "extra_items": {
             "documentation_gaps": {
                 "produced": produced_gap_requirements,
-                "matched_requirements": gap_hits,
+                "matched_requirements": sorted(covered_gap_requirements),
             },
             "questions": {"matched_expected": question_hits},
         },

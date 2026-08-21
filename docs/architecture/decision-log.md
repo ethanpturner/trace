@@ -9682,3 +9682,87 @@ appears in most evaluation diffs. The package describes rather than packages: a 
 the repository rather than downloading an archive, which is the cost of refusing the second copy.
 And the corpus remains synthetic by construction (design-principles section 19) — the property
 that makes publication safe is also the limit on what publication establishes.
+
+## DEC-147: An expected-gap list is a must-include list, so gaps are scored on recall and counted, never on precision
+
+Date: 2026-08-21
+
+Status: Accepted
+
+Decision:
+
+**A scenario's `expected-documentation-gaps.yaml` enumerates the gaps a correct assessment must
+produce, not every gap it may produce.** `documentation_gap_precision` — matching produced gaps
+over produced gaps — read it as the second thing, and that denominator was never authored. It is
+retired. In its place: `documentation_gap_recall`, expected gap requirements reached by at least
+one produced gap over the expected set, emitted only where a scenario authored expected gaps; and
+`documentation_gaps_produced`, a count carrying no ratio and no goal.
+
+**The structural argument is decisive.** The whole requirements catalog reaches the mapping step
+on every call (DEC-024, restated in every scenario's evaluation contract), and catalog 0.3 holds
+forty-four requirements. Every scenario's expected-gap file authors between one and four entries.
+A one-entry file cannot be claiming that exactly one of forty-four requirements may legitimately
+be undeterminable; it is naming the gap the scenario was built to exercise. Precision over that
+denominator does not measure the run — it measures how many requirements the document set happens
+to be silent about, which is a property of the fixture.
+
+**The finding/gap asymmetry is the reason the two layers do not share a metric shape.** A finding
+*asserts* a weakness, so an unexpected one is a claim the evidence does not support, and counting
+it spurious is right. A documentation gap *declines to assert*: it says only that whether a
+control exists cannot be determined from the documents. On a sparse document set many such
+statements are simultaneously true, so penalising them as imprecise punishes exactly the restraint
+DEC-009 requires and the project exists to demonstrate. The sibling metric already agreed —
+`clarifying_question_usefulness`, the other declines-to-assert artifact, is denominated on the
+expected set with an explicit denominator rule. Gaps were the outlier.
+
+**A gap that should not have been produced is the negative set's business.** The corpus already
+has the mechanism: `expected-rejections.yaml` records "the claims a correct assessment does not
+make, each with the mechanism that stops it". Where an organizational control makes an answer
+determinable, asserting a gap about it is wrong, and the rejection entry is where that wrongness
+is authored and graded. Absence from the expected-gap list was never that statement, and reading
+it as one made a scored error out of silence.
+
+Why:
+
+- The sweep made the mis-shape visible: nightly-reconciler produced eleven gaps against one
+  expected and parcel-platform seventeen against two, both scoring precision 0 on runs whose
+  gaps were, on inspection, defensible statements about genuinely silent documents. The number
+  was reported as a pipeline defect in provenance after provenance; it was an instrument defect.
+- The metric only ever looked correct against authored recordings, which were written to produce
+  the truth set and nothing else (DEC-124's reply-tuner cites "documentation-gap precision 1.0").
+  The first live runs were its first real test and it failed immediately.
+- `evaluation-plan.md` had defined the metric as "percentage of documentation gaps correctly
+  classified", which is a classification question, not a set-membership one. The implementation
+  was always a stricter reading than the specification it was written from.
+
+Alternatives Considered:
+
+- **Author exhaustive gap lists.** Enumerating every legitimately undeterminable requirement per
+  scenario would make the denominator real. Rejected: it is forty-four judgements per scenario
+  against a catalog that grows, the enumeration would need re-authoring on every catalog release,
+  and DEC-028 already refused a second source of truth about expected counts for the same reason.
+- **Keep the name and redefine it.** Rejected outright: a metric name that silently changes
+  meaning makes every committed feed unreadable, and the corpus's committed measurements are the
+  one thing that must stay interpretable. The old name is retired, and the rows that carry it stay
+  readable as what they were.
+- **Score unexpected gaps against the rejection set automatically.** Attractive, and it is the
+  honest precision-like signal, but rejections are authored as claims with suppression mechanisms
+  rather than as gap identities, and wiring a gap matcher onto them is its own decision with its
+  own truth-set work. Named here, not built.
+- **Report nothing about produced volume.** Rejected: the volume is real information about a run,
+  and reporting a bare count with no goal is how the corpus already handles figures that inform
+  without grading.
+
+Tradeoffs:
+
+The recall metric is now emitted only where a scenario authored expected gaps, so a scenario
+without them reports the metric as absent rather than as zero — consistent with the reserved
+truth metrics' posture, and it means the metric's population is smaller than the old one's.
+Committed feeds recorded before this entry carry `documentation_gap_precision` and keep it;
+nothing rewrites them, the scorecard does not difference across the change (DEC-143), and a
+reader comparing a pre-DEC-147 row to a later one is comparing two different questions. The
+count metric invites a reader to treat volume as quality in either direction, which the stated
+absence of a goal is the only defence against. And the genuinely wrong gap — one asserting
+undeterminability where an org control determines the answer — is currently unscored: the
+negative set holds the material, the matcher does not yet reach it, and that gap in the
+instrument is named rather than closed.

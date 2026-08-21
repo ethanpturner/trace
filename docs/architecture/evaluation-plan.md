@@ -424,15 +424,35 @@ Goal:
 
 Lower.
 
-## Documentation Gap Precision
+## Documentation Gap Recall
 
 Definition:
 
-Percentage of documentation gaps correctly classified.
+Expected gap requirements reached by at least one produced gap, over the expected set. The
+0.1 draft called this "documentation gap precision — percentage of documentation gaps
+correctly classified", and the shipped metric denominated it on production instead:
+matching produced gaps over produced gaps. DEC-147 retired that shape. An expected-gap file
+is a must-include list, not an enumeration of every gap a correct run may produce — the whole
+catalog reaches the mapping step (DEC-024), so silence on any of its requirements can support
+a gap, while the truth sets author one to four. A gap declines to assert, so an unexpected one
+may simply be true, and the claims a correct assessment does not make are the negative set's
+(`expected-rejections.yaml`).
 
 Goal:
 
 Higher.
+
+## Documentation Gaps Produced
+
+Definition:
+
+The count of documentation gaps a run produced, reported as a count and never as a ratio
+against the expected set.
+
+Goal:
+
+None. This is an observation, not a target — a gap volume is only interpretable beside the
+document set that produced it, and a target would be a quota, which section 20 rejects.
 
 ## Clarifying Question Usefulness
 
