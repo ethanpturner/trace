@@ -709,6 +709,19 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     evaluate.add_argument(
+        "--replay-journal",
+        action="append",
+        dest="replay_journal",
+        default=[],
+        type=_path,
+        metavar="PATH",
+        help=(
+            "re-drive an interrupted live harness run from its journal, repeatable; a directory "
+            "stands for its unspent numbered entries in order. Live profiles only: a recording "
+            "replay serves its own responses and takes no journal (DEC-139)"
+        ),
+    )
+    evaluate.add_argument(
         "--results-root",
         dest="results_root",
         type=_path,
@@ -3404,6 +3417,17 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
         )
         return 1
 
+    # A journal re-drives one interrupted live run (DEC-139); offline replays serve their own
+    # recorded responses, so offering them a journal is refused the way `_run_model` refuses it.
+    if args.replay_journal and not live_profile:
+        print(
+            "error: --replay-journal re-drives a live harness run; a recording replay serves "
+            "its own responses. Name a live --model-profile, or omit the flag",
+            file=sys.stderr,
+        )
+        return 1
+    journal_entries = _journal_entries(args.replay_journal)
+
     # Validate the condition once, not once per scenario: an unknown `--condition` used to produce
     # twelve identical HarnessErrors on `--all`. `clean` is always valid; any other must be declared
     # by some scenario.
@@ -3454,6 +3478,7 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
                     profile_name=args.model_profile,
                     results_root=args.results_root,
                     live_workflow_version=args.live_workflow_version,
+                    replay_journal=journal_entries,
                 )
             except HarnessError as refused:
                 print(f"error: {refused}", file=sys.stderr)

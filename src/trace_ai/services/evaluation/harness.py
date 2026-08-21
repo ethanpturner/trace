@@ -50,6 +50,12 @@ from trace_ai.domain.source_document import TrustLevel
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.infrastructure.database.store import AssessmentStore
 from trace_ai.infrastructure.model.factory import build_model
+from trace_ai.infrastructure.model.journal import (
+    JournalEntry,
+    JournalingModel,
+    JournalReplayModel,
+    journal_dir,
+)
 from trace_ai.infrastructure.model.profiles import resolve_profile
 from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.services.assessment import AssessmentService
@@ -162,6 +168,7 @@ def run_scenario(
     results_root: Path | None = None,
     stop_after_findings: bool = False,
     live_workflow_version: str | None = None,
+    replay_journal: Sequence[JournalEntry] = (),
 ) -> HarnessOutcome:
     """Replay one registered scenario through the ordinary pipeline and export its feed.
 
@@ -180,6 +187,12 @@ def run_scenario(
     it: an ablation that changes the finding set is measured on the findings, and the report's
     recorded sections — authored for the authoritative findings — would not fit the ablated ones.
     The report is not what the decision gate asks about.
+
+    `replay_journal` re-drives an interrupted live run from its journal (DEC-139): the named
+    entries answer the calls they recorded and everything else goes to the provider. Explicit,
+    never automatic — the caller asserts the journal the way `--replay-journal` does on the run
+    commands — and live-only: a recording replay serves its own responses, and a journal offered
+    to one would be a second source of answers nobody measured.
     """
     entry = load_scenario(slug, registry_path=registry_path)
     profile = resolve_profile(profile_name)
@@ -189,10 +202,17 @@ def run_scenario(
             "live_workflow_version pins a live run's shape; a replay's workflow version is the "
             "recording's fact, read from the registry (DEC-134), and cannot be overridden"
         )
+    if replay_journal and not live:
+        raise HarnessError(
+            "replay_journal re-drives a live run from its journal (DEC-139); a recording replay "
+            "serves its own responses and takes no journal"
+        )
     if live:
-        # A live run replays nothing: the provider answers, and the checkpoints are decided by
-        # DEC-077's named default policy (with recorded question answers matched by text). This
-        # path is manual and priced by the operator; CI never takes it.
+        # A live run replays nothing from recordings: the provider answers, and the checkpoints
+        # are decided by DEC-077's named default policy (with recorded question answers matched
+        # by text). This path is manual and priced by the operator; CI never takes it. The model
+        # is journaled once the assessment exists — see below — so a killed run re-drives from
+        # `traces/journal/` instead of re-buying its calls (DEC-139, #638).
         model = build_model(profile)
     else:
         if not entry.has_recording_for(condition):
@@ -225,6 +245,15 @@ def run_scenario(
         )
         assessment_id = created.id
         handle = service.handle(assessment_id)
+        if live:
+            # The journal mounts exactly as the CLI run commands mount it (DEC-139): the wrapper
+            # writes into this assessment's own `traces/journal/` area, and a supplied journal
+            # replays outside-in so a re-driven call is served without being re-journaled while
+            # a fresh one is journaled at the next index. The offline branch mounts nothing —
+            # journaling a recording replay would record responses no provider gave.
+            model = JournalingModel(model, journal_dir(handle.artifacts))
+            if replay_journal:
+                model = JournalReplayModel(list(replay_journal), model)
         loader = DocumentLoader(handle)
         for path in entry.input_documents(condition):
             loader.load_document(
