@@ -63,6 +63,7 @@ from trace_ai.infrastructure.model.journal import (
     JournalReplayModel,
     SpentJournalEntryError,
     journal_dir,
+    journal_entry_paths,
     read_journal_entry,
     spent_marker,
 )
@@ -2883,10 +2884,11 @@ def _run_model(
             )
         return profile, model
     artifacts = service.handle(args.assessment_id).artifacts
-    model = JournalingModel(model, journal_dir(artifacts))
+    directory = journal_dir(artifacts)
+    model = JournalingModel(model, directory)
     entries = _journal_entries(args.replay_journal)
     if entries:
-        model = JournalReplayModel(entries, model)
+        model = JournalReplayModel(entries, model, carry_forward=directory)
     return profile, model
 
 
@@ -2902,7 +2904,7 @@ def _journal_entries(supplied: list[Path]) -> list[JournalEntry]:
     try:
         for path in supplied:
             if path.is_dir():
-                for candidate in sorted(path.glob("[0-9]*.json")):
+                for candidate in journal_entry_paths(path):
                     if spent_marker(candidate).exists():
                         print(f"skipping {candidate.name} (spent)", file=sys.stderr)
                         continue

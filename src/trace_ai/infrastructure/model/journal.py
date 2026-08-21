@@ -14,8 +14,17 @@ the operator names it with `--replay-journal`; a stale journal must not silently
 input. `JournalReplayModel` serves an entry only when the requested schema *and* the request hash
 match, marks each served entry spent with a sidecar file so it can never answer twice across
 resumes, and sends everything the journal cannot answer to the live model — which the journaling
-wrapper then records at the next index. A journaled entry that matches nothing is skipped aloud
-and left unspent; divergence costs money, never a wrong answer.
+wrapper then records at the next index. Divergence costs money, never a wrong answer.
+
+**A served entry is carried forward into the active run's journal** (DEC-144). Spending an entry
+in the source and recording nothing in the destination left a re-drive's own journal full of
+holes: a second re-drive found the prefix spent and the remainder positioned against a
+consumption order that no longer existed, and re-bought the whole run. The carried copy states
+the usage the call cost when it was bought and names the entry it came from, so the journal keeps
+one complete consumption order per generation without a later reader mistaking a replay for a
+purchase. **The match is keyed on the request, not on position** (DEC-144): the scan reads the
+remaining entries in order and serves the first whose schema and hash both match, and a call
+nothing answers goes live leaving every entry unspent for a later call to claim.
 
 Failures are not journaled, for the reason the capture wrapper gives: a replay has no way to serve
 one and does not need to — a live retry that recovered replays as a first-attempt success. The
@@ -55,8 +64,10 @@ __all__ = [
     "JournalReplayModel",
     "JournalingModel",
     "SpentJournalEntryError",
+    "append_journal_entry",
     "call_hash",
     "journal_dir",
+    "journal_entry_paths",
     "read_journal_entry",
     "spent_marker",
 ]
@@ -139,6 +150,59 @@ def read_journal_entry(path: Path) -> JournalEntry:
     )
 
 
+def _entry_index(path: Path) -> int:
+    """The numbered prefix a journal filename carries, or 0 for a name that has none."""
+    digits = ""
+    for character in path.name:
+        if not character.isdigit():
+            break
+        digits += character
+    return int(digits) if digits else 0
+
+
+def journal_entry_paths(directory: Path) -> list[Path]:
+    """This journal's entries in consumption order, ordered by number rather than by name.
+
+    A journal that outlives two re-drives passes a hundred entries, and at three digits the
+    lexicographic order a bare `sorted()` gives puts `100-` between `10-` and `11-`. The order
+    is the contract the replay scan reads, so it is computed from the number.
+    """
+    return sorted(directory.glob("[0-9]*.json"), key=lambda path: (_entry_index(path), path.name))
+
+
+def append_journal_entry(
+    directory: Path,
+    *,
+    response: BaseModel,
+    usage: dict[str, object] | None,
+    call_sha256: str,
+    replayed_from: str | None = None,
+) -> Path:
+    """Write one entry at the next index and return where it landed.
+
+    The index is one past the highest the directory already holds rather than one past the count:
+    a resumed run appends after the interrupted attempt's entries, and a gap left by a removed
+    file must not send the next write onto a name that already exists — `ArtifactStore` refuses an
+    overwrite for good reason, and this directory has no such guard.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    existing = journal_entry_paths(directory)
+    index = (_entry_index(existing[-1]) if existing else 0) + 1
+    slug = agent_for_schema(type(response).__name__) or "response"
+    path = directory / f"{index:02d}-{slug}.json"
+    envelope: dict[str, object] = {"schema": type(response).__name__}
+    if usage is not None:
+        envelope["usage"] = usage
+    envelope["response"] = response.model_dump(mode="json")
+    envelope["call_sha256"] = call_sha256
+    if replayed_from is not None:
+        # Provenance, not accounting: the usage beside it is what the call cost when it was
+        # bought, and the run that carried it forward records no spend for it at all.
+        envelope["replayed_from"] = replayed_from
+    path.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
 def _usage_dict(usage: ModelUsage) -> dict[str, object]:
     """The envelope's `usage` mapping, Decimal cost as a string so JSON keeps its precision."""
     return {
@@ -191,33 +255,43 @@ class JournalingModel:
             system_cache_prefix=system_cache_prefix,
         )
         if isinstance(outcome, ModelSuccess):
-            self._directory.mkdir(parents=True, exist_ok=True)
-            index = len(list(self._directory.glob("[0-9]*.json"))) + 1
-            slug = agent_for_schema(type(outcome.value).__name__) or "response"
-            path = self._directory / f"{index:02d}-{slug}.json"
-            envelope: dict[str, object] = {
-                "schema": type(outcome.value).__name__,
-                "usage": _usage_dict(outcome.usage),
-                "response": outcome.value.model_dump(mode="json"),
-                "call_sha256": call_hash(prompt=prompt, system=system),
-            }
-            path.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
+            path = append_journal_entry(
+                self._directory,
+                response=outcome.value,
+                usage=_usage_dict(outcome.usage),
+                call_sha256=call_hash(prompt=prompt, system=system),
+            )
             print(f"journaled {path.name}", file=sys.stderr)
         return outcome
 
 
 class JournalReplayModel:
-    """Serves matching journal entries in order, and sends everything else to the live model.
+    """Serves matching journal entries, and sends everything else to the live model.
 
-    The scan pops from the front: entries recorded by phases that already completed — which a
-    resumed run never re-asks — are skipped aloud and left unspent, and the first entry whose
-    schema and request hash both match is served and marked spent. A call nothing in the journal
-    answers goes live, so a diverged journal costs money rather than serving a stale conclusion.
+    The scan reads the remaining entries in order and serves the first whose schema and request
+    hash both match; an entry it passes over stays in the queue, unspent, for a later call to
+    claim (DEC-144). Nothing is discarded by being scanned past, because the request hash — not
+    the position — is what proves an entry answers this call: an entry recorded by a phase that
+    already completed simply never matches, and a run whose inputs were edited matches nothing
+    and buys every call. A call the journal cannot answer goes live, so a diverged journal costs
+    money rather than serving a stale conclusion.
+
+    `carry_forward` names the active run's journal directory. A served entry is copied there
+    before it is returned, so this run's journal records the whole consumption order rather than
+    only the calls it bought, and a re-drive of a re-drive needs no hand-assembled journal.
     """
 
-    def __init__(self, entries: list[JournalEntry], inner: StructuredModel) -> None:
+    def __init__(
+        self,
+        entries: list[JournalEntry],
+        inner: StructuredModel,
+        *,
+        carry_forward: Path | None = None,
+    ) -> None:
         self._entries = list(entries)
         self._inner = inner
+        self._carry_forward = carry_forward
+        self._reported: set[Path] = set()
 
     @property
     def name(self) -> str:
@@ -238,36 +312,24 @@ class JournalReplayModel:
         system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         request_hash = call_hash(prompt=prompt, system=system)
-        while self._entries:
-            entry = self._entries[0]
-            if entry.answers(schema=schema, request_hash=request_hash):
-                self._entries.pop(0)
-                spent_marker(entry.path).write_text(
-                    "replayed; a journal entry answers one call once\n", encoding="utf-8"
-                )
-                print(f"replayed {entry.path.name} (no spend)", file=sys.stderr)
-                usage_model = entry.usage.model if entry.usage is not None else self._inner.name
-                return ModelSuccess(
-                    # `answers` verified the isinstance; the cast states what it proved.
-                    value=cast("T", entry.response),
-                    usage=ModelUsage(model=usage_model),
-                    metadata={"replayed_from_journal": entry.path.name},
-                )
-            if isinstance(entry.response, schema):
-                # The schema matches and the request does not: this call is not the one the
-                # entry recorded. Serving it anyway is what --replay-journal exists to prevent,
-                # so the whole remaining journal is set aside and the run continues live —
-                # popping past a same-schema mismatch could spend an entry a later call needs.
-                skipped = ", ".join(item.path.name for item in self._entries)
-                print(
-                    f"journal diverged at {entry.path.name}: the request differs from the one "
-                    f"it recorded; continuing live ({skipped} left unspent)",
-                    file=sys.stderr,
-                )
-                self._entries.clear()
-                break
-            self._entries.pop(0)
-            print(f"skipped {entry.path.name} (a completed phase's entry)", file=sys.stderr)
+        for position, entry in enumerate(self._entries):
+            if not entry.answers(schema=schema, request_hash=request_hash):
+                continue
+            self._entries.pop(position)
+            spent_marker(entry.path).write_text(
+                "replayed; a journal entry answers one call once\n", encoding="utf-8"
+            )
+            carried = self._carry(entry, request_hash)
+            where = f" -> {carried.name}" if carried is not None else ""
+            print(f"replayed {entry.path.name} (no spend){where}", file=sys.stderr)
+            usage_model = entry.usage.model if entry.usage is not None else self._inner.name
+            return ModelSuccess(
+                # `answers` verified the isinstance; the cast states what it proved.
+                value=cast("T", entry.response),
+                usage=ModelUsage(model=usage_model),
+                metadata={"replayed_from_journal": entry.path.name},
+            )
+        self._report_divergence(schema)
         return self._inner.generate(
             prompt=prompt,
             schema=schema,
@@ -276,3 +338,37 @@ class JournalReplayModel:
             cache_prefix=cache_prefix,
             system_cache_prefix=system_cache_prefix,
         )
+
+    def _carry(self, entry: JournalEntry, request_hash: str) -> Path | None:
+        """Copy a served entry into the active run's journal, or nothing if none was named.
+
+        The copy records the request hash that matched rather than the one the source carried:
+        a hand-assembled entry with no hash answered this call on schema alone, and the copy
+        states which call that was, so the next generation replays under the tighter contract.
+        """
+        if self._carry_forward is None:
+            return None
+        return append_journal_entry(
+            self._carry_forward,
+            response=entry.response,
+            usage=_usage_dict(entry.usage) if entry.usage is not None else None,
+            call_sha256=request_hash,
+            replayed_from=entry.path.name,
+        )
+
+    def _report_divergence(self, schema: type[BaseModel]) -> None:
+        """Name an entry that carries this call's schema and a different request, once each.
+
+        Nothing is set aside — the entry stays for a later call — but the operator hears that a
+        journal they named is not answering, which is the difference between a journal that ran
+        out and one whose inputs moved under it.
+        """
+        for entry in self._entries:
+            if not isinstance(entry.response, schema) or entry.path in self._reported:
+                continue
+            self._reported.add(entry.path)
+            print(
+                f"journal diverged at {entry.path.name}: it carries this call's schema and a "
+                f"different request; continuing live, and it stays unspent",
+                file=sys.stderr,
+            )

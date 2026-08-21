@@ -16,6 +16,7 @@ unit tree keeps every file.
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -414,3 +415,56 @@ def test_a_journaled_run_replays_end_to_end_on_a_fresh_root(
         handle = service.handle(assessment_id)
         assessment = handle.objects.get(Assessment, assessment_id)
         assert assessment.final_report_path is not None
+
+
+def test_a_carried_journal_replays_a_third_generation_end_to_end(
+    journaled_run: Path, tmp_path: Path
+) -> None:
+    """Run B carries what it replays; run C replays run B's journal (DEC-144, #645).
+
+    The #332 attempt could not do this: run B spent run A's entries and recorded nothing of
+    its own, so run C found the prefix spent, the remainder positioned against a consumption
+    order that no longer existed, and bought the whole assessment again. Run C's fallback is
+    empty here, so every one of its fourteen phases must be answered by what run B carried.
+    """
+    generation_one = journaled_run
+    generation_two = tmp_path / "journal-b"
+
+    root_b = tmp_path / "run-b"
+    root_b.mkdir()
+    assessment_b = _prepare(root_b)
+    _drive(
+        root_b,
+        assessment_b,
+        models=[
+            JournalReplayModel(
+                _unspent_entries(generation_one),
+                DeterministicModel([]),
+                carry_forward=generation_two,
+            )
+            for _ in range(3)
+        ],
+    )
+    assert _unspent_entries(generation_one) == [], "run B replayed run A's journal entire"
+    carried = _unspent_entries(generation_two)
+    assert len(carried) == 6, "run B's own journal holds every call it consumed"
+    assert all(
+        json.loads(entry.path.read_text(encoding="utf-8"))["replayed_from"] for entry in carried
+    ), "each carried entry names the entry it came from"
+
+    root_c = tmp_path / "run-c"
+    root_c.mkdir()
+    assessment_c = _prepare(root_c)
+    _drive(
+        root_c,
+        assessment_c,
+        models=[
+            JournalReplayModel(_unspent_entries(generation_two), DeterministicModel([]))
+            for _ in range(3)
+        ],
+    )
+
+    assert _unspent_entries(generation_two) == [], (
+        "run C must consume run B's journal entire; anything left unspent means the carried "
+        "copy did not answer the call it recorded"
+    )
