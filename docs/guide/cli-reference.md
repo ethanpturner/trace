@@ -433,7 +433,7 @@ trace evaluate [scenario] [--all] [--condition CONDITION]
                [--stability N] [--model-profile MODEL_PROFILE]
                [--ablate NAME] [--label LABEL] [--work-root WORK_ROOT]
                [--diff-against LABEL] [--live-workflow-version VERSION]
-               [--results-root RESULTS_ROOT]
+               [--replay-journal PATH] [--results-root RESULTS_ROOT]
                [--report {scorecard,comparison,ablation}] [--out OUT] [--json]
 ```
 
@@ -454,6 +454,12 @@ refused by name.
   offline-fake default replays recordings and spends nothing.
 - `--live-workflow-version VERSION` pins a live run to a named earlier workflow shape — the
   DEC-134 experiment arm (#331). Refused on a replay, whose version is the recording's fact.
+- `--replay-journal PATH` (repeatable) re-drives an interrupted live harness run from its
+  journal (DEC-139, #638): a directory stands for its unspent numbered entries in order, an
+  entry answers only the call that recorded it exactly once, and anything the journal cannot
+  answer runs live. Live profiles only — a recording replay serves its own responses. A live
+  harness run journals every response it consumes into the work root's `traces/journal/` area,
+  so the flag has something to name after a kill.
 - `--label`, `--condition`, `--work-root`, `--results-root`, and `--diff-against` control where
   the feed lands and what it is compared against.
 - `--report scorecard|comparison|ablation` runs the offline sweep and renders one evaluation
