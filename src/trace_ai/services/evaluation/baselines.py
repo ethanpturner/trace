@@ -201,7 +201,8 @@ def _contract_catalog_version(entry: Scenario) -> str | None:
 
 
 def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
-    """Match baseline findings to the expected set on requirement and component name (DEC-056).
+    """Match baseline findings to the expected set on requirement and component name (DEC-056),
+    with DEC-148's divergence classification applied by the same rule as the pipeline.
 
     A baseline finding carries the component *name*, so the match is a direct comparison against
     the expected `affected_component` — no context model, no identifiers to resolve.
@@ -223,16 +224,30 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
     ]
     matched: dict[str, list[str]] = {}
     missed: list[str] = []
+    divergent: dict[str, list[str]] = {}
     consumed: set[int] = set()
+    accounted: set[int] = set()
     for entry_ in expected:
         key = str(entry_["key"])
         want = (str(entry_["requirement_id"]), normalized_name(str(entry_["affected_component"])))
-        hits = [i for i, produced_key in enumerate(produced_keys) if produced_key == want]
+        on_requirement = [
+            i for i, produced_key in enumerate(produced_keys) if produced_key[0] == want[0]
+        ]
+        hits = [i for i in on_requirement if produced_keys[i] == want]
         if hits:
             matched[key] = [produced[i].title for i in hits]
             consumed.update(hits)
+            accounted.update(hits)
         else:
             missed.append(key)
+            # DEC-148, applied to the control arm by the same rule as the pipeline: a baseline
+            # finding on the expected requirement under another component name is withheld from
+            # spurious. A baseline carries one free-text component and no context model, so a
+            # compound attribution ("Training Store and Tuning Job") is the only way it can name
+            # more than one — the shape the pipeline expresses as a component list.
+            if on_requirement:
+                divergent[key] = [produced[i].title for i in on_requirement]
+                accounted.update(on_requirement)
 
     spurious = [
         {
@@ -241,7 +256,7 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
             "title": produced[i].title,
         }
         for i in range(len(produced))
-        if i not in consumed
+        if i not in accounted
     ]
     denominator = len(expected)
     metrics = {
@@ -251,6 +266,7 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
     return {
         "matched": matched,
         "missed": missed,
+        "divergent": divergent,
         "spurious": spurious,
         "conditional_unreached": conditional_unreached,
         "metrics": metrics,
@@ -345,6 +361,7 @@ def _export_feed(
         "findings": {
             "matched": scored["matched"],
             "missed": scored["missed"],
+            "divergent": scored.get("divergent") or {},
             "spurious": [entry_["title"] for entry_ in scored["spurious"]],
             "conditional_unreached": scored.get("conditional_unreached") or [],
         }

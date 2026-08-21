@@ -48,6 +48,30 @@ def test_the_generic_baseline_invents_the_false_positives_trace_avoids(
     assert outcome.metrics["spurious_finding_count"] == float(spurious_expected)
 
 
+def test_a_compound_component_string_is_divergent_not_spurious(tmp_path: Path) -> None:
+    """DEC-148 applies to the control arm by the same rule as the pipeline.
+
+    reply-tuner expects (req-TRAIN-002, `Tuning Job`). The generic baseline cites that exact
+    requirement and names `Training Store and Tuning Job` — a compound string, which is the only
+    way a baseline can attribute two components at all, since it carries one free-text field
+    where a pipeline finding carries a component list. Scoring that as a fabrication penalised
+    the baseline for a shape the harness gave it, so the finding is withheld from `spurious`
+    while the expectation stays missed.
+    """
+    outcome = run_baseline(
+        "reply-tuner",
+        "baseline-generic",
+        label="test",
+        response=_recorded("reply-tuner", "baseline-generic"),
+        results_root=tmp_path / "results",
+    )
+    assert outcome.matched == {}, "the component name does not match, so nothing is credited"
+    assert outcome.missed == ["FND-RT-01"], "recall is unmoved"
+    assert outcome.spurious == [], "the finding stands on the expected requirement"
+    assert outcome.metrics["false_negative_rate"] == 1.0
+    assert outcome.metrics["spurious_finding_count"] == 0.0
+
+
 @pytest.mark.parametrize("slug", ["oidc-portal", "managed-db-service"])
 def test_the_structured_baseline_matches_trace_on_the_zero_finding_scenarios(
     tmp_path: Path, slug: str

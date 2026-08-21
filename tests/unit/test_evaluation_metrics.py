@@ -333,6 +333,71 @@ def test_false_negative_rate_matches_on_requirement_and_component(
     assert rate.notes is not None and "FND-003" in rate.notes and "FND-004" in rate.notes
 
 
+def test_a_component_divergent_finding_stays_missed_and_is_not_spurious(
+    prepared: dict[str, Any],
+) -> None:
+    """DEC-148: the expectation's requirement is cited under a name it does not carry.
+
+    Recall must not move — the matcher did not establish that the two name the same ground — and
+    the finding must not be called spurious, which would assert a false positive the requirement
+    match is evidence against. This is translation-gateway's shape, built here from the ForgeFlow
+    fixture: the finding cites req-AI-002 (FND-002's requirement) but names a component the
+    expectation does not.
+    """
+    from trace_ai.services.evaluation.matching import match_findings
+
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-009", "Comment Posting Service")
+    finding, _ = approve_finding(
+        handle, a_finding(handle, affected_component_ids=["cmp-009"]), reviewer_id=REVIEWER
+    )
+
+    expected = [
+        {
+            "key": "FND-002",
+            "requirement_id": "req-AI-002",
+            "affected_component": "GitHub Comment Service",
+        }
+    ]
+    outcome = match_findings(
+        [finding], expected, component_names={"cmp-009": "comment posting service"}
+    )
+
+    assert outcome.matched == {}, "the component name does not match, so nothing is credited"
+    assert outcome.missed == ["FND-002"], "recall is unmoved: the expectation stays missed"
+    assert outcome.divergent == {"FND-002": [finding.id]}, "the near-match is named"
+    assert outcome.spurious == [], "a finding on the expected requirement is not a false positive"
+
+
+def test_a_finding_on_no_expected_requirement_is_still_spurious(
+    prepared: dict[str, Any],
+) -> None:
+    """DEC-148 narrows `spurious`; it does not empty it."""
+    from trace_ai.services.evaluation.matching import match_findings
+
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "GitHub Comment Service")
+    finding, _ = approve_finding(
+        handle, a_finding(handle, requirement_ids=["req-LOG-001"]), reviewer_id=REVIEWER
+    )
+
+    expected = [
+        {
+            "key": "FND-002",
+            "requirement_id": "req-AI-002",
+            "affected_component": "GitHub Comment Service",
+        }
+    ]
+    outcome = match_findings(
+        [finding], expected, component_names={"cmp-001": "github comment service"}
+    )
+
+    assert outcome.divergent == {}, "no produced finding stands on the expected requirement"
+    assert outcome.spurious == [finding.id]
+
+
 def test_a_consolidated_finding_scores_full_credit_per_matched_expectation(
     prepared: dict[str, Any],
 ) -> None:

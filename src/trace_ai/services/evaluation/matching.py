@@ -9,6 +9,12 @@ Matching is structural through the contract's fields: an expected finding matche
 on `requirement_id` plus a normalized affected-component name, and a consolidated finding scores
 full credit per matched expectation (DEC-056). Titles and wording are never compared.
 
+DEC-148 adds one classification without relaxing that rule: a produced finding standing on an
+expected requirement under a component name the expectation does not carry leaves the expectation
+missed — the matcher cannot confirm the two name the same ground — but is withheld from
+`spurious`, because "spurious" asserts a false positive and a finding on the expected requirement
+is not evidence for that assertion.
+
 The fingerprint is DEC-066's cross-run identity: the DEC-019 hash over the finding's sorted
 requirement identifiers and its affected components' normalized *names* — names rather than
 identifiers, because identifiers are allocated per run and the fingerprint exists to say two runs
@@ -115,10 +121,18 @@ class FindingMatchOutcome:
     satisfied no expectation. `fingerprints` carries DEC-066 identity for each produced finding
     that matched, keyed by expected key, so a later run can say *which* finding answered an
     expectation and not merely that one did.
+
+    `divergent` is DEC-148's third classification, and it is a *subset of* `missed`: an expected
+    key whose requirement a produced finding cites while naming no component the expectation
+    names. Recall is unmoved by it — the expectation stays missed, because the matcher did not
+    confirm the two name the same ground — but the findings it maps to are withheld from
+    `spurious`, because calling a finding spurious asserts it is a false positive, and a finding
+    on the expected requirement is not evidence for that assertion.
     """
 
     matched: dict[str, list[str]] = field(default_factory=dict)
     missed: list[str] = field(default_factory=list)
+    divergent: dict[str, list[str]] = field(default_factory=dict)
     spurious: list[str] = field(default_factory=list)
     fingerprints: dict[str, list[str]] = field(default_factory=dict)
     expected_count: int = 0
@@ -139,19 +153,29 @@ def match_findings(
     *,
     component_names: Mapping[str, str],
 ) -> FindingMatchOutcome:
-    """Classify every expected entry and every approved finding under DEC-056's rule."""
+    """Classify every expected entry and every approved finding under DEC-056's rule, as
+    amended by DEC-148.
+
+    A match still requires the expected requirement *and* an affected component whose name
+    matches; nothing is credited on the requirement alone. An expectation nothing matched is
+    additionally recorded as `divergent` when some produced finding cites its requirement, and
+    those findings are then withheld from `spurious`.
+    """
     outcome = FindingMatchOutcome(expected_count=len(expected_findings))
     matched_finding_ids: set[str] = set()
+    divergent_finding_ids: set[str] = set()
 
     for entry in expected_findings:
         key = str(entry["key"])
         wanted_requirement = str(entry["requirement_id"])
         wanted_component = normalized_name(str(entry["affected_component"]))
+        on_requirement = [
+            finding for finding in approved if wanted_requirement in finding.requirement_ids
+        ]
         matched = [
             finding
-            for finding in approved
-            if wanted_requirement in finding.requirement_ids
-            and any(
+            for finding in on_requirement
+            if any(
                 component_names.get(component_id) == wanted_component
                 for component_id in finding.affected_component_ids
             )
@@ -164,8 +188,14 @@ def match_findings(
             matched_finding_ids.update(finding.id for finding in matched)
         else:
             outcome.missed.append(key)
+            if on_requirement:
+                outcome.divergent[key] = [finding.id for finding in on_requirement]
+                divergent_finding_ids.update(finding.id for finding in on_requirement)
 
-    outcome.spurious = [finding.id for finding in approved if finding.id not in matched_finding_ids]
+    # A finding matching some other expectation is never spurious, and neither is one standing
+    # on an expected requirement under a name the expectation does not carry (DEC-148).
+    accounted = matched_finding_ids | divergent_finding_ids
+    outcome.spurious = [finding.id for finding in approved if finding.id not in accounted]
     return outcome
 
 

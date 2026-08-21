@@ -156,7 +156,14 @@ def test_forgeflow_replays_through_the_harness_offline(
     assert feed["metrics"]["false_negative_rate"]["evaluator_type"] == "benchmark"
 
     items = feed["items"]["findings"]
-    assert set(items) == {"matched", "missed", "spurious", "conditional_unreached", "fingerprints"}
+    assert set(items) == {
+        "matched",
+        "missed",
+        "divergent",
+        "spurious",
+        "conditional_unreached",
+        "fingerprints",
+    }
     classified = len(items["matched"]) + len(items["missed"]) + len(items["conditional_unreached"])
     assert classified > 0, "every expected finding is classified, not merely counted"
     # The flagship live capture resolves neither contradiction, so the two conditional

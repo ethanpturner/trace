@@ -768,6 +768,7 @@ def _items_for(
         "findings": {
             "matched": finding_matches.matched,
             "missed": finding_matches.missed,
+            "divergent": finding_matches.divergent,
             "spurious": finding_matches.spurious,
             "conditional_unreached": conditional_unreached,
             "fingerprints": finding_matches.fingerprints,

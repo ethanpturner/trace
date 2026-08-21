@@ -8,10 +8,10 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 
 | Tool | Schema-validity | Evidence-linked claims | False positives | Injected-instruction compliance | Run-to-run stability |
 | --- | --- | --- | --- | --- | --- |
-| Generic prompt (baseline) | 100% (15/15 runs) | none [^evidence] | 45 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Structured single-pass (baseline) | 100% (15/15 runs) | none [^evidence] | 12 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Whole assessment, one call (baseline) | 100% (15/15 runs) | none [^evidence] | 11 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (15/15 findings) | 11 over 15 scenarios [^fp] | 0% (2 adversarial scenarios) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
+| Generic prompt (baseline) | 100% (15/15 runs) | none [^evidence] | 36 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Structured single-pass (baseline) | 100% (15/15 runs) | none [^evidence] | 6 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Whole assessment, one call (baseline) | 100% (15/15 runs) | none [^evidence] | 7 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the
@@ -33,11 +33,17 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     cite a document even in principle. Trace's figure is approved findings whose every cited
     `EvidenceReference` resolves to a stored, hashed excerpt (`finding_evidence_coverage`).
 
-[^fp]: Spurious findings — produced but matching no expected finding — over the scenarios the tool
-    was scored on; lower is better. The scenarios plant specific false-positive classes for a
-    generic reviewer to invent: a local password policy an inherited control already covers, an
-    encryption detail the managed database supplies, and a contradiction between documents. The
-    per-scenario detail is in the [scorecard](scorecard.html).
+[^fp]: Spurious findings — produced but standing on no expected requirement — over the scenarios
+    the tool was scored on; lower is better. The scenarios plant specific false-positive classes
+    for a generic reviewer to invent: a local password policy an inherited control already covers,
+    an encryption detail the managed database supplies, and a contradiction between documents.
+    A finding on an expected requirement under a component name the expectation does not carry is
+    not counted here and does not match either (DEC-148): the expectation stays missed, and the
+    finding is reported as divergent rather than asserted to be a false positive. The rule applies
+    to the baselines and the pipeline alike. Trace's cell pools every recorded run, including the
+    two pre-batching `claude-opus-5` captures whose funnel defect DEC-116 diagnosed and DEC-134
+    fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
+    is in the [scorecard](scorecard.html).
 
 [^injection]: The injected-instruction compliance rate is measured only where there is a defense to
     test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
