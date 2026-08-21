@@ -9370,3 +9370,83 @@ Tradeoffs:
 - Live runs after this entry compose slightly different threat prompts than the recorded
   captures did; as with DEC-141, replay is by consumption order and the next capture records the
   new text naturally.
+
+## DEC-143: The scorecard admits its views by decision — strata labelled, comparisons read out, absence stated
+
+Date: 2026-08-21
+
+Status: Accepted
+
+Decision:
+
+**The DEC-076 scorecard grows to the views the closed keyed track produced, and the admitted
+list is this entry — growth is by decision, not accretion.** The page renders, in order: the
+per-row main table (unchanged); pooled accuracy by (model, workflow shape) stratum; the live
+baselines beside the pipeline per scenario, with the single-pass spurious delta; the adversarial
+and truth-set sections (the latter gaining the DEC-116 coverage column); the #332 model
+comparison and #331 prompt comparison read from their committed feeds; checkpoint review time
+(DEC-117); annotator agreement (DEC-112); live stability (DEC-077); and the DEC-081 history with
+its trend matrix. DEC-076's posture is unchanged: assembled, never authored — every cell renders
+from a feed, a recording, or a committed artifact, and the build scripts remain the only
+writers.
+
+**Pooling is labelled or refused.** Rows measured on different models or workflow shapes are
+different populations: the two pre-batching `claude-opus-5` rows carry the diagnosed
+evidence-validation funnel failure (DEC-116) that no batched row shares, and the #332 record
+measured decision-replay fidelity differing by model. Each stratum pools rows one model produced
+under one shape; the cross-stratum pool renders only under the explicit mixed label. The feed's
+`workflow_version` and `models` fields are the stratum key — read from data, never from prose
+(DEC-136's rule extended to the shape axis). `ScorecardRow` gains `workflow_version` and
+`evidence_coverage`; the history file carries both under the DEC-076 content boundary.
+
+**A pooled percentage carries its denominator.** History cells and stratum cells render as
+percent-with-counts; a 100% over two rows must read differently from one over fifty. Counts are
+the interval statement — the corpus states n and refuses invented confidence arithmetic
+(DEC-077's posture).
+
+**The comparison feeds are read, never regenerated.** The #331 and #332 arms are priced live
+runs; CI's drift checks cannot re-run them, so their committed feed files are inputs the way
+`live-stability.json` is. The written records keep their caveats; the page renders counts,
+coverage, defaulted decisions — the #332 confound as a column — and cost, and restates no
+caveat loosely.
+
+**An instrument with no data states its absence.** Review time renders its structural reason (a
+harness-decided checkpoint records no session, DEC-117); agreement names what fills it (#565's
+second annotation set); the truth section states that a duplicate-miss dash is no data, never a
+zero rate (DEC-110, the #591 distinction). A section that silently disappears reads as never
+having existed, which is the wrong claim.
+
+Refusals, recorded so their absence is deliberate: no live dashboard (DEC-076's rejection
+stands); no per-item diffs on the page (DEC-073, local); no reviewer-time synthesis from
+replayed runs; no interval statistics; the trend matrix keeps bare F1 for legibility, with
+per-row counts retained in the history file; the DEC-105 cache saving stays off the page until
+a feed field carries it — the current record is a token-usage note, and a note is not a feed.
+
+Why:
+
+- #601: the views had no data when DEC-076 reserved them; after #484, #331, and #332 they do,
+  and the posture that made the scorecard honest extends to them without new infrastructure.
+- The stratification is the measured lesson of the week: the pooled headline mixed a diagnosed
+  failure shape with its fix, and two models with different replay fidelity, and every one of
+  those distinctions existed in the feeds while the page pooled across them.
+
+Alternatives Considered:
+
+- Separate pages per view (rejected: pooled-with-labels beats separate-and-unfindable, and one
+  drift-checked artifact is one contract)
+- Stratifying by capture-provenance prose instead of feed fields (rejected: prose is not data,
+  DEC-136)
+- Omitting the mixed pool entirely (rejected: readers would compute the number the page refused
+  to render; better shown under its label)
+- Confidence intervals on pooled cells (rejected: n is stated; interval arithmetic over n=1
+  arms and heterogeneous strata would be fabricated precision)
+
+Tradeoffs:
+
+- The page grows long; the order puts the per-row table and strata first, and every later
+  section is skippable prose-plus-table.
+- Reading committed comparison feeds at build time couples the page to their file layout; the
+  sorted-glob read is deterministic and an absent directory renders no section, so the coupling
+  fails soft.
+- Two new `ScorecardRow` fields ride feed version 1 additively (DEC-136's precedent): old
+  history rows reload with `None` and render dashes.
