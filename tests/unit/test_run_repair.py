@@ -147,7 +147,7 @@ def _walked_to(handle: AssessmentHandle, run_id: str, destination: Phase) -> Ass
 
 
 def stranded_run(handle: AssessmentHandle) -> WorkflowRun:
-    """A run killed in the window a pause is not atomic across (DEC-144, #641).
+    """A run killed in the window a pause is not atomic across (DEC-145, #641).
 
     `_persist_pause` commits the run row and *then* writes the state file — deliberately, so a
     rolled-back `on_pause` cannot leave a paused state file for an unpaused row. A process killed

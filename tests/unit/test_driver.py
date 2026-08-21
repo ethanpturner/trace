@@ -659,7 +659,7 @@ def test_a_resumed_run_says_running_on_its_row_while_it_executes(
 ) -> None:
     """The row a resumed run wears is a running run's, not the pause it resumed from (#641).
 
-    Before DEC-144 the row kept `paused` for the whole resumed run while the state file recorded
+    Before DEC-145 the row kept `paused` for the whole resumed run while the state file recorded
     the phases going by, so a process killed anywhere in that stretch left a combination neither
     `trace resume` nor `trace runs repair` would touch. The row is what the run *is*.
     """
@@ -689,7 +689,7 @@ def test_a_resumed_run_says_running_on_its_row_while_it_executes(
 
 
 def test_a_repaired_strand_resumes_and_finishes_the_run(prepared: tuple[Path, str]) -> None:
-    """The whole recovery, end to end: strand, repair, resume (DEC-144, #641).
+    """The whole recovery, end to end: strand, repair, resume (DEC-145, #641).
 
     The strand is built the way a kill builds one — the row paused, the state file still recording
     the phase the process was running, because a pause commits the row before it writes the file.

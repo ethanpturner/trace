@@ -1439,7 +1439,7 @@ def resume_assessment(
         )
     # Resuming ends the review session whichever stopped state the run resumed from. A failed run's
     # assessment is ordinarily already `draft`, which is why this sat inside the paused branch --
-    # but a repaired strand (DEC-144) is a failed run whose pause had moved the assessment to
+    # but a repaired strand (DEC-145) is a failed run whose pause had moved the assessment to
     # `pending_review`, and leaving it there would make the next pause's `begin_review` refuse.
     assessment = handle.objects.get(Assessment, assessment_id)
     if assessment.status is ObjectStatus.PENDING_REVIEW:

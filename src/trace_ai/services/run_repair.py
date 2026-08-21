@@ -13,7 +13,7 @@ batch hold a run for over two hours. Nothing here inspects time, processes, or p
 caller states that the process is gone, and the error summary names the assertion so the row's
 history says who decided (DEC-127's explicitness precedent).
 
-A second orphan shape reaches the same verb (#641, DEC-144): a run whose row says `paused` while
+A second orphan shape reaches the same verb (#641, DEC-145): a run whose row says `paused` while
 its state file records a phase still `running`. A pause commits the row and then writes the state
 file -- deliberately in that order, so a rolled-back `on_pause` cannot leave a paused state file
 for an unpaused row -- and a process killed between the two writes leaves the halves disagreeing.
@@ -113,7 +113,7 @@ def repair_run(handle: AssessmentHandle, run_id: str, *, reason: str | None = No
     """Mark an orphaned or stranded run failed, on the operator's stated assertion.
 
     Two shapes qualify: a `running` row whose process is gone (DEC-137), and a `paused` row whose
-    state file disagrees with it (DEC-144). Any other status is refused with the verb that already
+    state file disagrees with it (DEC-145). Any other status is refused with the verb that already
     covers it: a cleanly paused run is `trace resume`'s, a superseded paused run is `trace runs
     prune`'s, and a completed run needs nothing. The mechanics are the ledger's own
     `complete(error_summary=...)` -- the same close a run performs on itself -- so the repaired row

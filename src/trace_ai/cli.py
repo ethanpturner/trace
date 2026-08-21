@@ -63,6 +63,7 @@ from trace_ai.infrastructure.model.journal import (
     JournalReplayModel,
     SpentJournalEntryError,
     journal_dir,
+    journal_entry_paths,
     read_journal_entry,
     spent_marker,
 )
@@ -1991,7 +1992,7 @@ def _runs_status(args: argparse.Namespace, service: AssessmentService) -> int:
         if state.pending_human_review is not None:
             awaiting = len(state.pending_human_review.object_ids)
     # A row and a state file that disagree are reported as the disagreement they are, rather than
-    # by printing one side and letting the other pass unseen (DEC-144).
+    # by printing one side and letting the other pass unseen (DEC-145).
     strand = strand_description(handle, run)
 
     if args.as_json:
@@ -2074,7 +2075,7 @@ def _runs_prune(args: argparse.Namespace, service: AssessmentService) -> int:
 
 
 def _runs_repair(args: argparse.Namespace, service: AssessmentService) -> int:
-    """Mark an orphaned or stranded run failed (DEC-137, DEC-144). A dry run refuses."""
+    """Mark an orphaned or stranded run failed (DEC-137, DEC-145). A dry run refuses."""
     from trace_ai.services.run_repair import RunRepairError, describe_run, repair_run
 
     handle = service.handle(args.assessment_id)
@@ -2893,10 +2894,11 @@ def _run_model(
             )
         return profile, model
     artifacts = service.handle(args.assessment_id).artifacts
-    model = JournalingModel(model, journal_dir(artifacts))
+    directory = journal_dir(artifacts)
+    model = JournalingModel(model, directory)
     entries = _journal_entries(args.replay_journal)
     if entries:
-        model = JournalReplayModel(entries, model)
+        model = JournalReplayModel(entries, model, carry_forward=directory)
     return profile, model
 
 
@@ -2912,7 +2914,7 @@ def _journal_entries(supplied: list[Path]) -> list[JournalEntry]:
     try:
         for path in supplied:
             if path.is_dir():
-                for candidate in sorted(path.glob("[0-9]*.json")):
+                for candidate in journal_entry_paths(path):
                     if spent_marker(candidate).exists():
                         print(f"skipping {candidate.name} (spent)", file=sys.stderr)
                         continue

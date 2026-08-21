@@ -60,7 +60,9 @@ banner exits 1 with `SourceCheckoutRequiredError`.
   journals each response it consumes into the assessment's `traces/journal/` area, and a resume
   that names the journal re-drives an interrupted phase without re-spending its calls. An entry
   answers only the call that recorded it — schema and request hash both match — exactly once;
-  it is marked spent when served, and anything the journal cannot answer runs live. Refused
+  it is marked spent when served, and anything the journal cannot answer runs live. A served
+  entry is copied into this run's journal as it is served (DEC-144), so a run interrupted a
+  second time is re-driven by naming the same directory again, with no hand-assembly. Refused
   with `offline-fake`, which journals nothing: replay a recording with `--response` instead.
 - `--max-model-calls N` — stop the run before exceeding this many model calls.
 - `--max-cost COST` — stop the run before exceeding this estimated cost.
@@ -459,7 +461,8 @@ refused by name.
   entry answers only the call that recorded it exactly once, and anything the journal cannot
   answer runs live. Live profiles only — a recording replay serves its own responses. A live
   harness run journals every response it consumes into the work root's `traces/journal/` area,
-  so the flag has something to name after a kill.
+  so the flag has something to name after a kill, and a re-drive carries what it replays into
+  that same area (DEC-144) — a second kill re-drives from the same directory unchanged.
 - `--label`, `--condition`, `--work-root`, `--results-root`, and `--diff-against` control where
   the feed lands and what it is compared against.
 - `--report scorecard|comparison|ablation` runs the offline sweep and renders one evaluation
@@ -601,7 +604,7 @@ the same information as one DEC-096 envelope. Note the row of a run whose proces
 still says `running` — a status read reports the row and never repairs it; asserting the kill
 is `trace runs repair` (DEC-137). When the row and the state file disagree — a `paused` row over
 a state file still recording a running phase, which a process killed between a pause's two writes
-leaves behind — a `stranded:` line names the disagreement and the verb that reaches it (DEC-144),
+leaves behind — a `stranded:` line names the disagreement and the verb that reaches it (DEC-145),
 rather than printing one side and letting the other pass unseen.
 
 ```
@@ -623,7 +626,7 @@ trace runs repair <assessment_id> <run_id> [--reason TEXT] [--force]
 ```
 
 Marks an orphaned or stranded run failed, on the operator's assertion that its process is gone
-(DEC-137, DEC-144). A killed process leaves its run at `running`; `resume` refuses it — neither
+(DEC-137, DEC-145). A killed process leaves its run at `running`; `resume` refuses it — neither
 paused nor failed — and prune covers paused runs only. A process killed between a pause's two
 writes instead leaves a `paused` row over a state file still recording a running phase, which
 `resume` refuses because the file it reads is not a pause; repair reaches that combination too,

@@ -2425,7 +2425,7 @@ def test_a_run_narrates_each_phase_to_stderr(
 def test_runs_status_names_a_stranded_run_and_the_verb_that_reaches_it(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    """A row and a state file that disagree are reported as that (DEC-144, #641).
+    """A row and a state file that disagree are reported as that (DEC-145, #641).
 
     Printing one side and letting the other pass unseen is what left the field occurrences
     looking like ordinary pauses while `resume` refused them.
