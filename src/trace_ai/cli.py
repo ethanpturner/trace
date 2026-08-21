@@ -670,7 +670,10 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument(
         "--model-profile",
         default="offline-fake",
-        help="the model profile for a stability run (default: offline-fake, which it refuses)",
+        help=(
+            "the model profile for a live run — one named scenario or --stability; the "
+            "offline-fake default replays recordings and spends nothing"
+        ),
     )
     evaluate.add_argument(
         "--ablate",
@@ -695,6 +698,15 @@ def build_parser() -> argparse.ArgumentParser:
         dest="diff_against",
         metavar="LABEL",
         help="classify each expected item against a prior feed with this label (DEC-073)",
+    )
+    evaluate.add_argument(
+        "--live-workflow-version",
+        dest="live_workflow_version",
+        metavar="VERSION",
+        help=(
+            "pin a live run to a named earlier workflow shape (DEC-134's experiment, #331); "
+            "refused on a replay, whose version is the recording's fact"
+        ),
     )
     evaluate.add_argument(
         "--results-root",
@@ -3381,6 +3393,17 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
 
     registry = load_registry()
 
+    # A live profile prices every scenario it touches; `--all` under one would bill the whole
+    # corpus on a single flag. Live harness runs are singly named (the DEC-077 posture: manual,
+    # priced by the operator), and the offline default keeps a bare sweep free.
+    live_profile = args.model_profile != "offline-fake"
+    if live_profile and args.all_scenarios:
+        print(
+            "error: a live --model-profile prices each scenario; name one scenario, not --all",
+            file=sys.stderr,
+        )
+        return 1
+
     # Validate the condition once, not once per scenario: an unknown `--condition` used to produce
     # twelve identical HarnessErrors on `--all`. `clean` is always valid; any other must be declared
     # by some scenario.
@@ -3428,7 +3451,9 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
                     label=args.label,
                     condition=args.condition,
                     ablations=args.ablations,
+                    profile_name=args.model_profile,
                     results_root=args.results_root,
+                    live_workflow_version=args.live_workflow_version,
                 )
             except HarnessError as refused:
                 print(f"error: {refused}", file=sys.stderr)

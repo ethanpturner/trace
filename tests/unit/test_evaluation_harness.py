@@ -96,6 +96,19 @@ def test_a_scenario_without_a_recording_is_refused_by_name(tmp_path: Path) -> No
         )
 
 
+def test_a_live_workflow_version_is_refused_on_a_replay(tmp_path: Path) -> None:
+    """The pin is the experiment arm of a live run (#331); a replay's version is the recording's
+    fact (DEC-134), and overriding it would re-measure a recording under a shape that never
+    produced it. The refusal fires before anything is loaded or spent."""
+    with pytest.raises(HarnessError, match=r"live_workflow_version.*recording's fact"):
+        run_scenario(
+            "forgeflow",
+            data_root=tmp_path / "data",
+            label="test",
+            live_workflow_version="0.1",
+        )
+
+
 # ------------------------------------------------------------------------------------------
 # The ordinary (clean) harness run
 # ------------------------------------------------------------------------------------------
@@ -135,6 +148,10 @@ def test_forgeflow_replays_through_the_harness_offline(
     assert outcome.feed_path == tmp_path / "results" / "forgeflow" / "clean" / "test.json"
     assert feed["scenario"] == "forgeflow"
     assert feed["authoritative"] is True
+    # The shape that produced the feed is stated in it (DEC-134): forgeflow's recording pins the
+    # pre-batching single-call shape, and a cross-shape comparison (#331) is only readable if
+    # each feed names its own.
+    assert feed["workflow_version"] == "0.1"
     assert feed["metrics"]["false_negative_rate"]["evaluator_type"] == "benchmark"
 
     items = feed["items"]["findings"]

@@ -161,12 +161,19 @@ def run_scenario(
     registry_path: Path | None = None,
     results_root: Path | None = None,
     stop_after_findings: bool = False,
+    live_workflow_version: str | None = None,
 ) -> HarnessOutcome:
     """Replay one registered scenario through the ordinary pipeline and export its feed.
 
     `label` names the run in the results tree — a commit hash, a date, or `local`. The caller
     supplies it because the harness computes nothing about its environment; a feed's identity is
     stated, never inferred.
+
+    `live_workflow_version` pins a live run to a named earlier workflow shape — the DEC-134
+    experiment: v1 single-call against v2 batched on the same scenarios (#331). It is live-only
+    by construction: a replay's version is the recording's fact, read from the registry, and a
+    parameter that could override it would re-measure a recording under a shape that never
+    produced it.
 
     `stop_after_findings` ends the run at the finding checkpoint rather than resuming into the
     report, and the finding-quality metrics are computed there. The ablation set (DEC-012) uses
@@ -177,6 +184,11 @@ def run_scenario(
     entry = load_scenario(slug, registry_path=registry_path)
     profile = resolve_profile(profile_name)
     live = profile.provider != "fake"
+    if live_workflow_version is not None and not live:
+        raise HarnessError(
+            "live_workflow_version pins a live run's shape; a replay's workflow version is the "
+            "recording's fact, read from the registry (DEC-134), and cannot be overridden"
+        )
     if live:
         # A live run replays nothing: the provider answers, and the checkpoints are decided by
         # DEC-077's named default policy (with recorded question answers matched by text). This
@@ -204,9 +216,12 @@ def run_scenario(
             # A replay pins the registry's workflow version so the recording is consumed under
             # the call shape that produced it (DEC-134) — the condition's own pin where its
             # recording carries one, because a promoted clean capture must not re-shape the
-            # replay of a condition recording it did not touch. A live run pins nothing: it
-            # measures the current pipeline, and what it records carries the current version.
-            workflow_version=None if live else entry.workflow_version_for(condition),
+            # replay of a condition recording it did not touch. A live run pins nothing —
+            # measuring the current pipeline — unless the caller names an earlier shape as the
+            # comparison arm of a DEC-134 experiment (#331).
+            workflow_version=live_workflow_version
+            if live
+            else entry.workflow_version_for(condition),
         )
         assessment_id = created.id
         handle = service.handle(assessment_id)
@@ -800,6 +815,10 @@ def _export_feed(
         "models": list(models),
         "condition": condition,
         "label": label,
+        # The shape that produced this feed (DEC-134): a replay's pin, or the live run's
+        # version — current unless an experiment named an earlier one (#331). A comparison
+        # across shapes is only readable if each feed states its own.
+        "workflow_version": assessment.workflow_version,
         "assessment_id": assessment.id,
         "workflow_run_id": run.id,
         "run_status": run.status.value,

@@ -1,0 +1,158 @@
+{
+  "ablations": [],
+  "assessment_id": "asm-001",
+  "authoritative": true,
+  "condition": "clean",
+  "defaulted_decisions": 9,
+  "feed_version": "1",
+  "items": {
+    "documentation_gaps": {
+      "matching": [],
+      "non_matching": [
+        "gap-001",
+        "gap-002",
+        "gap-003",
+        "gap-004",
+        "gap-005"
+      ]
+    },
+    "findings": {
+      "conditional_unreached": [],
+      "fingerprints": {},
+      "matched": {},
+      "missed": [],
+      "spurious": []
+    }
+  },
+  "label": "prompt-v1-live",
+  "metrics": {
+    "clarifying_question_usefulness": {
+      "evaluator_type": "benchmark",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "documentation_gap_precision": {
+      "evaluator_type": "benchmark",
+      "sample_size": 5,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "duplicate_finding_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "estimated_cost": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "dollars",
+      "value": 1.7998805
+    },
+    "evidence_assessment_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 108,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "execution_duration": {
+      "evaluator_type": "automated",
+      "sample_size": 27,
+      "unit": "seconds",
+      "value": 1604.935
+    },
+    "false_negative_rate": {
+      "evaluator_type": "benchmark",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "false_positive_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "finding_evidence_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "model_call_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 14.0
+    },
+    "node_failure_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 27,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "report_finding_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "report_invented_finding_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "report_severity_inconsistency_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "reviewer_acceptance_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "reviewer_edit_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "reviewer_rejection_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "token_usage": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "tokens",
+      "value": 328744.0
+    },
+    "unsupported_claim_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "unsupported_claim_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 26,
+      "unit": "percentage",
+      "value": 0.0
+    }
+  },
+  "models": [
+    "openai/gpt-5.1"
+  ],
+  "run_status": "completed",
+  "scenario": "missing-docs",
+  "stopped_because": "completed",
+  "workflow_run_id": "run-001",
+  "workflow_version": "0.1"
+}
