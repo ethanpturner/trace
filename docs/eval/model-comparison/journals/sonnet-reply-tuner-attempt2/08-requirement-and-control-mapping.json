@@ -1,0 +1,110 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 15318,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 15761,
+    "estimated_cost": "0.29970375",
+    "duration_seconds": 149.37086341704708
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The training corpus is built from full closed-ticket transcripts of customer support conversations (evd-002), which satisfies the applicable condition that training data derive from user or customer content. The corpus is not synthetic, public, or free of sensitive elements by construction, so the non-applicable exclusion does not hold. This bears directly on the threat: the severity of any exposure to the vendor turns on whether the data sent for training has been minimized.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the tuning job's fine-tuning call executes against the vendor's infrastructure rather than within the pipeline's own environment, since that would mean customer content containing restricted PII (evd-002, evd-003) is sent to an external model provider. The documentation names the vendor's base model as the fine-tuning target (evd-002) but does not state where execution occurs, and a direct question to the reviewer on this point returned no substantive answer, so whether the non-applicable condition ('the model runs within the system's own trust boundary') holds cannot be established.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies only if fine-tuning is performed on vendor-hosted infrastructure, which would make the vendor an external provider processing customer transcript data on the system's behalf. The documentation does not establish whether this transmission occurs (evd-002 describes only that the vendor's base model is fine-tuned, not the execution location), so the applicable condition cannot be confirmed either way.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the fine-tuning call causes unredacted transcript data -- including customer names, email addresses, and full message bodies (evd-003) -- to cross to vendor infrastructure, which would be data crossing a network boundary the system does not control. Whether this transmission occurs is not established in the documentation, so the condition is unresolved rather than confirmed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Fine-tuning execution location for the Tuning Job is undetermined",
+        "description": "The documentation states that the Tuning Job fine-tunes the vendor's base reply model on the training store's contents (evd-002) but does not state whether that fine-tuning executes within the pipeline's own environment or by invoking the vendor's infrastructure. A direct question to the reviewer on this point (qst-001) returned no substantive answer under the stability protocol default. Without this fact it cannot be determined whether unredacted transcript data (evd-003), which includes customer names, email addresses, and full message bodies, leaves the environment to reach the vendor.",
+        "importance": "This fact controls the applicability of the requirements governing external-provider data minimization (req-AI-003), external processor data-handling terms (req-TPI-001), and encryption of data crossing an uncontrolled network boundary (req-DATA-001). Until it is resolved, none of those requirements can move past 'unverified,' and the confidentiality exposure of the full unredacted transcript corpus to a third party remains an open question rather than a settled one.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-008",
+          "df-004"
+        ],
+        "requested_evidence": [
+          "A statement of whether the tuning job invokes the vendor's fine-tuning service/API or runs the base model within the pipeline's own environment",
+          "If vendor-hosted, a description of what data is transmitted to the vendor and any minimization, encryption in transit, or contractual retention/usage terms that apply to that transmission"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "d58d1689afcf2d0ebdd4c8c305a5d1dea38357bd6171c479e4f15fa4cecae696"
+}

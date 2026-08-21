@@ -1,0 +1,53 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 12846,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 28434,
+    "estimated_cost": "0.4996725",
+    "duration_seconds": 172.02882908296306
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "critique_type": "unsupported_claim",
+        "description": "map-024 declines the negative transport conclusion by invoking req-DATA-001's common_false_positives entry \"absent encryption detail for a managed service that encrypts by default\". Nothing in evd-001 establishes a managed service on either path: the only deployment statement is \"The service runs on a virtual machine in the operations subnet\", with \"The kiosks call it over the store network\" and \"The fulfillment system polls it hourly\". The precondition that catalog entry names -- a managed platform that supplies encryption by default -- is not established for df-001 or df-002, and the one deployment fact the note does give (a self-hosted virtual machine) points away from it. No load balancer, proxy, gateway, or managed endpoint appears anywhere in evd-001.",
+        "rationale": "The satisfaction status itself is right: evd-001 is silent about protocol and transport, silence is not absence, and gap-004 already records that inability to verify. What is unsupported is the stated basis for the suppression. A reviewer reading this mapping could reasonably take it to mean that a platform default plausibly covers transport on these two flows, which the evidence does not support for a service running on an operator-managed VM reached over a store network. The mapping should rest its refusal to conclude absence on plain documentary silence (already captured by gap-004), or, if it means to rely on a terminating platform in front of the VM, record that as an explicit assumption rather than as a catalog exception whose precondition is unestablished.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-009",
+        "critique_type": "duplicate",
+        "description": "gap-009 records two things as unestablished -- what restricts reachability of the sync service, and the network location and operating party of the fulfillment system -- that gap-005 and gap-006 already record separately for this same threat. gap-005 covers the missing enforcing mechanism for ctl-001's stated placement; gap-006 covers the fulfillment system's ownership, location, and the unbounded poll path, with the same req-TPI-001 consequence gap-009 names in its importance text. All three cite evd-001 and only evd-001, and gap-009's three requested-evidence items are contained in the union of the other two (inbound access policy for the VM; fulfillment location and operator; reachability of the interface beyond the operations subnet).",
+        "rationale": "evd-001 is a single three-sentence deployment paragraph, and one silence in it is being carried forward as three separate gap records for one threat. Left as is, the same two questions will be put to the documentation owner three times and may be answered inconsistently. Merging gap-009 into gap-005 and gap-006 preserves both distinct questions -- reachability enforcement, and fulfillment ownership/location -- without a third composite record that adds no new requested evidence.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-005",
+        "critique_type": "duplicate",
+        "description": "The single unrecorded fact behind gap-005 -- that ctl-001 states placement in the operations subnet but names no firewall policy, security group, private link, or mesh policy enforcing reachability -- is recorded five times in this package: gap-005, gap-009, gap-017, gap-022, and gap-027. Each cites only evd-001, each traces to the limitation already written on ctl-001 (\"Placement is stated but no enforcing mechanism ... is described\"), and each asks for substantially the same artifact (the inbound policy governing traffic from the store network into the operations subnet, and which sources may reach the ingest interface). They differ only in which threat's precondition they are attached to, and they disagree on severity for the identical missing artifact: gap-027 low, the other four medium.",
+        "rationale": "One policy document closes all five at once, so five gap records will produce five near-identical evidence requests and, if answered separately, five differently worded resolutions against the same control limitation. Consolidating them into one gap anchored on ctl-001, with the affected threats listed as related objects, keeps the per-threat traceability while presenting the documentation owner with a single question and a single severity. Raised at medium confidence because four of the five are attached to threats outside this review group, so the consolidator sees more of the picture than I do.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "call_sha256": "32a21ce597194ef159ca1481593d680595e7962d3ab1a328549d3c02fe053fa8"
+}

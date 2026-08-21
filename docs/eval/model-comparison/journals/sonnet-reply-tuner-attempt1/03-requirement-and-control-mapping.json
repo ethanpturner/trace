@@ -1,0 +1,310 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 20267,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 43942,
+    "estimated_cost": "0.4710585",
+    "duration_seconds": 201.2436610830482
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "training-store-write-restriction",
+        "name": "Training store write access restricted to exporter job identity",
+        "description": "The nightly transcript exporter job is documented as the only writer to the training store; write access is granted solely to its job identity through the platform's access policy, so no other principal can add or modify corpus content.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": []
+      },
+      {
+        "key": "artifact-date-versioning",
+        "name": "Dated artifact bucket for tuned model versions",
+        "description": "Each week's tuned model artifact is written to the artifact bucket named by date, giving each artifact a distinguishable identifier and a basic ordering across training runs.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003",
+          "cmp-005"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "partially_implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not state that the base model identity or the training-data snapshot version is recorded against each artifact, only that artifacts are named by date."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [
+          "training-store-write-restriction"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The tuning job fine-tunes a model on collected closed-ticket data, and the training corpus accepts content originating from many different customers, matching this requirement's applicable_conditions directly.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data derives directly from customer ticket content, which is the applicable_conditions trigger for this requirement, and this is the exact mechanism the threat's attack path describes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [
+          "artifact-date-versioning"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Tuned model artifacts are produced weekly and served to agents for every open ticket, matching this requirement's applicable_conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The training store holds PII (customer names, email addresses, message bodies), which is confidential data at rest, matching this requirement's applicable_conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The training store and artifact bucket retain copies of customer data (transcripts and tuned artifacts) as a by-product of processing, matching this requirement's applicable_conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data exists in more than one store -- the helpdesk, the training store, and embedded within the tuned model artifact -- matching this requirement's applicable_conditions, and the threat's impact depends on whether memorized PII in any of these can be removed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the tuning job's use of 'the vendor's base reply model' means training data is sent to an external vendor service rather than a vendor-provided model run inside the system's own environment; the documentation does not establish which, and the recorded reviewer question on this exact point (qst-001) returned no answer, so the run proceeds on the documents alone.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Assuming, absent further information, that 'vendor's base reply model' could denote either a locally-run licensed model or a hosted external fine-tuning API; the documentation does not distinguish these."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the fine-tuning vendor processes customer transcript data on the system's behalf as an external processor; this turns on the same unresolved fact as req-AI-003 -- whether tuning executes within the vendor's external service -- which the documentation does not settle.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Assuming the vendor relationship may constitute external processing of customer data; not established by the documentation."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system overview states agents see a suggested reply and decide whether to use it, i.e. every output is a draft a person may edit, discard, or send manually, which matches this requirement's non_applicable_conditions entry directly.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Publication of the suggested reply to the customer requires the agent to review and decide whether to use it, matching this requirement's non_applicable_conditions entry that a human approves each publication.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Whether fine-tuning sends unredacted transcript data to an external vendor",
+        "description": "The tuning job is described as fine-tuning 'the vendor's base reply model' on the training store's contents (evd-002), but the documentation does not state whether this execution happens within the pipeline's own environment using a vendor-supplied model, or whether transcript data is transmitted to a vendor-operated service. A prior reviewer question on this exact point returned no definitive answer.",
+        "importance": "This determines whether unredacted customer PII crosses an external trust boundary in addition to being memorized in the tuned artifact, which would materially change the scope of this threat's exposure and engage req-AI-003 and req-TPI-001 more concretely.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "description of where the tuning job executes",
+          "a statement of whether training data leaves the environment to reach the vendor",
+          "vendor data retention and usage terms, if applicable"
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Retention period for exported transcripts and tuned artifacts is not stated",
+        "description": "The training store and artifact bucket retain exported transcripts and weekly model artifacts (evd-002, evd-004), but no retention or expiry period is documented for either.",
+        "importance": "An undefined retention period means unredacted PII, and PII memorized in superseded model artifacts, may persist indefinitely, extending this threat's window of exposure.",
+        "related_object_ids": [
+          "cmp-002",
+          "cmp-003",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "operations documentation stating the retention period for the training store and artifact bucket",
+          "storage lifecycle configuration"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Deletion path for customer data across training store and tuned artifacts is not described",
+        "description": "Customer data exists in the helpdesk, the training store, and is embedded in tuned model weights, but no deletion procedure covering these stores is documented.",
+        "importance": "Because a customer's data can be memorized in model weights and reproduced for unrelated tickets, the ability (or inability) to remove that data on request -- including from already-served artifacts -- directly bears on how this threat's impact can be remediated.",
+        "related_object_ids": [
+          "cmp-002",
+          "cmp-003",
+          "cmp-005",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "operations documentation describing a deletion procedure",
+          "an inventory of stores holding customer data, including the tuned artifact"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Tuned artifact lineage recording is incomplete",
+        "description": "The artifact bucket names each week's artifact by date (evd-004), but the documentation does not state that the base model version or the training-data snapshot used for that run is recorded against the artifact.",
+        "importance": "Without recorded lineage, if a specific export or training run is later found to have introduced memorized PII, there is no stated way to determine which served artifacts were trained on it.",
+        "related_object_ids": [
+          "cmp-003",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "documentation naming a registry or artifact store and the lineage fields it records",
+          "description of how a served artifact is traced to its training-data version"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "a4de975cfcb957665444c20000bbafd1198a49fe3aaa713b0b2b963e4b79b97b"
+}

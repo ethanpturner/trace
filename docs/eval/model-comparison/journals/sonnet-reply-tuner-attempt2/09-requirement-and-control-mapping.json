@@ -1,0 +1,116 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 19010,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 17044,
+    "estimated_cost": "0.359895",
+    "duration_seconds": 191.03319499990903
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The training corpus (Training Store) accepts closed-ticket transcripts written by any customer, satisfying the condition that 'the training corpus accepts content from more than one source or author,' and the reply model is fine-tuned on that corpus, satisfying 'a model is fine-tuned or continually trained on data the system collects.'",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data derives directly from customer ticket content including names, email addresses, and message bodies, satisfying 'training data derives from user, customer, or production content'; the corpus is neither synthetic, public, nor free of sensitive elements, so the non-applicable conditions do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Tuned model artifacts are produced weekly by the Tuning Job and served to agents by the Reply Service, satisfying 'tuned model artifacts are produced and any of them is served or shared,' which is directly relevant to this threat because tracing an affected reply model back to the poisoned training snapshot requires recorded lineage.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Tuned artifact lineage beyond date-based naming is unconfirmed",
+        "description": "The tuning job writes each week's artifact to an artifact bucket named by date, and the reply service serves whichever artifact is most recent, but the documentation does not state whether any registry entry or artifact metadata records the base model version or the training-data snapshot each artifact was trained from.",
+        "importance": "Without recorded lineage beyond a date, an artifact later found to reflect poisoned or manipulated training content -- as this threat describes -- cannot be reliably traced back to the specific training-store snapshot or base model that produced it, which would slow identifying which weekly artifacts are affected and which are clean.",
+        "related_object_ids": [
+          "req-TRAIN-003",
+          "ast-002",
+          "cmp-003",
+          "cmp-005"
+        ],
+        "requested_evidence": [
+          "artifact registry schema or metadata fields recorded per tuned artifact",
+          "confirmation of whether the training-data snapshot version is captured at the time each weekly artifact is produced"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog addresses vetting or reviewing the content of individual training examples for adversarial intent before they enter a fine-tuning corpus, as distinct from (a) governing who or what may write to the corpus and (b) minimizing sensitive/PII fields before training. A customer can phrase ordinary ticket text specifically to bias the tone or content of future suggested replies for other tickets and other customers; this is neither an access-control failure (the exporter job is the sole, correctly-scoped writer) nor a sensitive-data-minimization failure in the sense of PII exposure -- the crafted text need not contain any sensitive field at all -- yet it is exactly the mechanism this threat describes, and the catalog has no requirement asking whether training examples are reviewed or filtered for manipulative intent before a tuning run incorporates them.",
+        "suggested_category": "training_data_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TRAIN-001",
+            "why_not": "Covers who and what may write to the training corpus and how content enters it, but its own common_false_positives entry explicitly treats the absence of content-level sanitization as not a shortfall of this requirement, so it does not reach vetting the content of what a governed writer legitimately admits."
+          },
+          {
+            "requirement_id": "req-TRAIN-002",
+            "why_not": "Addresses excluding or transforming sensitive elements (PII) before training, or documenting a justified decision to train on them; it does not address content that carries no sensitive field but is phrased to manipulate the model's future behavior."
+          },
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "Addresses content passed into a live model call at inference time and isolating it from the model's task within that single request; it does not address content absorbed into model weights through a batch fine-tuning pipeline, which has no per-request prompt boundary to enforce."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "484d2cd8c6c5b4726eee557a88549882a619097c61b16d8711a104441ad489e3"
+}

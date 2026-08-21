@@ -1,0 +1,499 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 18035,
+    "cache_read_tokens": 14308,
+    "cache_creation_tokens": 14761,
+    "estimated_cost": "0.55109525",
+    "duration_seconds": 215.64950708393008
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat's attack path runs entirely over the machine-to-machine read path the fulfillment system polls (df-002); the note describes only kiosk ingest and that hourly poll (evd-001), and no administrative or operator interface participates in the path. The requirement's condition 'the system exposes an administrative or operator interface' is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Scoped to this threat only: the note is silent on whether an administrative interface exists elsewhere in the system, and this mapping asserts nothing about that."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system passes no content to a model' holds for everything described: the sync service receives order records from kiosks and stores them for collection (evd-001), and no model or prompt construction appears anywhere in this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'model output is shown only to the user who requested it' is moot because no model output exists; the data published on df-002 is stored order records, not model output (evd-001). Nothing in this disclosure threat involves a publication path for generated content.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The condition 'customer content is sent to an external model provider' does not hold: the only outbound flow in this threat is the fulfillment system's poll of stored records (evd-001, df-002), and no model provider boundary is crossed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'output is consumed only by machine processing' is beside the point because no model output exists in this system as described (evd-001); there is no rendering of model-derived content in this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "unknown",
+        "applicability_reason": "The requirement's conditions turn on whether authentication is delegated to an external identity provider. This threat concerns a system-to-system caller (cmp-003) whose authentication on df-002 is unestablished, so it cannot be determined whether any identity is asserted at all, let alone whether it is delegated. The missing fact \u2014 what the read path requires of a caller \u2014 is not itself one of the requirement's conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The access this threat exploits is an automated hourly poll by a system (evd-001), not human privileged or administrative access, and multi-factor authentication is not a mechanism that bears on a machine caller. Neither 'the system exposes administrative access' nor 'privileged access crosses an untrusted network' is engaged by this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the sync service holds records on behalf of more than one customer or organization, or if responses on df-002 are expected to be scoped to the verified caller rather than returning the whole accumulated set. The note establishes that records from the field kiosks are stored together for collection (evd-001) but does not establish tenancy or any server-side scoping rule, which is precisely the threat's third precondition.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Whether distinct organizations' records share this store is not established by the note."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system holds no external delegated access' holds for the flows described: the sync service receives records and serves them to a poller (evd-001); it does not act on a customer resource held on an external platform under a delegated grant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is a runtime read-path disclosure: the attacker reaches the poll interface and retrieves stored records (evd-001, df-002). No build, dependency, or deployment path appears in the attack path, so neither of the requirement's conditions is engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The condition 'the system stores or transmits confidential or restricted data' holds: order records carry customer names, delivery addresses, and order contents, are stored by the service, and are transmitted over the store network and to the polling fulfillment system (evd-001). Confidentiality of those records in storage and on df-002 is exactly what this threat puts at stake.",
+        "suppressed_conclusion": "That encryption of order records in transit on df-002 and at rest on the sync service host is absent, on the grounds that the note describes neither.",
+        "suppressed_by": "common_false_positives entry: 'absent encryption detail for a managed service that encrypts by default' \u2014 the note states only deployment on a virtual machine and gives no transport or storage detail either way, so silence here cannot support a negative conclusion.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The condition 'the system retains a copy of customer data after processing completes' holds: the service stores order records for the fulfillment system to read (evd-001), so records persist between hourly collections. The threat's impact scales directly with that retention, since a single poll may return far more than one hour of records.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "The note does not state whether records are deleted after collection, so the volume exposed by one successful request cannot be bounded from the documentation."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the artifacts held for collection belong to more than one customer organization sharing the same store. The note establishes a single store accumulating records from the field kiosks (evd-001) but does not establish whether more than one tenant's records are held there, and says nothing about how any separation would be enforced on read.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The condition 'the system stores customer data' holds (evd-001). It bears on this threat because the quantity a single poll-shaped request can return is bounded by whether collected records are removed from the primary store and from any derived copies; no removal path is described.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Scoped to this threat: the disclosure occurs through the read interface the fulfillment system polls (evd-001, df-002), not through log records, and no log production or forwarding destination features in the attack path. This mapping makes no claim about logging practice for the system generally.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement covers actions taken through a privileged interface by an operator. This threat's actor poses as an automated poller on a data-serving read path (evd-001, df-002); no administrative or operator interface is in the path, so the condition 'the system exposes an administrative or operator interface' is not engaged here. The related concern \u2014 that repeated bulk reads by a non-administrative caller would go unrecorded \u2014 is raised as a catalog-gap candidate rather than stretched onto this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The sync service is an internal service holding order records on behalf of the system, and the first precondition of this threat is that its read path is reachable from a network position the attacker can obtain. The condition 'the component authenticates callers weakly or relies on network position' is live because nothing establishes what the read path requires of a caller (df-002 authentication unknown), leaving network placement (evd-001) as the only described constraint.",
+        "suppressed_conclusion": "That reachability of the sync service is inadequately restricted, on the grounds that the note names the operations subnet but describes no firewall policy, security group, private link, or mesh policy enforcing it.",
+        "suppressed_by": "common_false_positives entry: 'absent detail of the enforcing mechanism, where placement itself is stated' \u2014 evd-001 states the placement, so the missing mechanism detail does not support a negative conclusion.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the read path relies on a static shared credential or key held by the sync service or presented by the poller, since this threat turns partly on an attacker replaying or forging the poller's identity. Whether any such credential exists, and where it would be held, is unestablished (df-002 authentication unknown; evd-001 describes only deployment and polling).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds for the direction of this threat: the sync service is the resource holder being read from, not a client obtaining access to a customer resource elsewhere (evd-001, df-002).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the fulfillment system (cmp-003) is operated by a party other than the system owner, in which case order records containing customer names and delivery addresses cross a trust boundary on df-002 (evd-001). The note states nothing about that system's ownership, so whether the condition 'customer data is sent to an external provider' holds cannot be settled, and no retention or usage terms for the receiving party are documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is retrieval of already-stored records by a poll-shaped request (evd-001); the poll does not trigger processing that consumes a metered external service, and no retry behaviour is described. The condition 'processing consumes a metered external service' is not engaged. The adjacent concern \u2014 that repeated harvesting reads are unbounded \u2014 is not a cost or capacity concern and is raised as a catalog-gap candidate instead.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The flow in this threat is a read served in response to a poll initiated by the external system (evd-001, df-002), not an inbound event delivered to the system that triggers privileged work; the non-applicable framing 'inbound events are polled rather than delivered' fits the collection direction here. Origin verification of kiosk ingest is a different flow and is not part of this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the endpoint accepts no state-changing events' fits the read path in this threat: the poll retrieves stored records rather than submitting an event that causes work (evd-001). The replay described in this threat is of a caller's identity on a read, not re-delivery of a previously valid event.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "What the sync service requires of a caller on the fulfillment read path is not established",
+        "description": "The note states that the service stores order records for the fulfillment system to read and that the fulfillment system polls hourly (evd-001), but records nothing about authentication or authorization on that read path, and nothing about whether a response is scoped to a verified caller or returns the whole accumulated set. Trace cannot determine whether an access control exists on df-002; this is not a statement that none does.",
+        "importance": "This is the single fact that decides whether the threat's bulk-retrieval path is open. Without it, neither the applicability of tenant-scoped authorization (req-AUTHZ-001) nor the sufficiency of network placement as the sole constraint (req-NET-001) can be settled.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-003",
+          "df-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "A statement of what credential or identity, if any, the sync service requires of a caller on the read path",
+          "Whether the read response is scoped to a verified caller or returns all records currently held",
+          "Configuration or a source reference showing where the read-path authorization check is enforced"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Retention of order records after collection is not stated",
+        "description": "Records are stored for the fulfillment system to read (evd-001), but the note does not say whether they are deleted once collected, expired on a schedule, or retained indefinitely, nor whether derived or secondary copies exist. Trace cannot determine whether a retention or deletion control exists.",
+        "importance": "Retention determines how much a single successful read returns and therefore the magnitude of any disclosure through this path. It also determines whether req-DATA-002 and req-DATA-004 are satisfied by a lifecycle policy already in place.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "The retention period for order records held for collection, and whether records are deleted after a successful read",
+          "Any storage lifecycle or scheduled deletion configuration",
+          "An inventory of any secondary or derived stores holding copies of order records"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network reachability of the sync service, and the location and ownership of the fulfillment system, are not established",
+        "description": "The note states that the service runs on a virtual machine in the operations subnet, that kiosks call it over the store network, and that the fulfillment system polls it (evd-001). No enforcing mechanism for that placement is described, and the fulfillment system's network position and operating party are unstated. Placement is recorded (ctl-001); whether it is enforced, and against which callers, is not.",
+        "importance": "The set of parties able to reach the read path cannot be bounded from the documentation, which is the threat's first precondition. Ownership of the fulfillment system also decides whether records cross a third-party trust boundary (req-TPI-001).",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-003",
+          "df-002",
+          "ctl-001"
+        ],
+        "requested_evidence": [
+          "Firewall, security-group, or equivalent policy governing inbound access to the sync service virtual machine",
+          "The network location of the fulfillment system relative to the operations subnet, and the party that operates it",
+          "Whether the read interface is reachable from the store network or from any position beyond the operations subnet"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Encryption of order records in transit and at rest is not established",
+        "description": "Order records carry customer names, delivery addresses, and order contents (evd-001), and are transmitted from kiosks over the store network and served to a polling consumer. The note names no transport protocol and no storage encryption, whether application-implemented or inherited from the hosting platform. Trace cannot determine whether such protection exists.",
+        "importance": "Confidentiality of the same records this threat targets depends on it, and where protection is inherited from a hosting platform the correct record is the inheritance and its provider rather than an absent control.",
+        "related_object_ids": [
+          "cmp-001",
+          "df-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "The transport protocol used on the kiosk ingest and fulfillment poll paths, and whether it is authenticated and encrypted",
+          "Whether the virtual machine's disk or the record store provides encryption at rest, and which party provides it"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog covers recording or bounding read access to a data-serving interface by a non-administrative machine caller. This threat's harvesting pattern \u2014 a poll-shaped request repeated on a schedule against a service that accumulates records for collection (evd-001) \u2014 would produce no attributable access record and meet no volume limit under any requirement here, so a continuous drain of personal data would be neither detectable after the fact nor rate-bounded while in progress.",
+        "suggested_category": "access_monitoring",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "Scoped to actions taken through a privileged interface by an operator identity. The caller here is an automated poller on an ordinary data-serving path, so the requirement's conditions are not engaged and stretching it would misclassify the interface as administrative."
+          },
+          {
+            "requirement_id": "req-TPI-002",
+            "why_not": "Bounds work that consumes a metered external service or significant compute, framed around cost and capacity exhaustion. Reading already-stored records consumes no metered service, so the requirement does not reach repeated bulk retrieval."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "Constrains which network positions can reach the component, not what is recorded or limited once a caller is in an admitted position. A caller inside the permitted segment is exactly the case this concern is about."
+          },
+          {
+            "requirement_id": "req-LOG-001",
+            "why_not": "Concerns keeping restricted content out of logs and identifying where logs are sent; it says nothing about whether access to data is logged at all."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "9ed96cd4cd9dad5fc96dd4c721d66aac47d97b861fe95041df4176d3293ecf63"
+}

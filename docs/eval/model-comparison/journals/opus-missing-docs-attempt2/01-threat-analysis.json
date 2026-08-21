@@ -1,0 +1,261 @@
+{
+  "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 16259,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 16153,
+    "estimated_cost": "0.50824125",
+    "duration_seconds": 200.19577116600703
+  },
+  "response": {
+    "threats": [
+      {
+        "title": "Forged kiosk submissions inject fabricated order records into the fulfillment pipeline",
+        "description": "The sync service accepts order-record submissions from the field kiosks over the store network (evd-001, df-001), and the approved context records the authentication on that flow as unknown (ctx-010). If the service does not authenticate the caller, or if whatever it uses can be replayed or reused, any party able to reach the submission interface from the store network \u2014 someone who uses an unattended store network port, joins a store segment, or controls a device already on it \u2014 can submit records that the service stores alongside genuine ones. Because the fulfillment system polls hourly and reads what is stored in order to act on it (ctx-008, ctx-009), a fabricated record becomes a fulfillment instruction carrying an attacker-chosen name, delivery address and order contents. Logging and monitoring are not established for this system (ctx-024), so whether such a submission would be distinguishable from a kiosk's own traffic afterwards is undetermined.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002"
+        ],
+        "preconditions": [
+          "The sync service exposes an interface reachable from the store network that accepts order-record submissions (df-001, evd-001).",
+          "Caller authentication on df-001 is not established by the approved context (ctx-010); the scenario requires that it is absent, weak, or replayable.",
+          "Controls on the store-network-to-operations-subnet boundary are not established (tb-001, ctx-019); the scenario requires that a submission from an arbitrary store-network host reaches the service.",
+          "The approved context describes no independent check by which the fulfillment system could distinguish a stored record that did not originate at a kiosk."
+        ],
+        "attack_path": [
+          "Obtain a position on the store network from which the sync service is reachable (unattended port, store wireless segment, or an already-controlled device on that segment).",
+          "Identify the service's submission interface, by observing kiosk traffic or by probing addresses in the operations subnet.",
+          "Construct a submission shaped like a kiosk order record, carrying an attacker-chosen customer name, delivery address and order contents.",
+          "Send it across the store-network-to-operations-subnet boundary to the sync service, which stores it with the genuine records.",
+          "Wait for the fulfillment system's hourly poll, which retrieves the fabricated record and acts on it."
+        ],
+        "impact": "Integrity of the stored customer order records (ast-001) is compromised: fabricated records enter the store and are read as genuine, so goods can be dispatched to attacker-chosen addresses at the operator's expense and the record set no longer reflects orders customers placed. Sustained submission would also inflate the store and the fulfillment workload.",
+        "likelihood": "Undetermined; turns entirely on whether df-001 authenticates callers (ctx-010) and on what separates the store network from the operations subnet (ctx-019).",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception on the store network discloses customer names, addresses and order contents in transit",
+        "description": "Every order record travels from a kiosk to the sync service over the store network (evd-001, df-001) carrying the customer's name, delivery address and order contents (ctx-003), which together identify individual customers (ctx-004). Transport protection on that flow is recorded as unknown (ctx-011), and no control is established on the boundary the flow crosses (ctx-019). If the traffic is unprotected, or protected in a way a party on the path can terminate, an attacker positioned on the store network \u2014 a tapped port, a rogue access point, or a compromised device sharing the segment \u2014 reads personal data continuously as orders are placed. The same position would also permit altering a record in flight, for example substituting the delivery address before the service stores it.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "Order records cross the store network from kiosks to the sync service (df-001, evd-001, ctx-007).",
+          "Encryption in transit on df-001 is not established (ctx-011); the scenario requires the traffic to be readable, or terminable, by a party on the path.",
+          "The attacker can occupy a position on the segment carrying kiosk traffic; what separates that segment from the service is not established (tb-001, ctx-019)."
+        ],
+        "attack_path": [
+          "Obtain a listening position on the store network path used by one or more kiosks.",
+          "Capture submissions to the sync service as customers place orders.",
+          "Extract customer name, delivery address and order contents from the captured traffic.",
+          "Optionally act on the same position by modifying a record in flight before it reaches the service."
+        ],
+        "impact": "Disclosure of personal data about identifiable customers \u2014 name, delivery address and what they ordered \u2014 accumulating for every order placed at the observed kiosks. If the position is used actively rather than passively, the delivery address stored and later acted on by the fulfillment system can be changed without either the kiosk or the service seeing an anomaly.",
+        "likelihood": "Undetermined; depends on whether df-001 is protected in transit (ctx-011) and on how exposed the store network is.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "A caller imitating the hourly fulfillment poll retrieves the whole stored record set",
+        "description": "The sync service holds order records so the fulfillment system can read them, and the fulfillment system retrieves them by polling hourly (evd-001, ctx-008, ctx-009). How that reader is authenticated and what authorizes it to read are not established (ctx-012, ctx-017), and where the fulfillment system runs or whose network its traffic crosses is not established either (ctx-020). If the read interface can be reached and its caller is not authenticated \u2014 or a credential can be obtained or replayed \u2014 a single well-formed request returns whatever the service is holding. That is not one order but the accumulated set, and retention is not established (ctx-015), so nothing in the approved context bounds how much has piled up. Because a poll at that interface is an expected hourly event, an additional retrieval resembles ordinary traffic, and whether it would be recorded at all is undetermined (ctx-024).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
+        "preconditions": [
+          "The sync service exposes a read interface that returns stored order records to a polling caller (df-002, evd-001, ctx-009).",
+          "Authentication and authorization on df-002 are not established (ctx-012, ctx-017); the scenario requires them to be absent, weak, or obtainable by the attacker.",
+          "The read interface is reachable from the attacker's position; the fulfillment system's network location and the controls on the store-network-to-operations-subnet boundary are not established (ctx-020, ctx-019).",
+          "The service holds more than the current interval's records at the time of the request; retention is not established (ctx-015)."
+        ],
+        "attack_path": [
+          "Locate the read interface, from a store-network position, from another host in the operations subnet, or from wherever the fulfillment system's traffic originates.",
+          "Issue a request shaped like the fulfillment system's hourly poll.",
+          "Receive the stored order records the service returns to a poller, in bulk.",
+          "Repeat on a schedule to collect newly arriving records while the retrieval blends with the expected hourly pattern."
+        ],
+        "impact": "Bulk disclosure of customer order records (ast-001) \u2014 potentially every record the service is holding, obtained in a single request rather than the trickle a wire-tap yields, exposing names, delivery addresses and order contents of many identifiable customers at once.",
+        "likelihood": "Undetermined; depends on how the reader on df-002 is authenticated (ctx-012) and on from where the read interface is reachable (ctx-020, ctx-019).",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Host- or storage-level access to the sync service VM yields the accumulated corpus of customer records",
+        "description": "The sync service stores order records and runs on a virtual machine in the operations subnet (evd-001, ctx-002, ctx-006). The storage mechanism (ctx-013), at-rest protection (ctx-014), retention (ctx-015) and the administrative access model for the machine (ctx-025) are all unrecorded in the approved context. An actor who reaches the machine at the operating-system or storage level \u2014 an operations administrator acting outside their remit, a supplier or contractor with VM access, a snapshot or backup copy leaving the subnet, or an attacker who has taken another host in the operations subnet \u2014 reads the records directly, bypassing whatever the service's own interfaces enforce on the kiosk and fulfillment paths. What is obtained is not a single order but the whole set the service is holding, and no bound on that set is established.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
+        "preconditions": [
+          "The sync service stores order records rather than forwarding them (ctx-002, evd-001); the store lives on, or is reachable from, the virtual machine in the operations subnet (ctx-006, ctx-013 \u2014 the mechanism itself is not established).",
+          "The stored records carry names, delivery addresses and order contents for identifiable customers (ctx-003, ctx-004).",
+          "The scenario requires an actor to obtain operating-system or storage-level access to that virtual machine, or a copy of its storage; who holds administrative access and how it is controlled is not established (ctx-025).",
+          "Whether at-rest protection would blunt the read is not established (ctx-014), and how far back the corpus extends is not established (ctx-015)."
+        ],
+        "attack_path": [
+          "Obtain administrative or operating-system access to the virtual machine \u2014 legitimately held, laterally from another host in the operations subnet, or through a snapshot or backup copy of its storage.",
+          "Locate the record store on the machine's file system or attached storage.",
+          "Read or copy the accumulated order records without interacting with the service's kiosk or fulfillment interfaces.",
+          "Optionally alter or delete stored records in place before the fulfillment system's next poll."
+        ],
+        "impact": "Disclosure of the full accumulated set of customer order records (ast-001) \u2014 names, delivery addresses and order contents in bulk for every customer whose order is still held. Access at this level equally permits silent alteration or deletion of records before the fulfillment system reads them, corrupting what is delivered and to whom.",
+        "likelihood": "Undetermined; the store and its contents are documented, but the ease of reaching the host and whether at-rest protection applies are not (ctx-025, ctx-014).",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Orders submitted between hourly polls are lost if the service or its store fails or is exhausted",
+        "description": "Between a kiosk's submission and the fulfillment system's next hourly poll, the sync service is the only place the approved context shows an order record existing (evd-001, ctx-002, ctx-008). Whether the store is replicated or backed up, and whether kiosks retain or re-send what they submitted, is not established; nor is any availability or recovery requirement (ctx-023). If the virtual machine fails, the storage fills or corrupts, or an actor who can reach the service exhausts or terminates it, up to an interval's worth of orders can disappear after the kiosks have already accepted them: the fulfillment system polls, sees nothing (or an incomplete set), and proceeds as though those orders were never placed. A deliberate actor can drive the same outcome by flooding the submission interface until the service stops accepting or storing records.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002"
+        ],
+        "preconditions": [
+          "Records rest only in the sync service between kiosk submission (df-001) and the fulfillment system's next hourly poll (df-002, ctx-008).",
+          "Whether the store is replicated, backed up, or re-sendable by the kiosks is not established by the approved context; the scenario requires that a lost record cannot be recovered or replayed.",
+          "No availability or recovery requirement is established for the service (ctx-023), and logging and monitoring are not established (ctx-024), so the scenario requires that the loss is not surfaced promptly.",
+          "Reaching the service to induce failure requires a store-network position or a position in the operations subnet; boundary controls are not established (ctx-019)."
+        ],
+        "attack_path": [
+          "Reach the service's submission interface from the store network, or the virtual machine itself from the operations subnet.",
+          "Exhaust it \u2014 sustained submissions that fill the store or the host's disk, or termination of the service process or host.",
+          "Kiosk submissions made during the affected window are not stored, or already-stored records become unreadable.",
+          "The next hourly poll returns nothing or an incomplete set, and the fulfillment system acts as though no orders were placed in that period."
+        ],
+        "impact": "Destruction or unavailability of customer order records (ast-001) covering up to a full polling interval: orders customers placed at kiosks are never delivered to the fulfillment system and so are never fulfilled, with no established mechanism by which the gap would be noticed other than customer complaints.",
+        "likelihood": "Undetermined; depends on whether the store is the sole copy, on whether kiosks can re-send, and on how reachable the service is (ctx-019, ctx-023).",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "A field kiosk taken over in the field carries a legitimate position across the trust boundary",
+        "description": "The kiosks are field-deployed devices that call the sync service across the boundary between the store network and the operations subnet (evd-001, ctx-007, ctx-018). Who owns them, how many there are, how they are managed and what physical protection they have is not established (ctx-021). A kiosk that is opened, stolen, or re-flashed hands an attacker whatever position that device legitimately holds: any credential or configuration it uses on df-001, its network placement, and whatever expectation the service has that traffic from a kiosk is genuine. Unlike a forged submission from an arbitrary host, this scenario survives caller authentication on df-001, because the credential used is the real one. The same foothold is a launching point for probing what else in the operations subnet answers, since the controls on the boundary are not established (ctx-019).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "Kiosks are deployed in the field and call the sync service across the store-network-to-operations-subnet boundary (evd-001, ctx-007, ctx-018).",
+          "Ownership, management, hardening and physical protection of the kiosks are not established (ctx-021); the scenario requires that an attacker can reach one physically or administratively.",
+          "The scenario requires that the kiosk holds, or can obtain, whatever is needed to call the service, and that the service treats calls from a kiosk position as genuine; authentication on df-001 is not established (ctx-010).",
+          "What the boundary permits from a kiosk's network position is not established (ctx-019)."
+        ],
+        "attack_path": [
+          "Gain physical or remote administrative access to a field kiosk.",
+          "Extract its configuration, credentials and the service endpoint it calls, or simply operate the device as-is.",
+          "Submit fabricated or altered order records to the sync service under the kiosk's own identity, indistinguishable from that kiosk's legitimate traffic.",
+          "Use the kiosk's permitted network position to probe what else in the operations subnet is reachable beyond the sync service."
+        ],
+        "impact": "Order records (ast-001) injected or altered under a genuine kiosk identity, so the stored set no longer reflects real orders and the fulfillment system acts on attacker-chosen name, address and content combinations; attribution points at the compromised kiosk rather than the attacker; and the kiosk's network position may expose further hosts in the operations subnet beyond the sync service itself.",
+        "likelihood": "Undetermined; field deployment is documented, but kiosk management, hardening and what the kiosk holds for calling the service are not (ctx-021, ctx-010).",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "d1e77a0fb9853828d85d188fc2c25fff3d0bc1cd077860514fd34fff659f5448"
+}

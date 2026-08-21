@@ -1,0 +1,132 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 23862,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 16084,
+    "estimated_cost": "0.429075",
+    "duration_seconds": 242.90475270792376
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Weekly tuned artifacts are produced and served to every agent (evd-004), which is exactly the condition under which req-TRAIN-003 applies; artifacts leave the process that produced them and are actively served, so the non_applicable_conditions entry does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [
+          "Assuming evd-004's description of the artifact bucket is a complete account of what is recorded about each artifact -- i.e., that no additional, undocumented field records the base model version or training-data snapshot an artifact was trained from."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The tuning job is an automated process that incorporates the vendor's base reply model as a third-party component before producing the served artifact (evd-002), satisfying this requirement's 'builds incorporate third-party components' applicable_condition even though no separate code-deployment pipeline is described for this component.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Treating the weekly tuning job that ingests the vendor base model and writes the tuned artifact as the 'build' this requirement addresses, since the documentation names no separate deployment pipeline for this component."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The base model is transmitted across the vendor trust boundary (tb-002 per df-004), a network boundary the system does not control, which independently satisfies this requirement's applicable_conditions regardless of the base model's data classification.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "This requirement, if satisfied, would address confidentiality of the channel (encryption) rather than the substitution/integrity concern central to this threat; it is mapped here only because the applicable_condition on crossing an uncontrolled network boundary is met."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Suggested replies are shown beside each open ticket and the agent decides whether to use, edit, or discard them before any reply reaches a customer (evd-001), which is this requirement's non_applicable_conditions entry 'a human approves each publication and this is documented.'",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat's attack path runs through the vendor-supplied base model reaching the tuning job, not through the training corpus; the training store's write path is separately governed, with the transcript exporter documented as its sole writer (evd-002), which is not the path this threat exploits.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Base model supply channel authentication, encryption, and integrity verification are undocumented",
+        "description": "The documentation describes the Tuning Job fine-tuning the vendor's base reply model (evd-002) but does not state how the base model is authenticated or encrypted in transit when it is supplied by the vendor, nor whether any integrity or provenance check is performed on the received model before it is used as the fine-tuning starting point. The corresponding data flow records both authentication and encryption in transit as unknown.",
+        "importance": "A compromised, backdoored, or substituted base model would propagate into every weekly tuned artifact and into every suggested reply reaching every agent's console, with no described control at the point the base model enters the pipeline to detect or prevent that.",
+        "related_object_ids": [
+          "cmp-008",
+          "cmp-003",
+          "cmp-004",
+          "cmp-005",
+          "df-004"
+        ],
+        "requested_evidence": [
+          "Description of the authentication and encryption used when the vendor supplies the base model to the tuning job",
+          "Description of any integrity or provenance check (e.g., checksum or signature verification) performed on the received base model before fine-tuning begins",
+          "Description of how the specific base model version is identified, pinned, or recorded for later tracing"
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "cd49252626c3267e57665d284e228fe96a519973c6b8933af38f730b16f8c348"
+}

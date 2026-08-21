@@ -1,0 +1,821 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 36754,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 44474,
+    "estimated_cost": "0.7203585",
+    "duration_seconds": 344.30310379108414
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctl-training-store-write-restriction",
+        "name": "Training store write access restricted to exporter job identity",
+        "description": "Only the Transcript Exporter's job identity has write access to the training store bucket, enforced through the platform's access policy; no other principal can write to the corpus.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "Restricts who can write to the corpus but does not filter, redact, or minimize the content written, so full unredacted PII enters the corpus unchanged."
+        ]
+      },
+      {
+        "key": "ctl-dated-artifact-storage",
+        "name": "Weekly tuned-model artifacts stored by date",
+        "description": "Each week's fine-tuned artifact is written to the artifact bucket named by date, and the reply service serves whichever artifact is most recent.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003",
+          "cmp-005"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "partially_implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": [
+          "Provides a date-based identifier for artifacts but the documentation does not state that any entry records the base model or the training-data snapshot version each artifact was trained from, which is what tracing an affected artifact back to poisoned or sensitive training data would require."
+        ]
+      },
+      {
+        "key": "ctl-agent-review-gate",
+        "name": "Agent review before suggested reply is used",
+        "description": "Agents view each suggested reply beside the corresponding open ticket and may edit or discard it before any reply is sent to a customer.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-005",
+          "cmp-006"
+        ],
+        "protected_asset_ids": [],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "The reviewing agent has no visibility into whether a suggested phrase, name, or email address originated from a different customer's earlier ticket, so a plausible-looking memorized fragment may not be recognized as out of place and could be used with or without edits."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface is described anywhere in the architecture; the components involved are a nightly export job, a storage bucket, a weekly tuning job, and an agent-facing reply console, none of which is described as a privileged operator interface reaching customer data across a tenant boundary. The non_applicable_conditions entry 'no administrative interface exists' holds.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The reply service produces one suggested reply per ticket that is rendered to a support agent, who decides whether to use it; no automated sequence of actions is triggered by model output. This matches the non_applicable_conditions entry that every model output is rendered to a person and acts on nothing.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The generated reply is a draft the agent may edit or discard before it is sent; nothing in this threat's path has the model executing an action itself. This matches the non_applicable_conditions entry that all outputs are drafts a person publishes manually.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The reply service generates text only; no tool invocation by the model is described in this pipeline, matching the non_applicable_conditions entry that the model produces text only and invokes nothing.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No external tool servers or tool-calling protocol appear anywhere in the described components (exporter, training store, tuning job, reply service, agent console), matching the non_applicable_conditions entry that the system uses no external tool protocol.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat's mechanism is disclosure through the model memorizing and reproducing training data, not embedded instructions in analyzed content redirecting the model's task. req-AI-001 addresses prompt-injection risk, a different attack mechanism this threat's path does not exercise, so it is not engaged even though customer-authored text does reach the model.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [
+          "ctl-agent-review-gate"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The suggested reply is shown to the support agent, who decides whether to use, edit, or discard it before any reply is sent to a customer; this matches the non_applicable_conditions entry that a human approves each publication and this is documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if fine-tuning against 'the vendor's base reply model' executes on the vendor's own external infrastructure, which would mean unredacted transcript PII is sent to an external model provider. The documentation names the vendor's base model but does not state whether tuning executes within the pipeline's own environment or externally at the vendor -- exactly the fact qst-001 asked about and left unresolved.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Whether the tuning job's execution environment is internal or vendor-hosted, and whether transcript content leaves the system's environment as a result, is not established by the documentation."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-004 addresses markup/script injection risk when model output is rendered into a UI; this threat's concern is confidentiality disclosure of memorized PII, a different attack class the rendering-encoding control does not bear on.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No external identity provider or federated/social identity delegation is described for any component in this threat's path; the applicable_conditions (delegation to an external provider) are not shown to hold, and this threat's mechanism does not involve authentication at all.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative interface or privileged access crossing an untrusted network is described in this threat's path, matching the non_applicable_conditions entry that the system has no privileged interface.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The 'customers' in this threat are individual ticket submitters to a single support organization, not distinct tenant organizations sharing the reply-tuner system; nothing describes the pipeline as serving more than one tenant. This matches the non_applicable_conditions entry that the system serves a single tenant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No delegated access to an external platform on a customer's behalf is described; the exporter and tuning job act on the operating organization's own helpdesk data, not a customer-owned external resource, matching the non_applicable_conditions entry that the system holds no external delegated access.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns the training-data pipeline's handling of PII, not the deployment pipeline's authentication or dependency trust; no build or deployment step is implicated in the described attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No backup process is described for any component in this threat's path, and backup deletion separation is unrelated to the memorization-disclosure mechanism under evaluation.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is a confidentiality/disclosure concern, not a metered-resource consumption or cost-abuse concern; no metered infrastructure or consumption trigger appears in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No non-production environment or shared tooling reaching production is described; this threat's path is entirely within the production training/serving pipeline.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No deployment pipeline definition or out-of-band deployment path is implicated in this threat; the tuning job and exporter are scheduled jobs, not a deployment pipeline being altered.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-005",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No alerting system is described in this pipeline, and this threat does not turn on alert volume or routing.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The training store and artifact bucket store confidential PII (customer names, email addresses, and message bodies), satisfying the applicable_conditions of storing sensitive data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The training store retains full transcript copies as a by-product of the fine-tuning process, satisfying the condition that the system retains customer data after processing completes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The training store commingles tickets from many individual customers of one operating organization rather than artifacts from multiple distinct tenant organizations sharing infrastructure; this matches the non_applicable_conditions entry that the system serves a single tenant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data (transcripts) exists in more than one store here -- the training store and the artifact bucket -- and is also embedded, by this threat's own mechanism, in the tuned model's weights, satisfying the applicable_conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "This bears directly on the threat: if a source transcript is deleted but the model that memorized it has already been trained and served, deletion of the source alone would not remove the exposure. No deletion process for the training store, artifact bucket, or an already-tuned artifact is documented."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No redirect-based delegated sign-in flow is described anywhere in this pipeline, matching the non_applicable_conditions entry that authentication is local or the system performs no redirect-based sign-in.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No externally issued token is described as reaching a trust decision in this pipeline; the non_applicable_conditions entry applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No delegated sign-in session is described as being established by any component in this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No authorization-code exchange flow is described in this pipeline, matching the non_applicable_conditions entry.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [
+          "ctl-training-store-write-restriction"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "A model is fine-tuned on data the system collects (the tuning job trains on the training store's contents), and the corpus accepts transcripts authored by many different customers, satisfying both applicable_conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data derives directly from customer support tickets -- user/customer content -- satisfying the applicable_conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "The documentation directly states the absence of any minimization step ('there is no redaction or filtering step... what the customer wrote is what the model trains on'), which is a description of the shortfall rather than silence about it. Neither common_false_positives entry applies: no differential-privacy-style claim is being second-guessed, and no reviewed, justified decision to train on named sensitive fields is stated -- the passage describes an unreviewed absence, not a documented decision."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [
+          "ctl-dated-artifact-storage"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Tuned model artifacts are produced weekly and served to agents via the reply service, satisfying the condition that tuned artifacts are produced and served.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [
+          "The date-named artifact bucket establishes that artifacts are registered somewhere identifiable (satisfying the 'where artifacts are registered' half), but the documentation does not state that an entry records the base model or the training-data snapshot version each artifact was trained from, so the lineage half of the requirement is not established."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system handles restricted PII (ticket transcripts containing names, emails, and message bodies), satisfying the first applicable_conditions entry.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface exists in this pipeline, matching the non_applicable_conditions entry.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CODEGEN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The reply service generates suggested reply text only; no code or commands generated by the model are executed by the system, matching the non_applicable_conditions entry.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CODEGEN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model-generated code, configuration, or infrastructure definitions are integrated anywhere in this pipeline, matching the non_applicable_conditions entry.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat's attack path proceeds entirely through legitimate, authorized internal job identities (the exporter and tuning job acting as designed) rather than through an internal component being reachable from an untrusted network; network-position-based unauthorized access is not part of this threat's mechanism.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This system fine-tunes a model on a training corpus; it does not retrieve stored content into a model's context at answer time. The non_applicable_conditions entry that the corpus is not a runtime-written retrieval index does not literally match, but the requirement's applicable_conditions (retrieved content placed in context at answer time) are not met here -- the reply service serves a fine-tuned artifact, it does not retrieve documents per query.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No retrieval-at-answer-time corpus exists in this architecture; the applicable_conditions (a corpus retrieved and filtered by requester entitlement) are not met by a fine-tuning pipeline.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No retrieval index or embeddings derived from a source with its own deletion lifecycle are described; the applicable_conditions do not hold for a fine-tuning corpus rather than a retrieval index.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No credential authenticating the system to an external platform, and no private signing key, is described in this pipeline; the job identities described (evd-002) are internal platform-managed identities, not stored external credentials.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No access to a customer resource held on an external platform is described; this threat's concern is data disclosure through model memorization, not credential lifetime for reaching an external resource.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the vendor supplying the base model processes customer transcript data on the system's behalf during fine-tuning, which would make it an external processor. The documentation names 'the vendor's base model' but does not establish whether tuning happens within the pipeline's own environment or at the vendor, the same unresolved fact underlying req-AI-003.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is a confidentiality/disclosure concern; no metered external service consumption, event-triggered processing, or retry behavior bounding is implicated in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No endpoint accepting inbound events from an external platform is described anywhere in this pipeline, matching the non_applicable_conditions entry.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No inbound event endpoint exists, so replay of inbound events is not a relevant concern for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Fine-tuning execution location and data egress to the vendor is undetermined",
+        "description": "The documentation states the tuning job fine-tunes 'the vendor's base reply model' but does not state whether that tuning executes within the pipeline's own environment or on the vendor's external infrastructure, and therefore does not establish whether unredacted customer transcript content leaves the system's environment to reach an external provider.",
+        "importance": "This determines whether req-AI-003 (minimization of data sent to an external model provider) and req-TPI-001 (external processor retention and usage terms) apply, and whether the PII exposure created by this threat extends beyond the system's own boundary into a third party's retention and usage practices.",
+        "related_object_ids": [
+          "cmp-003",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "A statement of where the tuning job executes (internal compute vs. vendor-hosted service) and, if vendor-hosted, what data leaves the environment and under what retention terms the vendor holds it."
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "No documented deletion path for customer data in the training store or embedded in tuned model artifacts",
+        "description": "The documentation describes transcripts persisting in the training store and being trained into weekly model artifacts, but does not describe any process for deleting a customer's data from the training store, the artifact bucket, or an already-tuned model artifact that may have memorized it.",
+        "importance": "This bears directly on the threat: even if a source transcript is later deleted, a tuned artifact trained on it may retain and later reproduce memorized fragments, so deleting the source record alone would not remove the exposure this threat describes.",
+        "related_object_ids": [
+          "ast-001",
+          "ast-002",
+          "cmp-002",
+          "cmp-003"
+        ],
+        "requested_evidence": [
+          "A description of how customer data is removed from the training store, the artifact bucket, and any already-served tuned model, on customer or operator request."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Retention period for the training store is not documented",
+        "description": "The training store is described as holding transcripts organized by export date, but no retention or deletion schedule is stated for those exported copies.",
+        "importance": "Without a stated and enforced retention period, unredacted PII accumulates indefinitely and remains available to every future weekly tuning run, widening the pool of data the fine-tuned model can memorize and later reproduce.",
+        "related_object_ids": [
+          "cmp-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "A stated retention period for the training store and confirmation that it is enforced, along with whether it matches any customer-facing data handling statement."
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement addresses scanning or filtering a generated suggestion at the point it is shown to an internal reviewer (here, the support agent) for inadvertent inclusion of another individual's identifiable information, as a runtime backstop independent of training-data minimization. The catalog's fine-tuning requirements govern what enters the corpus before training; its output-validation requirement governs publication that occurs without human review. Neither reaches the case in this threat, where a human does review the output but has no way to recognize that a plausible-looking name, email address, or phrase was memorized from a different customer's record.",
+        "suggested_category": "output_leakage_detection",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TRAIN-002",
+            "why_not": "Addresses minimizing sensitive content before training -- preventing memorization at the source -- not detecting or filtering PII a model has already memorized and reproduces at inference time."
+          },
+          {
+            "requirement_id": "req-AI-002",
+            "why_not": "Addresses validation before publication to a destination outside the system when publication occurs without human review; here a human agent does review the suggestion, so the requirement's non_applicable_conditions are met, yet the review as described gives the agent no basis to recognize memorized content from another customer's record as out of place."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "0ce1e3d697671e8adbac0f8feacea00cea38f2240bb4058bf14cf6f05acafda5"
+}

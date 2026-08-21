@@ -1,0 +1,875 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 657,
+    "output_tokens": 53439,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 18220,
+    "estimated_cost": "0.871881",
+    "duration_seconds": 470.6363815419609
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The not_applicable determination rests on characterizing thr-003's attack path and its affected components (cmp-003/004/005/006) as not involving end-user authentication. No evidence in this batch describes thr-003 itself or the specific components it affects; evd-001-evd-004 describe the reply-tuner pipeline generally but do not address end-user authentication functionality of any component. The claim can be neither confirmed nor refuted from the evidence supplied here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative, including its specific list of affected components (cmp-003/004/005/006)",
+          "Documentation of whether any affected component provides end-user login functionality"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim that no administrative or externally reachable privileged interface is implicated depends on thr-003's attack path, which is not included among this batch's evidence. evd-001-evd-004 describe the pipeline's components but say nothing about administrative interfaces. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation of any administrative or privileged interface in the affected components"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim that no multi-tenant request-scoping concern is implicated depends on thr-003's scope, which is not included among this batch's evidence. evd-001-evd-004 do not discuss tenancy at all. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing whether the system is multi-tenant"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly states that the Tuning Job 'fine-tunes the vendor's base reply model,' confirming the reasoning's premise that the vendor supplies a model to the system. This supports part of the not_applicable determination, but no passage in this batch affirmatively establishes that the system holds no delegated access to any external platform elsewhere in its architecture.",
+        "missing_evidence": [
+          "Documentation confirming no other component of the system holds delegated credentials to an external platform on a customer's behalf"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly confirms that the Tuning Job fine-tunes the vendor's base reply model, establishing that the build incorporates a third-party component, which supports the applicability determination for req-CICD-001. The further claim that authentication/encryption for the transfer are unrecorded relies on df-004, which is not included among this batch's evidence; that portion is appropriately left as 'unverified' rather than asserted either way.",
+        "missing_evidence": [
+          "df-004 dataflow documentation describing the authentication/encryption used for the vendor-to-tuning-job model transfer"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim depends on thr-003's attack path, not included in this batch's evidence, and no passage in evd-001-evd-004 addresses backup administration at all. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing backup administration, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim depends on thr-003's attack path, not included in this batch's evidence, and no passage in evd-001-evd-004 addresses metered-infrastructure cost abuse. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing metered infrastructure exposure, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim depends on thr-003's attack path, not included in this batch's evidence, and no passage in evd-001-evd-004 addresses production/non-production environment separation. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing environment separation, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim depends on thr-003's attack path, not included in this batch's evidence, and no passage in evd-001-evd-004 addresses deployment-pipeline-definition change visibility. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing pipeline-definition change control, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim depends on thr-003's attack path, not included in this batch's evidence, and no passage in evd-001-evd-004 addresses alert volume or alert routing. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing alerting configuration, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The applicability_reason characterizes thr-003 as a tampering/integrity concern rather than a confidentiality concern and asserts the transferred artifact (referenced as df-004) carries no stated sensitivity classification. Neither thr-003's characterization nor df-004 is included among the evidence supplied to this batch; evd-001-evd-004 describe the pipeline's components but do not classify the sensitivity of the model-weights transfer. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition characterizing it as a tampering/integrity vs. confidentiality concern",
+          "df-004's dataflow documentation, including any sensitivity classification of the transferred artifact"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim depends on thr-003's attack path, not included in this batch's evidence, and no passage in evd-001-evd-004 addresses retention periods for by-product customer data. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing retention periods, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 directly states that the tuning job writes each week's artifact to the artifact bucket named by date, and agents are served the most recent artifact. This confirms a single dated artifact per week rather than per-tenant customer artifacts, directly supporting the not_applicable determination.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The claim depends on thr-003's attack path, not included in this batch's evidence, and no passage in evd-001-evd-004 addresses customer-initiated data deletion. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing customer-initiated deletion, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 mentions any sign-in flow, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing any sign-in flows, if any exist"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 mentions consumption of externally issued identity tokens, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing identity-token consumption, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 mentions delegated sign-in sessions, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing delegated sign-in sessions, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 mentions authorization-code exchange, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing authorization-code exchange, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 confirms an architectural separation between the write path (Transcript Exporter, Training Store) and the tuning/serving path (Tuning Job, Reply Service), consistent with treating them as distinct components. However, whether the write path is excluded from thr-003's specific list of affected components (cmp-003/004/005/006) is a fact about thr-003 itself, which is not included in this batch's evidence, so the determination is only partly grounded.",
+        "missing_evidence": [
+          "thr-003's definition specifying its affected components"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Same scope reasoning as map-045: evd-002 confirms the write path is architecturally distinct from the tuning/serving path, but whether thr-003's affected components exclude the training-corpus write path is a fact about thr-003 itself, not included in this batch's evidence.",
+        "missing_evidence": [
+          "thr-003's definition specifying its affected components"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 directly confirms that tuned artifacts are produced weekly and that agents are served the most recent artifact, supporting the applicability determination. The further claim about ctl-002's documented limitation (that base-model identity and training-data snapshot version are not recorded per artifact) references a control not included among this batch's evidence, so the specific basis for 'partially_satisfied' cannot be independently confirmed here.",
+        "missing_evidence": [
+          "ctl-002's control description, to confirm what lineage metadata it does or does not record"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 addresses application logging of restricted data, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing application logging practices, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 addresses administrative-action recording, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing administrative-action logging, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the Reply Service as generating one suggested reply per ticket, which the agent may edit or discard -- a natural-language response reviewed by a human, not code executed by the system. This indirectly supports the claim that the reply model's output is never executed as code.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "Serves the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same passage describing the Reply Service's output as a suggested reply text (rather than code, configuration, or infrastructure definitions) indirectly supports the claim that no model-generated code or configuration is merged or deployed in this system.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "Serves the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 describes network topology or reachability of any data store, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Network architecture documentation describing reachability of internal data stores"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly states that the Tuning Job fine-tunes the vendor's base reply model on the training store's current contents, describing a fine-tuning mechanism rather than a retrieval-augmented one, and no passage in this batch describes a retrieval step performed at answer time. This supports the not_applicable determination.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same fine-tuning description in evd-002 supports characterizing the system as a fine-tuning pipeline rather than a retrieval-augmented one, so no retrieval corpus with differing entitlements is implicated.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-055",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same fine-tuning description in evd-002 supports characterizing the system as a fine-tuning pipeline rather than a retrieval-augmented one, so no retrieval index derived from mutable sources is implicated.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-056",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the Tuning Job process (fine-tuning the vendor's base model) without mentioning any credential used to authenticate to the vendor for the model transfer. This passage neither confirms nor denies the existence of such a credential, which is exactly what the mapping's 'unknown' determination reflects; treating this as genuinely unresolved rather than assuming presence or absence is well supported.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly confirms that the vendor supplies a base model to the Tuning Job, matching the reasoning's premise. However, no passage in this batch affirmatively establishes that the system accesses no customer resources on any external platform elsewhere, so only the vendor-relationship half of the claim is grounded.",
+        "missing_evidence": [
+          "Documentation confirming no other component accesses a customer resource held on an external platform"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The applicability_reason relies on df-004 (asserted to describe an inbound-only transfer direction) and on qst-001, an open question, neither of which is included among this batch's evidence. evd-001-evd-004 do not describe whether transcript data separately reaches the vendor. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "df-004's dataflow documentation describing transfer direction",
+          "Resolution of qst-001 regarding whether transcript data reaches the vendor"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 addresses metered external-service-triggered cost bounding, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing cost-bounding controls for external services, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 mentions any inbound webhook or event endpoint, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing any inbound webhook or event endpoints, if any exist"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "No passage in evd-001-evd-004 mentions inbound event replay handling, and thr-003's attack path is not included in this batch's evidence. The claim cannot be confirmed or refuted here.",
+        "missing_evidence": [
+          "thr-003's definition and attack-path narrative",
+          "Documentation describing inbound event replay protections, if any"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly states the Tuning Job fine-tunes the vendor's base reply model on the training store's current contents, and that the Transcript Exporter is the only writer to the training store, with its job identity the only principal holding write access, granted through the platform's access policy. This directly supports both the applicability determination (a model is fine-tuned on data the system collects) and the 'satisfied' status (a single, access-controlled write path exists).",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A weekly job that fine-tunes the vendor's base reply model on the training store's current\ncontents and writes the tuned model artifact to the artifact bucket."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "The exporter is the only writer to the training store; its job identity is the only\nprincipal with write access to the bucket, granted through the platform's access policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states transcripts are exported in full, including customer names, email addresses, and complete message bodies, and evd-003 confirms there is no redaction or filtering step between the helpdesk and the training store, so what the customer wrote is what the model trains on. Together these directly support that the training corpus derives from customer content and contains sensitive elements, establishing applicability of req-TRAIN-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "Transcripts are exported in full, including customer names, email addresses, and complete\nmessage bodies."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 directly confirms tuned artifacts are produced weekly and the most recent one is served to agents, supporting applicability. The further claim that 'no tuned artifact is confined to the experiment that produced it' is consistent with this passage but is not itself stated by it, so that part is an inference rather than a directly documented fact, and the evidence does not otherwise explain why satisfaction is only partial.",
+        "missing_evidence": [
+          "Documentation of any control governing artifact confinement to individual experiments, and of what would make req-TRAIN-003 fully satisfied"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The tuning job writes each week's artifact to the artifact bucket named by date. Agents are\nserved whichever artifact is most recent."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-003 directly establish that customer-authored ticket content, un-redacted and un-filtered, flows into the training store and is used to fine-tune the model, and evd-001 provides context that agents, not the model, make the final decision on each suggested reply. These support that customer-authored content the system did not author is passed into the fine-tuning process. However, the rationale's characterization of customers as 'an untrusted, open contributor base' relies on evd-005, which is not included among the evidence supplied to this batch, so that portion of the applicability argument cannot be verified here. The mapping's own stated assumption -- that a fine-tuning write path is analogous to a runtime prompt-isolation surface -- is an acknowledged interpretive extension, not a documented fact.",
+        "missing_evidence": [
+          "evd-005 (or equivalent documentation) characterizing customers as an untrusted, open contributor base, referenced in the rationale but not supplied to this batch"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "Transcripts are exported in full, including customer names, email addresses, and complete\nmessage bodies."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The training store holds the full transcripts as exported. There is no redaction or\nfiltering step between the helpdesk and the training store; what the customer wrote is what\nthe model trains on."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "Agents see a suggested reply\nbeside each open ticket and decide whether to use it."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that agents see a suggested reply beside each open ticket and decide whether to use it, and evd-002 confirms the Reply Service produces one suggested reply per ticket, which the agent may edit or discard. Together these directly support that a human reviews and decides on each suggested reply before it reaches a customer, i.e., publication is not automatic, supporting the not_applicable determination for req-AI-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Agents see a suggested reply\nbeside each open ticket and decide whether to use it."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "Serves the most recent tuned model to the agent console. For each open ticket it generates\none suggested reply, which the agent may edit or discard."
+          }
+        ]
+      }
+    ]
+  },
+  "call_sha256": "711bdbc584d1c868564e43e895a026ac22334026f53be9ffe651e617f0ddafe8"
+}

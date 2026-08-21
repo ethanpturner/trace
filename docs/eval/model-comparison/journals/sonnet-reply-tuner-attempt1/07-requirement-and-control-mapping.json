@@ -1,0 +1,195 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 26507,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 44855,
+    "estimated_cost": "0.56808225",
+    "duration_seconds": 276.97127491701394
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "human-review-suggested-replies",
+        "name": "Agent review before suggested reply is used",
+        "description": "Support agents view the generated suggested reply beside its corresponding open ticket and decide whether to use, edit, or discard it before any reply reaches the customer; the reply service does not send output directly to customers.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-005",
+          "cmp-006"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "Review is a human judgment step and is not documented as including any specific check for subtle content-shaping effects introduced through training on unreviewed customer text."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The tuning job fine-tunes a model on data the system collects (evd-002), which is exactly the applicable condition 'a model is fine-tuned or continually trained on data the system collects', and the training store is documented as accepting content from one nightly export process rather than a fixed, unwritten artifact, so the non-applicable conditions do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data derives directly from customer ticket content (evd-002, evd-003), satisfying the applicable condition, and the corpus is not synthetic, public, or free of sensitive elements -- it contains names, email addresses, and full message bodies -- so the non-applicable condition does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Tuned artifacts are produced weekly and served to the agent console (evd-004, evd-002), meeting the applicable condition that artifacts are produced and served; no tuned artifact is confined to the experiment that produced it, so the non-applicable condition does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [
+          "human-review-suggested-replies"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer-authored ticket content the system did not author is passed into the fine-tuning process (evd-002, evd-003), and customers are an untrusted, open contributor base (evd-005), meeting both applicable conditions; neither non-applicable condition holds, since content is not authored solely by the operating organization and content clearly does reach a model.",
+        "suppressed_conclusion": "That no control at all bounds the effect of embedded or manipulative customer-authored content on the model, i.e. a full 'unmet' status based solely on the documented absence of a redaction or filtering step.",
+        "suppressed_by": "common_false_positives entry: 'absent input sanitization where model capability is restricted and output is validated' -- the suggested reply is reviewed and may be edited or discarded by the agent before reaching a customer (evd-001), which is a downstream control on the model's output.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [
+          "Applying this requirement to a fine-tuning write path (rather than a single-request prompt) treats training-time incorporation of customer text as analogous to passing untrusted content into the model's task; this is an interpretive extension since the requirement's examples describe runtime prompt isolation rather than training governance."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [
+          "human-review-suggested-replies"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement does not apply because its non-applicable condition holds: 'a human approves each publication and this is documented' -- agents are documented as deciding whether to use, edit, or discard each suggested reply before it reaches a customer (evd-001), so publication is not automatic and without review.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This applies if the tuning job's fine-tuning of 'the vendor's base reply model' (evd-002) executes on the vendor's external infrastructure and thereby sends the unredacted transcripts (evd-003) across that boundary; it would be non-applicable if the model instead runs within the pipeline's own trust boundary. The documentation does not state which, and a related reviewer question (qst-001) was left unresolved by design.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [
+          "The phrase 'vendor's base reply model' could describe either a locally-hosted licensed model or a model fine-tuned via an external vendor service; neither is confirmed by the documentation."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This applies if fine-tuning is performed by an external vendor processing customer data on the system's behalf, which the documentation's reference to 'the vendor's base reply model' (evd-002) makes plausible but does not establish; if fine-tuning occurs entirely within the system's own environment, the requirement would not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Assuming, without confirmation, that 'vendor' could denote a third-party processor rather than a model licensed for in-environment use."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Fine-tuning execution boundary and vendor data handling are not established",
+        "description": "The documentation names 'the vendor's base reply model' (evd-002) and states that unredacted transcripts including names, email addresses, and full message bodies are what the model trains on (evd-003), but it does not state whether the tuning job executes within the pipeline's own environment or on the vendor's external service, nor whether customer transcript data leaves the environment to reach the vendor. A prior reviewer question on this exact point (qst-001) received no answer under the assessment's stability protocol, so the fact remains unresolved on the documents alone.",
+        "importance": "Whether the vendor is an external processor determines whether data-minimization and external-processor-terms requirements apply to the same unreviewed customer content this threat concerns, and changes the scope of exposure if that content is manipulative or sensitive.",
+        "related_object_ids": [
+          "cmp-002",
+          "cmp-003",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "confirmation of where the tuning job executes (the pipeline's own environment vs. a vendor-hosted service)",
+          "a description of what data, if any, crosses to the vendor and under what terms",
+          "any data processing agreement or retention/usage terms governing vendor handling of transcript data"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "2c81fc95610bf481233f6cf939f168662d8332313ad83cddf17bfde39029f708"
+}

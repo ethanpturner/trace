@@ -1,0 +1,175 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 757,
+    "output_tokens": 20347,
+    "cache_read_tokens": 28530,
+    "cache_creation_tokens": 14685,
+    "estimated_cost": "0.37110375",
+    "duration_seconds": 199.5550935830688
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Training Store (cmp-002) is a data store that is not itself a public interface, which satisfies req-NET-001's applicable_conditions; the threat's entire attack path is that a principal other than the workloads that need the store can reach and read its contents, which is exactly the failure this requirement targets.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [
+          "The documentation describes only the write-side restriction on the training store (the exporter's job identity is the sole writer via platform access policy). It does not state the store's network placement or which other principals or workloads can reach it for reads, so whether reachability is confined to the workloads that need it is not established either way."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The reply-tuner fine-tunes a model on data collected via the Transcript Exporter into the training store (evd-002), which is the corpus this threat concerns; req-TRAIN-001's applicable_conditions (a model fine-tuned on collected data) hold. The requirement addresses the write side of the same corpus and asset the threat concerns, distinct from but adjacent to the read-access gap the threat describes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data derives directly from customer ticket content (evd-002), so req-TRAIN-002's applicable_conditions hold; its non_applicable_conditions (synthetic, public, or no sensitive elements by construction) do not hold, since evd-003 states the corpus contains full names, email addresses, and message bodies. Because the store holds this unminimized data, the impact of the read-access gap this threat describes is full-fidelity personal data rather than a reduced or transformed copy.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "Neither of req-TRAIN-002's common_false_positives applies here: no minimization step is documented at all (this is not a case of overlooking differential-privacy or unlearning prose where minimization is otherwise described), and the statement that transcripts are used raw is not accompanied by any stated basis or justification, so this is not a 'stated, justified decision' being wrongly treated as undocumented -- it is an explicit statement that no exclusion or transformation occurs, with no justification given for training on the raw fields."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system is described as an internal pipeline operated for one organization's own support agents (evd-001), with no indication that the training store or reply service serves multiple distinct customer organizations as separate tenants sharing this infrastructure; req-AUTHZ-001's non_applicable_conditions ('the system serves a single tenant') applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-003 targets artifacts belonging to distinct customer tenants sharing one storage system; the training store as documented holds one organization's own exported ticket transcripts rather than artifacts belonging to multiple separate tenants, so its non_applicable_conditions ('the system serves a single tenant') applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documented components -- Transcript Exporter, Training Store, Tuning Job, Reply Service -- include no administrative or operator interface; req-ADMIN-001's non_applicable_conditions ('no administrative interface exists') applies to the architecture as described, distinguishing this from the threat's actual concern, which is platform-level read permission on a storage bucket rather than an operator-facing interface.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Read-access scope of the training store is undocumented",
+        "description": "The documentation states that write access to the training store is restricted to the Transcript Exporter's job identity, enforced through the platform's access policy (evd-002). It does not state who or what else may read the bucket's contents, whether the platform's general access policy grants broader read permissions to other principals, or how the store's network reachability is configured. The store holds full, unredacted transcripts including customer names, email addresses, and message bodies, organized only by export date (evd-003).",
+        "importance": "The threat's plausibility turns entirely on facts the documentation does not state: whether a platform operator, another job, or a broader grant under the same access policy can read the bucket directly. Without a statement of the read-side access model, whether PII exposure beyond the tuning pipeline is possible cannot be assessed either way.",
+        "related_object_ids": [
+          "cmp-002",
+          "ast-001",
+          "df-002",
+          "df-003"
+        ],
+        "requested_evidence": [
+          "a statement of which principals or roles hold read access to the training store bucket",
+          "the platform access policy governing read permissions on the bucket, distinct from the write-only policy already documented",
+          "documentation of the training store's network placement and reachability"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog's authorization-related requirements address read-access restriction only in the specific contexts of multi-tenant separation (req-AUTHZ-001, req-DATA-003), a defined administrative or operator interface (req-ADMIN-001), and network reachability from an untrusted network (req-NET-001). None of these covers the ordinary case presented here: a single-tenant, internal datastore holding sensitive personal data, where the open question is which platform principals -- operators, other jobs, or a broader grant under the same access policy -- hold read permission on the store itself, independent of tenant boundaries, network position, or any distinct administrative interface.",
+        "suggested_category": "authorization",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "Targets network-level reachability of an internal component from an untrusted network; it does not address principal-level read-permission scope for callers already inside the trusted network or platform, which is the mechanism this threat describes."
+          },
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "Targets per-request tenant-scoping in a multi-tenant system; this pipeline is single-tenant and internal, so there is no tenant boundary for the requirement to enforce."
+          },
+          {
+            "requirement_id": "req-DATA-003",
+            "why_not": "Targets separation of artifacts belonging to distinct customer tenants sharing one storage system; the training store holds one organization's own data rather than multiple tenants' artifacts."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "Targets a defined administrative or operator interface restricted through a stronger access path; the concern here is the read-permission scope on a storage bucket reached through the platform's general access policy, not a distinct operator-facing interface."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "5b360fc06623c1551763df0a63575557eba01eac2658fe224167f15718c289ec"
+}

@@ -1,0 +1,275 @@
+{
+  "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "claude-sonnet-5",
+    "input_tokens": 822,
+    "output_tokens": 35370,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 17106,
+    "estimated_cost": "0.5971635",
+    "duration_seconds": 323.576512874919
+  },
+  "response": {
+    "threats": [
+      {
+        "title": "Memorized customer PII surfaces in suggested replies for unrelated tickets",
+        "description": "Closed-ticket transcripts are exported and stored in full, unredacted form, including customer names, email addresses, and complete message bodies, with no redaction or filtering step between the helpdesk and the training store (evd-002, evd-003). The tuning job fine-tunes the weekly model directly on this unredacted content (evd-002), and the reply service serves the resulting artifact to agents for every open ticket (evd-002, evd-004). A model fine-tuned on unfiltered personal data can reproduce fragments of it at inference time, so a suggested reply generated for one ticket could surface another customer's name, email address, or message content.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-003",
+          "cmp-005",
+          "cmp-006"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-003",
+          "df-006",
+          "df-007"
+        ],
+        "preconditions": [
+          "No redaction or filtering step exists between the helpdesk and the training store (evd-003)",
+          "The tuning job trains directly on the training store's unredacted contents (evd-002)"
+        ],
+        "attack_path": [
+          "Customer's PII is captured verbatim in a closed ticket and exported nightly to the training store",
+          "Tuning job fine-tunes the weekly model on the unredacted transcripts",
+          "Reply service serves the resulting artifact for all open tickets",
+          "A suggested reply generated for an unrelated ticket reproduces memorized PII from training",
+          "Agent views, and may send, a reply containing another customer's data"
+        ],
+        "impact": "Disclosure of one customer's personal data to a support agent, and potentially onward to another customer, through a suggested reply unrelated to the original ticket.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Automatic deployment of an unvalidated model artifact to all agents",
+        "description": "The tuning job writes each week's artifact to the artifact bucket, and the reply service serves whichever artifact is most recent (evd-004), with no validation, testing, or approval step described in between. Unlike the training store, whose write access is explicitly restricted to a single job identity (evd-002), no equivalent restriction is described for the artifact bucket. A flawed, corrupted, or unauthorized artifact reaching the bucket would become the version served to every agent with no described checkpoint.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-005",
+          "cmp-006"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-005",
+          "df-006",
+          "df-007"
+        ],
+        "preconditions": [
+          "No validation or approval step is described between artifact write and artifact being served (evd-004)",
+          "No write-access restriction is described for the artifact bucket, unlike the training store (evd-002)"
+        ],
+        "attack_path": [
+          "A flawed, corrupted, or unauthorized artifact is written to the artifact bucket",
+          "Reply service selects the most recent artifact by date alone",
+          "The unvalidated artifact generates suggested replies for every open ticket across the agent console"
+        ],
+        "impact": "Widespread, automatic use of a degraded or unauthorized model artifact in every suggested reply, with no described review before production use.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromised vendor base model propagates into every suggested reply",
+        "description": "The tuning job fine-tunes the vendor's base reply model, received across the vendor model supply boundary; authentication and encryption for that transfer are both documented as unknown (evd-002). The tuning job builds directly on this externally supplied model, and the resulting artifact is served to every agent with no described validation step (evd-004). A base model substituted or tampered with before or during delivery would carry that behavior into the tuned artifact and into every suggested reply.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "supply_chain"
+        ],
+        "threat_actor_ids": [
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-005",
+          "cmp-006"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-004",
+          "df-005",
+          "df-006",
+          "df-007"
+        ],
+        "preconditions": [
+          "Authentication and encryption for the base-model transfer from the vendor are not documented (evd-002)",
+          "No validation step is described between artifact write and artifact serving (evd-004)"
+        ],
+        "attack_path": [
+          "Base model is transferred from the vendor across the vendor boundary to the tuning job",
+          "Tuning job fine-tunes on the base model without independent verification of its integrity",
+          "Resulting artifact is written to the artifact bucket and automatically served as the most recent version",
+          "Agents receive suggested replies shaped by the compromised base model"
+        ],
+        "impact": "Systematic manipulation of suggested replies served to all agents, originating from a single upstream vendor dependency.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Customer-authored ticket content becomes unreviewed training data shaping replies to others",
+        "description": "Customer ticket messages are exported verbatim once a ticket closes, with no redaction or filtering step between the helpdesk and the training store (evd-002, evd-003), and are used directly to fine-tune the weekly model (evd-002). Because message bodies feed the model unreviewed, a customer who writes unusual, misleading, or manipulative content in their own ticket could influence the phrasing or content of suggested replies the model later generates for other agents and other customers' tickets.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "data_poisoning"
+        ],
+        "threat_actor_ids": [
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-003",
+          "cmp-005",
+          "cmp-006"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003",
+          "df-006"
+        ],
+        "preconditions": [
+          "No redaction or filtering step exists between the helpdesk and the training store (evd-003)",
+          "Message bodies are used for fine-tuning without a described content-review step (evd-002)"
+        ],
+        "attack_path": [
+          "Customer writes unusual or manipulative content into their own ticket",
+          "Ticket closes and is exported verbatim into the training store",
+          "Tuning job fine-tunes the weekly model on the unreviewed content",
+          "Model generates suggested replies for unrelated tickets shaped by that content",
+          "Agent uses or lightly edits the affected suggestion"
+        ],
+        "impact": "Manipulated or degraded suggested-reply content reaching agents and, if used unedited, reaching other customers, with no visible provenance linking it to the originating ticket.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Unresolved fine-tuning execution location may put customer PII on vendor infrastructure",
+        "description": "Whether the tuning job's fine-tuning executes within the pipeline's own environment or on the vendor's infrastructure is not established (evd-002). If execution occurs on vendor-side infrastructure, the unredacted transcripts in the training store, including customer names, email addresses, and message bodies, would need to leave the pipeline's environment and cross the vendor boundary to reach it.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-003",
+          "cmp-008"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-003",
+          "df-004"
+        ],
+        "preconditions": [
+          "Fine-tuning execution location is not documented (evd-002)",
+          "If execution occurs on vendor infrastructure, unredacted transcript data would cross the vendor boundary to reach it"
+        ],
+        "attack_path": [
+          "Tuning job initiates fine-tuning using the training store's unredacted contents",
+          "If execution runs on vendor-hosted infrastructure, transcript data is transmitted across the vendor model supply boundary",
+          "Customer PII becomes accessible outside the boundary controls documented for the pipeline"
+        ],
+        "impact": "Potential disclosure of customer PII to a third-party vendor beyond the pipeline's documented boundary.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception of the nightly transcript export exposes unredacted PII in transit",
+        "description": "The nightly export from the helpdesk to the transcript exporter crosses the helpdesk/pipeline trust boundary, and both authentication and encryption-in-transit for that flow are documented as unknown (evd-002). The transcripts carried are full and unredacted, including customer names, email addresses, and message bodies (evd-002, evd-003). An interception on that path, if the channel is unauthenticated or unencrypted, would yield that content directly.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "Authentication and encryption-in-transit for the nightly export are not documented (evd-002)",
+          "The flow crosses the helpdesk/pipeline trust boundary"
+        ],
+        "attack_path": [
+          "Nightly export job pulls closed-ticket transcripts from the helpdesk across the trust boundary",
+          "An interception on that path, if unauthenticated or unencrypted, captures the transcript contents",
+          "Full transcripts including customer names, email addresses, and message bodies are exposed"
+        ],
+        "impact": "Disclosure of unredacted customer PII in transit between the helpdesk and the pipeline.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "a98a6d7f667b48fa1f9662a87fd205f4f466bd446f8b88c35d454750942be101"
+}

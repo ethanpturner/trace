@@ -1,0 +1,474 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 18691,
+    "cache_read_tokens": 14308,
+    "cache_creation_tokens": 15090,
+    "estimated_cost": "0.5695515",
+    "duration_seconds": 215.2747175419936
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "cmp-001 is an internal service that holds customer order records on behalf of the system and is not documented as a public interface by design; the requirement's applicable conditions hold (a component holding work/data, whose caller authentication is not established). This threat's first step is reaching the submission interface from the store network or the virtual machine from the operations subnet, which is precisely the reachability question this requirement governs.",
+        "suppressed_conclusion": "That the reachability restriction is absent or only partially in place \u2014 i.e. a partially_satisfied or unmet status on the grounds that evd-001 names the operations subnet but names no firewall policy, security group, private link, or service mesh enforcing it.",
+        "suppressed_by": "req-NET-001 common_false_positives entry: 'absent detail of the enforcing mechanism, where placement itself is stated' (and relatedly 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable'). evd-001 states the placement, so silence about the enforcing mechanism does not support a negative conclusion.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that cmp-001's submission interface is not intended to be a public interface, since evd-001 describes it as receiving records from the field kiosks over the store network rather than from the internet."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies if kiosk submissions (df-001) count as work the system does not originate that consumes a capacity-limited resource \u2014 the storage and compute of the single virtual machine described in evd-001. That is the exhaustion arm of this threat. Applicability is conditional because neither the metering or capacity limits of the store, nor whether submissions are initiated only by authenticated parties (the non_applicable condition 'work is initiated only by an authenticated operator'), is established by evd-001.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed that the sync service's store is finite and shared across all kiosks, since evd-001 describes a single virtual machine receiving submissions from the kiosk estate. Nothing in evd-001 states a rate limit, quota, or queue bound."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system does handle personal data, but this threat is destruction and unavailability of records (denial of service and tampering), not disclosure in transit or at rest. Encryption of df-001, df-002, or the store would neither prevent nor detect the loss of records described in this attack path, so the requirement is not engaged by this threat. Confidentiality of ast-001 would be assessed against a disclosure threat rather than here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement governs data being kept too long relative to what customers are told. This threat is the inverse: records disappearing before the fulfillment system's next hourly poll can read them. The retention period of records after they are consumed has no bearing on this attack path or its impact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'the system serves a single tenant' holds as far as the approved context establishes: evd-001 describes one operator's kiosk estate and one fulfillment system, and the customers named in ast-001 are order recipients rather than tenants sharing the platform. No cross-tenant storage separation question arises on this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed single-tenancy from the approved context, which records no second customer organization. If the kiosk estate spans distinct customer organizations, this decision should be revisited."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns the ability to remove customer data deliberately on request. This threat concerns records being removed or made unreadable involuntarily, before they are delivered. A deletion path would not mitigate this attack path, so the requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement governs restricted data leaking into logs and the ownership of the log destination \u2014 a disclosure concern. This threat's path (exhaustion or failure of cmp-001 and its store, causing records never to reach cmp-003) does not turn on log content or log destination, so the requirement is not engaged here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'no administrative interface exists' holds as far as the approved context establishes: neither evd-001 nor the recorded components describe an operator or administrative interface whose actions would need attributing. This threat is driven by submission volume or component failure, not by privileged operator action.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed no administrative interface exists because the approved context records none. Its absence from evd-001 is silence rather than proof; if an operator console for cmp-001 exists, this decision should be revisited."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'no administrative interface exists' holds as far as the approved context establishes; the components recorded for this threat (cmp-001, cmp-003) expose a submission interface and a polling interface, not an operator interface reaching customer data. Reaching the virtual machine from the operations subnet, as the attack path describes, is a network-position question handled under req-NET-001 rather than a privileged-interface question.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed no administrative interface exists because the approved context records none for cmp-001 or cmp-003."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither applicable condition holds in the approved context: no external or federated identity provider is recorded for any component, and no end-user authentication path is described. Documenting a delegation that the context does not establish would not bear on this threat's destruction-and-unavailability path in any case.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed no delegated identity provider is in use because none is recorded in the approved context; evd-001 is silent on authentication entirely."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'the system has no privileged interface' holds as far as the approved context establishes: no administrative or externally reachable privileged access path is recorded for cmp-001 or cmp-003. Factor policy ownership does not bear on this threat's exhaustion or component-failure path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed no privileged interface exists because the approved context records none."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'the system serves a single tenant' holds as far as the approved context establishes: one kiosk estate feeding one fulfillment system, with no second customer organization recorded. This threat also concerns loss of records rather than one tenant reaching another's data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed single-tenancy from the approved context; the 'customers' in ast-001 are order recipients, not tenants of the platform."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'the system holds no external delegated access' holds as far as the approved context establishes: no platform installation, OAuth grant, or delegated permission set is recorded for cmp-001. The threat's path involves inbound submissions and a poll, not the system acting on a customer resource held elsewhere.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither applicable condition is recorded in the approved context: no external-platform credential and no signing key is attributed to cmp-001. Custody of a secret would not bear on this threat, whose path is exhaustion or failure of the service and its store.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed no credentials are held because none are recorded in the approved context; evd-001 does not describe how any party authenticates."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'the system accesses no customer resources on external platforms' holds as far as the approved context establishes: cmp-001 receives records and is polled, and holds no outbound access to a customer resource. Credential lifetime has no bearing on this threat's loss-of-records outcome.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement governs an external processor's retention and usage of data crossing the trust boundary \u2014 a disclosure and data-handling concern. This threat is that records never reach cmp-003 at all, so provider handling terms neither cause nor mitigate it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "cmp-003 is typed as an external system with unrecorded ownership, so this requirement may well be engaged by a disclosure-oriented threat over df-002; it is marked not applicable here only because it does not bear on this threat's path."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition requires an endpoint accepting events from an external platform. df-001 carries submissions from the system's own field kiosks (cmp-002) rather than from an external platform, and for df-002 the non_applicable condition 'inbound events are polled by the system rather than delivered to it' holds \u2014 evd-001 states the fulfillment system polls hourly. Origin authenticity is also not the mechanism of this threat, which is exhaustion or failure rather than a forged event.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assumed the field kiosks are the system's own devices rather than a third-party platform, based on evd-001 describing them as 'the field kiosks' calling the service over the store network."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay of a previously valid inbound platform event is not a step in this attack path, and as with req-WEBHOOK-001 the inbound path is submissions from the system's own kiosks while the downstream path is a poll. Duplicate delivery would, if anything, preserve records rather than destroy them.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No build or deployment pipeline appears in this threat's attack path, which runs from network reachability of cmp-001 to exhaustion or failure of the service and its store. The approved context records no pipeline for cmp-001, so pipeline authentication and dependency provenance are not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumed no automated deployment pipeline is in scope for this threat because none is recorded in the approved context; evd-001 describes deployment only as a virtual machine in the operations subnet."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'the system passes no content to a model' holds: the approved context records only a sync service, kiosks, and a fulfillment system, and evd-001 describes no model or analysis step.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition 'model output is published to a destination outside the system' cannot hold: no model exists in the approved context, so there is no model output to validate before publication.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable condition 'customer content is sent to an external model provider' does not hold: evd-001 describes order records flowing only from kiosks to the sync service and onward to the polling fulfillment system, with no model provider in the path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable conditions concerning model output do not arise at all: no model is present in the approved context, so nothing model-generated is rendered into an interface or another system's markup.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Reachability of the sync service submission interface is not established",
+        "description": "evd-001 states that cmp-001 runs on a virtual machine in the operations subnet and that the kiosks call it over the store network, but describes no mechanism (firewall policy, security group, private link, service mesh, or caller authentication) determining which hosts may reach the submission interface across tb-001. Trace cannot determine from the approved context whether the reachability restriction req-NET-001 asks for exists. This records an inability to verify; it does not assert that the restriction is missing.",
+        "importance": "The first step of thr-005 is reaching the submission interface from the store network or the virtual machine from the operations subnet. Whether that is possible for any host on those networks, or only for the named kiosks and the fulfillment system, determines whether the exhaustion path is available to a deliberate actor at all.",
+        "related_object_ids": [
+          "cmp-001",
+          "df-001",
+          "tb-001",
+          "ctl-001"
+        ],
+        "requested_evidence": [
+          "Network or deployment documentation identifying the boundary between the store network and the operations subnet and what it admits",
+          "Firewall or security-group policy applied to the virtual machine hosting cmp-001",
+          "A statement of which hosts or workloads are permitted to call the submission interface (df-001)"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Durability and recoverability of order records between polls is not established",
+        "description": "evd-001 states that the sync service stores order records for the fulfillment system to read and that the poll occurs hourly. It does not establish whether the store is replicated or backed up, whether the kiosks retain what they submitted or can re-send it, or whether any availability or recovery objective applies to cmp-001. Trace therefore cannot determine whether a lost or corrupted record is recoverable, nor whether a shortfall between submissions and polled records would be detected.",
+        "importance": "The impact of thr-005 \u2014 up to a full polling interval of customer orders never reaching fulfillment \u2014 rests entirely on whether the sync service store is the sole copy and whether loss would be noticed before customers complain. An answer either way changes the assessment of this threat substantially.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-002",
+          "ast-001",
+          "df-001",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "Backup, replication, or storage-durability configuration for the record store used by cmp-001",
+          "Kiosk-side behaviour on submission failure: whether records are retained locally and re-sent",
+          "Any stated availability or recovery objective for cmp-001, and any reconciliation or alerting between submitted and polled record counts"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Bounds on submission volume and storage consumption are not established",
+        "description": "evd-001 describes kiosks calling the sync service but states no rate limit, per-kiosk quota, queue depth limit, disk quota, or retry policy. Trace cannot determine whether sustained submissions could fill the store or the host's disk, which is the condition req-TPI-002 is conditionally applicable on for this threat.",
+        "importance": "The exhaustion arm of thr-005 depends on whether repeated submissions can consume the single virtual machine's capacity without a bound. Without this, applicability of req-TPI-002 itself cannot be settled.",
+        "related_object_ids": [
+          "cmp-001",
+          "df-001"
+        ],
+        "requested_evidence": [
+          "Rate or volume limits applied to the submission interface, per kiosk or in aggregate",
+          "Storage quota or queue depth configuration for the record store",
+          "Retry behaviour for failed submissions and any backoff applied"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement in the catalog addresses the durability and recoverability of customer data that rests in a single component between processing stages: whether the store is replicated or backed up, whether the upstream producer can re-send what it submitted, and whether loss of a batch would be detected before it reaches customers. The catalog's data-protection requirements govern confidentiality (encryption, tenant separation, log content) or bounded retention (deletion capability, retention periods), and its availability-tagged requirements govern bounding of consumption and replay of events. None asks that data the system has accepted responsibility for survives until it is consumed, or that a shortfall is noticed. In this system evd-001 shows order records existing only on one virtual machine for up to an hour, with the fulfillment system's hourly poll as the only reader, so silent loss produces no signal anywhere.",
+        "suggested_category": "data_durability",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-DATA-002",
+            "why_not": "It bounds retention from above \u2014 that working copies are removed within a defined period and that the period matches what customers are told. It says nothing about data surviving until it is legitimately consumed, which is the opposite direction."
+          },
+          {
+            "requirement_id": "req-DATA-004",
+            "why_not": "It requires that customer data can be deleted on request, including from derived stores. Deliberate deletion capability neither prevents nor detects involuntary loss of records before delivery."
+          },
+          {
+            "requirement_id": "req-TPI-002",
+            "why_not": "It bounds work triggered by external events so that consumption cannot run away. That addresses one possible cause of loss (exhaustion) but not durability of records already accepted, nor recovery or detection after a component failure."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "It restricts who can reach an internal component. It does not address failure of the component itself, corruption of its store, or whether anything survives or is recoverable once that happens."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "It requires a record of privileged administrative actions for after-the-fact attribution. It does not cover operational detection of processing shortfalls or missing work, and this threat involves no operator action."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "0dfbe2f1329d3c71b31ef285c714728b8f665c0c5edfe48cb15d8c7dcf5b814b"
+}

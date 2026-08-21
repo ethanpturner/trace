@@ -1,0 +1,41 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 162,
+    "output_tokens": 12780,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 26917,
+    "estimated_cost": "0.48854125",
+    "duration_seconds": 159.40498354204465
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "critique_type": "missing_precondition",
+        "description": "The attack path's third step (\"Receive the stored order records the service returns to a poller, in bulk\") and the impact statement (\"potentially every record the service is holding, obtained in a single request\") both require that one poll-shaped request returns the whole held record set rather than only the records new since the previous poll. No precondition states that. The four listed preconditions cover exposure of a read interface, absent or obtainable authentication on df-002, reachability from the attacker's position, and accumulation of more than one interval's records \that more sit in the store \\ but accumulation says nothing about what a single response carries. evd-001 states only that the service \"stores them for the fulfillment system to read\" and that \"the fulfillment system polls it hourly\"; an incremental poll, a cursor, or a delete-after-read design is equally consistent with that sentence. eas-152 names exactly this as missing evidence (\"Whether a poll returns only records new since the last poll or the full stored set\") but recommends continue, so the dependency is recorded in the assessment and not in the threat.",
+        "rationale": "The claim that distinguishes this threat from an ordinary interception scenario is bulk \\ \"not one order but the accumulated set\". That claim rests wholly on unstated response-scoping behaviour, and it belongs in the precondition list where a reviewer can see the single fact that would collapse the impact from bulk to incremental. Stated as a precondition, the scenario remains honest about resting on silence; left implicit in the impact wording, a downstream finding can carry a bulk-disclosure impact that reads as established when evd-001 does not address it.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-020",
+        "critique_type": "duplicate",
+        "description": "gap-020 and gap-025 record the same missing artifact in nearly the same words: both cite evd-001 and ctl-001, both concern the submission interface (df-001) reached from the store network, both observe that placement in the operations subnet is stated while no firewall policy, security group, private link, or service mesh is described, and each of gap-020's three requested items (a boundary description for the operations subnet, firewall or security-group policy showing which sources may reach the submission interface, a statement that access is restricted to the named kiosk workloads) is already contained in gap-025's request list. gap-011 (read interface reachability) and gap-018 (reachability within the operations subnet) restate the same silence from a different angle, and their requested evidence is the same firewall or security-group configuration for the operations subnet host plus a statement of which named workloads may reach the service. One sentence in evd-001 \\ \"The service runs on a virtual machine in the operations subnet\", with no enforcing mechanism named \\ underlies all four.",
+        "rationale": "A single network or firewall description would answer all four requests at once, so four separate medium-severity gaps make one undocumented artifact present as four deficiencies and send the same request to the document owner four times. Consolidating them into one reachability gap that preserves the distinct facets \\ submission path from the store network, read path from wherever the fulfillment poll originates, and lateral reachability within the operations subnet \\ keeps everything that was asked for at a fraction of the reviewer's cost. The facets differ; the missing evidence does not. Flagged as medium confidence because a reviewer may prefer to keep per-threat traceability rather than consolidate.",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "call_sha256": "d24d068b67d6fef410e796ec6a7a8bae9bda9cc41cebf5cbe492704cb0ec2f3c"
+}
