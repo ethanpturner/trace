@@ -1,76 +1,114 @@
-# Model comparison — attempt record, incomplete
+# Model comparison — three profiles, six arms bought, three dropped against the cap
 
-*Recorded 2026-08-20. Issue #332, which stays open: no live arm completed, and this page says so
-rather than presenting a partial table as a comparison.*
+*Recorded 2026-08-21. Issue #332. The comparison the evaluation plan's model-evaluation section
+names, executed: the `openai/gpt-5.1` arm recorded from the #484 sweep at no new cost, and the
+first completed live `claude-opus-5` and `claude-sonnet-5` pipeline runs. Three arms were
+dropped against the spend cap and are named below — this table says what was bought and what
+was not, and the 2026-08-20 attempt record is kept at the bottom because the two defects it
+found (and the third one this completion found) are part of the comparison's story.*
 
-The plan was three scenarios (missing-docs, reply-tuner, crypto-wallet) across three profiles:
-the #484 sweep's `openai/gpt-5.1` captures as the recorded arm at no new cost, and live
-`claude-opus-5` and `claude-sonnet-5` runs through the Anthropic adapter — its first measured
-live pipeline runs. Checkpoint decisions replay from the sweep's recorded decision files by
-content fingerprint, so the reviewer variable is held constant across arms.
+## The table
 
-What the attempt measured instead is two defects in the measurement machinery. Both are worth
-more than the table would have been; the table remains buyable once they are fixed, and the
-money already spent is preserved below as replayable journals.
+Finding-layer outcomes are the per-item match sets against each scenario's truth set;
+`coverage` is `evidence_assessment_coverage`, 1.0 on every arm. `defaulted` counts checkpoint
+decisions that fell to the DEC-077 default policy because no recorded decision fingerprint
+matched — the column that scopes what this table may claim (see the confound below). Run cost
+is the completed run's ledger; arm total is every dollar the arm consumed across kills and
+re-drives, interruption losses included, per the attempt record's accounting rule.
 
-## What was spent, and where it went
+| Scenario | Model | matched / missed / spurious | coverage | defaulted | subjects | run cost | arm total |
+|---|---|---|---|---|---|---|---|
+| missing-docs | `openai/gpt-5.1` | 0 / 0 / 0 | 1.0 | 0 | 110 | $2.83 | (sweep's) |
+| missing-docs | `claude-opus-5` | 0 / 0 / 0 | 1.0 | 28 | 176 | $4.67 | $13.27 |
+| missing-docs | `claude-sonnet-5` | 0 / 0 / 1 | 1.0 | 11 | 53 | $2.36 | $7.49 |
+| reply-tuner | `openai/gpt-5.1` | 1 / 0 / 0 | 1.0 | 0 | 117 | $2.97 | (sweep's) |
+| reply-tuner | `claude-sonnet-5` | 0 / 1 / 5 | 1.0 | 24 | 52 | $4.73 | $16.32 |
+| crypto-wallet | `openai/gpt-5.1` | 0 / 0 / 1 | 1.0 | 0 | 156 | $4.87 | (sweep's) |
 
-| Attempt | Arm | Died at | Billed | Recoverable |
-|---|---|---|---|---|
-| 1 | opus / missing-docs | critical review (18 calls) | $9.82 | no — the harness live path does not journal |
-| 1 | sonnet / reply-tuner | evidence validation (8 calls) | $4.53 | no — same |
-| 2 | opus / missing-docs | critical review | $9.50 | yes — journaled (19 + 18 envelopes preserved) |
-| 2 | sonnet / reply-tuner | evidence validation | $6.60 | yes — journaled (11 + 13 envelopes preserved) |
+**Dropped against the cap, named rather than truncated:** `claude-sonnet-5`/crypto-wallet
+(projected $8–10 against $7.92 of remaining headroom), `claude-opus-5`/reply-tuner, and
+`claude-opus-5`/crypto-wallet. The completion ran cheapest-first once measured arm costs came
+in above their estimates, which is why the sonnet row is fuller than the opus row.
 
-Program total: **$30.45 billed, zero completed arms**, against a $40 stop-loss. The third
-attempt was not made: under defect 2 every re-drive re-buys everything past extraction, so one
-more attempt could not fit inside the remaining budget, and spending it would have bought the
-same defect a third time. The unrun arms (opus/reply-tuner, both crypto-wallet live arms) were
-already dropped against the cap before attempt 2.
+## The confound this comparison measured about itself
 
-Attempt 1 was killed by the session harness; attempt 2's first kill was the driver's own
-timeout (operator error, $0 — the journals replayed), its second another harness-side kill
-mid-run. The kills are an execution-environment problem, not a pipeline one: every run advanced
-correctly until killed.
+The reviewer variable was held constant by replaying the sweep's recorded checkpoint decisions
+by content fingerprint. That instrument is exact for the model that produced the recordings —
+the `openai/gpt-5.1` arms default zero decisions by construction — and coarse for every other
+model: objects and claims minted in another model's words rarely fingerprint-match, and the
+unmatched subjects fall to the default policy, a more lenient reviewer than the recorded one.
+The opus and sonnet arms carry 11–28 defaulted decisions each. The sharpest case is
+reply-tuner/`claude-sonnet-5`: five candidate findings, none matching a recorded fingerprint,
+all five approved by default and all five scoring spurious — a row that measures the
+default-policy reviewer at least as much as it measures the model. Cross-model rows in this
+table are therefore **model + replay-fidelity**, never model alone. A future comparison wants
+either a per-arm human pass or a fingerprint matcher robust to cross-model paraphrase — the
+same string-identity boundary the #484 sweep recorded on translation-gateway (DEC-066), showing
+up here as a measurement confound instead of a scoring miss.
 
-## Defect 1: the harness's live path does not journal
+## What can be said inside that limit
 
-`run_scenario`'s live branch builds its model directly and never wraps it in `JournalingModel` —
-DEC-139's protection covers `trace run`/`trace resume` and nothing else. The stability protocol
-(DEC-077) and any live comparison arm therefore run the most expensive calls in the system with
-no recovery record: attempt 1's $14.35 vanished precisely here. The fix is small (wrap the live
-branch the way the CLI's `_run_model` does) and belongs with the harness.
+- **The zero-finding discipline held on every model.** All three profiles completed
+  missing-docs' intended zero-finding path at the outcome layer; opus minted no candidate
+  finding at all despite 28 defaulted decisions — the DEC-009 posture surviving the most
+  lenient reviewer condition this harness can produce.
+- **The matched finding stayed matched only on the sweep model.** reply-tuner's expected
+  training-data finding was caught by `openai/gpt-5.1` (severity-concordant) and missed by
+  `claude-sonnet-5`, whose five default-approved candidates circled adjacent ground.
+- **The mapping fan-out is model-emergent, and it is the cost driver.** On the same scenario
+  and inputs, opus minted 176 evidence subjects, gpt-5.1 110, sonnet 53 — a 3.3× spread in
+  assessed workload that flows straight into evidence-validation batch count and dollars.
+  Model choice sets not just answer quality but how much assessment the pipeline decides to do.
+- **Cost per completed run:** sonnet $2.36–4.73, gpt-5.1 $2.83–4.87 (gateway rates), opus
+  $4.67 for its one completed run — with the caveat that the interrupted arms' true single-pass
+  costs are higher than their completed-run ledgers (the replayed prefixes were paid for in
+  earlier runs; the arm-total column carries the honest number).
 
-## Defect 2: journal replay diverges at the first post-checkpoint call
+`duplicate_finding_rate` reported 0 with no evaluable pairs on every arm; no multi-finding run
+produced a same-ground pair for #591's population (reply-tuner/sonnet's five spurious findings
+sit on five distinct requirements).
 
-Attempt 2 re-drove each scenario from a fresh work root with attempt 1½'s journal named for
-replay. Measured behavior: the extraction entry served and was marked spent; the very next call
-(threat analysis) missed on `call_sha256`, and per design the whole remaining journal was set
-aside — every call from threat analysis onward re-bought live. Same registered inputs, same
-pinned `GENERATED_AT`, same recorded checkpoint decisions applied by the same fingerprint
-applier, fresh identical stores both times. Something non-deterministic enters the threat
-prompt between two runs whose inputs are pinned; reviewer-decision timestamps
-(`domain.base.now()` at checkpoint application, possibly surfacing through the DEC-141
-settlement sections) are the unverified prime suspect. The rendered requests are not persisted,
-so the diff could not be taken post-hoc — the reproduction is cheap and offline with the
-deterministic model: run the same scenario twice through the harness's live-decision path and
-compare `call_sha256` per call. Until this is fixed, DEC-139's "an interrupted phase re-drives
-without re-spending" holds only for runs that die before checkpoint 1.
+## Operations: the fix chain, field-tested the night it landed
 
-## What is preserved
+Three more harness-side process kills hit this completion — and this time each cost wall
+clock, not money. DEC-142 held in the field: consolidated journals replayed 14 of 20, 14 of
+17, and 13 of 13 entries free across both checkpoint applications, hashes matching across
+processes. Total new spend for the completion was $24.08 against arms that would have cost
+roughly $35 bought cold; the session's #332 total is $37.08 of the $45 cap ($67.53 across both
+days, both attempts included).
 
-- `journals/` — every paid response from the four journaled attempt-runs, in the DEC-139
-  envelope shape (`schema`/`usage`/`response`/`call_sha256`), 61 files. Once defect 2 is fixed,
-  the arms complete by replay for approximately the cost of their unbought tails.
-- `feeds/` — the three `openai/gpt-5.1` labelled feeds (the recorded arm, complete and
-  scored): missing-docs 0 matched / 0 missed / 0 spurious at $2.83; reply-tuner 1 matched /
-  0 / 0 at $2.97; crypto-wallet 0 / 0 / 1 spurious at $4.87 — coverage 1.0 on all three,
-  attribution per DEC-136. These are the sweep's captures re-scored under this comparison's
-  labels; their spend was the sweep's.
+The completion also found the journal machinery's third defect: **a re-drive's journal is not
+continuous** — a call served from a replay journal is not re-journaled into the new run's
+journal, so the new journal starts mid-run, and the replay queue is order-sensitive from entry
+one: offered a journal whose first entry is not the run's first call, it skips every entry as
+"a completed phase's entry" and buys the whole run. The workaround (manual consolidation of
+served prefixes with fresh tails, renumbered) recovered every re-drive tonight; the fix —
+copy served entries forward so every journal is complete from call one — is filed. A residual
+divergence class also showed twice: an entry recorded from a *retry* call carries validation
+feedback in its request that a fresh drive does not compose, so replay honestly diverges there
+and buys the tail; that one is inherent to the retry design and is a caveat, not a defect.
 
-## Caveats that will apply when the table is bought
+## Caveats
 
-n=1 per arm per scenario (variance is DEC-077's, not this page's); `defaulted_decisions`
-reported per arm, since a defaulted checkpoint decision grades the arm with a more lenient
-reviewer than the sweep's; per-row cost at each provider's published rates with any
-interruption loss reported beside the table, never folded into it.
+n = 1 per arm per scenario — variance is DEC-077's instrument, not this page's. The defaulted
+column must accompany any quotation of the cross-model rows. Costs are each provider's
+published rates as the ledger recorded them; interruption losses are reported in the arm-total
+column and the attempt record, never folded into run costs. Attribution per DEC-136 from the
+feeds' `models` field.
+
+---
+
+# Appendix: the 2026-08-20 attempt record
+
+*Kept verbatim in spirit, condensed in length: the first execution attempt completed zero live
+arms and found the two defects that made this completion possible.*
+
+The first attempt spent $30.45 across four runs (opus/missing-docs twice, sonnet/reply-tuner
+twice), every one killed harness-side before completion. Attempt 1's $14.35 was unrecoverable
+— the harness live path built its model bare, journaling nothing (#638, fixed: the path now
+mounts DEC-139's journal and `--replay-journal` re-drives it). Attempt 2's journals survived
+but would not replay past checkpoint 1 — a wall-clock field (`approved_at`) rendered into the
+threat package made every re-drive's requests unmatchable (#639, fixed as DEC-142: no
+model-facing package renders a wall clock; `scripts/replay_forgeflow.py` reproduces its pinned
+hash under the fixed shape). The 61 preserved response envelopes under `journals/` were this
+completion's replay prefixes; the `feeds/` directory carries all six arms' scored feeds.

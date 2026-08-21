@@ -1,0 +1,168 @@
+{
+  "ablations": [],
+  "assessment_id": "asm-001",
+  "authoritative": true,
+  "condition": "clean",
+  "defaulted_decisions": 11,
+  "feed_version": "1",
+  "items": {
+    "documentation_gaps": {
+      "matching": [
+        "gap-010",
+        "gap-011"
+      ],
+      "non_matching": [
+        "gap-001",
+        "gap-002",
+        "gap-003",
+        "gap-004",
+        "gap-005",
+        "gap-006",
+        "gap-007",
+        "gap-008",
+        "gap-009",
+        "gap-012"
+      ]
+    },
+    "findings": {
+      "conditional_unreached": [],
+      "fingerprints": {},
+      "matched": {},
+      "missed": [],
+      "spurious": [
+        "fnd-001"
+      ]
+    }
+  },
+  "label": "sonnet",
+  "metrics": {
+    "clarifying_question_usefulness": {
+      "evaluator_type": "benchmark",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "documentation_gap_precision": {
+      "evaluator_type": "benchmark",
+      "sample_size": 12,
+      "unit": "percentage",
+      "value": 0.16666666666666666
+    },
+    "duplicate_finding_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 1,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "estimated_cost": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "dollars",
+      "value": 2.3612379
+    },
+    "evidence_assessment_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 53,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "execution_duration": {
+      "evaluator_type": "automated",
+      "sample_size": 29,
+      "unit": "seconds",
+      "value": 1564.359
+    },
+    "false_negative_rate": {
+      "evaluator_type": "benchmark",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "false_positive_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 1,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "finding_evidence_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 1,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "model_call_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 15.0
+    },
+    "node_failure_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 29,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "report_finding_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 1,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "report_invented_finding_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "report_severity_inconsistency_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "reviewer_acceptance_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 1,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "reviewer_edit_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 1,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "reviewer_rejection_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 1,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "token_usage": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "tokens",
+      "value": 149957.0
+    },
+    "unsupported_claim_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "unsupported_claim_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 16,
+      "unit": "percentage",
+      "value": 0.0
+    }
+  },
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "run_status": "completed",
+  "scenario": "missing-docs",
+  "stopped_because": "completed",
+  "workflow_run_id": "run-001",
+  "workflow_version": "0.2"
+}

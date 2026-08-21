@@ -1,0 +1,180 @@
+{
+  "ablations": [],
+  "assessment_id": "asm-001",
+  "authoritative": true,
+  "condition": "clean",
+  "defaulted_decisions": 28,
+  "feed_version": "1",
+  "items": {
+    "documentation_gaps": {
+      "matching": [],
+      "non_matching": [
+        "gap-001",
+        "gap-002",
+        "gap-003",
+        "gap-004",
+        "gap-005",
+        "gap-006",
+        "gap-007",
+        "gap-008",
+        "gap-009",
+        "gap-010",
+        "gap-011",
+        "gap-012",
+        "gap-013",
+        "gap-014",
+        "gap-015",
+        "gap-016",
+        "gap-017",
+        "gap-018",
+        "gap-019",
+        "gap-020",
+        "gap-021",
+        "gap-022",
+        "gap-023",
+        "gap-024",
+        "gap-025",
+        "gap-026",
+        "gap-027"
+      ]
+    },
+    "findings": {
+      "conditional_unreached": [],
+      "fingerprints": {},
+      "matched": {},
+      "missed": [],
+      "spurious": []
+    }
+  },
+  "label": "opus",
+  "metrics": {
+    "clarifying_question_usefulness": {
+      "evaluator_type": "benchmark",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "documentation_gap_precision": {
+      "evaluator_type": "benchmark",
+      "sample_size": 27,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "duplicate_finding_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "estimated_cost": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "dollars",
+      "value": 4.670671
+    },
+    "evidence_assessment_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 176,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "execution_duration": {
+      "evaluator_type": "automated",
+      "sample_size": 35,
+      "unit": "seconds",
+      "value": 1614.521
+    },
+    "false_negative_rate": {
+      "evaluator_type": "benchmark",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "false_positive_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "finding_evidence_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "model_call_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 22.0
+    },
+    "node_failure_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 35,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "report_finding_coverage": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 1.0
+    },
+    "report_invented_finding_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "report_severity_inconsistency_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "reviewer_acceptance_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "reviewer_edit_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "reviewer_rejection_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 0,
+      "unit": "percentage",
+      "value": 0.0
+    },
+    "token_usage": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "tokens",
+      "value": 138030.0
+    },
+    "unsupported_claim_count": {
+      "evaluator_type": "automated",
+      "sample_size": null,
+      "unit": "count",
+      "value": 0.0
+    },
+    "unsupported_claim_rate": {
+      "evaluator_type": "automated",
+      "sample_size": 31,
+      "unit": "percentage",
+      "value": 0.0
+    }
+  },
+  "models": [
+    "claude-opus-5"
+  ],
+  "run_status": "completed",
+  "scenario": "missing-docs",
+  "stopped_because": "completed",
+  "workflow_run_id": "run-001",
+  "workflow_version": "0.2"
+}
