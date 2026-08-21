@@ -550,6 +550,12 @@ def _benchmark_metrics(
                 f"unmatched: {unmatched_expected or 'none'}; consolidated findings matching "
                 f"more than one expectation: {consolidated}"
                 + (
+                    f"; unmatched on the component name while a produced finding stands on the "
+                    f"requirement (DEC-148): {sorted(finding_matches.divergent)}"
+                    if finding_matches.divergent
+                    else ""
+                )
+                + (
                     f"; conditional expectations unreached without a resolved contradiction: "
                     f"{conditional_unreached}"
                     if conditional_unreached

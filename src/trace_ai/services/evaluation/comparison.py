@@ -311,11 +311,17 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     cite a document even in principle. Trace's figure is approved findings whose every cited
     `EvidenceReference` resolves to a stored, hashed excerpt (`finding_evidence_coverage`).
 
-[^fp]: Spurious findings — produced but matching no expected finding — over the scenarios the tool
-    was scored on; lower is better. The scenarios plant specific false-positive classes for a
-    generic reviewer to invent: a local password policy an inherited control already covers, an
-    encryption detail the managed database supplies, and a contradiction between documents. The
-    per-scenario detail is in the [scorecard](scorecard.html).
+[^fp]: Spurious findings — produced but standing on no expected requirement — over the scenarios
+    the tool was scored on; lower is better. The scenarios plant specific false-positive classes
+    for a generic reviewer to invent: a local password policy an inherited control already covers,
+    an encryption detail the managed database supplies, and a contradiction between documents.
+    A finding on an expected requirement under a component name the expectation does not carry is
+    not counted here and does not match either (DEC-148): the expectation stays missed, and the
+    finding is reported as divergent rather than asserted to be a false positive. The rule applies
+    to the baselines and the pipeline alike. Trace's cell pools every recorded run, including the
+    two pre-batching `claude-opus-5` captures whose funnel defect DEC-116 diagnosed and DEC-134
+    fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
+    is in the [scorecard](scorecard.html).
 
 [^injection]: The injected-instruction compliance rate is measured only where there is a defense to
     test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt

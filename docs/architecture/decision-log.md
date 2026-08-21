@@ -9766,3 +9766,94 @@ absence of a goal is the only defence against. And the genuinely wrong gap — o
 undeterminability where an org control determines the answer — is currently unscored: the
 negative set holds the material, the matcher does not yet reach it, and that gap in the
 instrument is named rather than closed.
+
+## DEC-148: A finding standing on an expected requirement under another component name is divergent, not spurious
+
+Date: 2026-08-21
+
+Status: Accepted
+
+Amends: DEC-056 (the matching rule, and its second open question)
+
+Decision:
+
+**The match predicate is unchanged.** An expected finding matches a produced one on the expected
+`requirement_id` *and* an affected component whose normalized name the expectation carries
+(DEC-056). Nothing is credited on the requirement alone; two expectations sharing a requirement
+still discriminate on the component, and a produced finding about genuinely different ground still
+fails to match.
+
+**A third classification is recorded beside the score.** An expectation nothing matched is
+*divergent* when some produced finding cites its requirement under a component name the
+expectation does not carry. `divergent` is a subset of `missed`, so **recall does not move**: the
+matcher did not confirm that the two name the same ground, and crediting a match it cannot
+confirm would be a fabrication.
+
+**The findings a divergence implicates are withheld from `spurious`.** This is the asymmetry the
+entry exists for. "Missed" is a statement about an expectation — unconfirmed — and the instrument
+can support it. "Spurious" is a statement about a finding — that it is a false positive — and a
+finding standing on the expected requirement is not evidence for that claim. The instrument may
+decline to confirm without asserting the opposite.
+
+**The rule applies to the baselines by the same code path.** `baselines.py` mirrors it, because a
+comparison whose arms are scored by different rules measures the rules.
+
+Why:
+
+**DEC-056 left this open and the corpus answered it.** Its second open question asked whether
+component-name matching survives a scenario whose truth set names components differently from its
+own context file. Translation-gateway answered it: the truth set names `Translation Connector`,
+the live extraction named the same thing `Helpdesk Translate connector service`, and one correct
+finding — same requirement, same evidence — scored as a miss *and* a spurious. One divergence,
+two penalties, and the second of them a false statement about the finding.
+
+**The component qualifier is doing almost no discriminating work.** Across all fifteen scenarios
+and seventeen expected findings, no two expectations within a scenario share a `requirement_id`;
+invoice-agent's three expectations name one component between them, translation-gateway's two
+name one. The qualifier is retained anyway — a future scenario may need it, and relaxing the
+predicate to requirement-only would credit a finding about different ground — but its present
+contribution is almost entirely false misses, which is why the residue deserves a name.
+
+**The baseline arm cannot express a component list at all.** A pipeline finding carries
+`affected_component_ids` and the matcher already accepts any of them; a baseline finding carries
+one free-text string, so a baseline naming two components writes `Training Store and Tuning Job`
+and fails equality with either. Scoring that as a fabrication penalised the control arm for a
+shape the harness gave it.
+
+**Measured effect, stated because it cuts against the pipeline.** Spurious counts fall from 79 to
+59 across the corpus: Trace 11 to 10, baseline-generic 45 to 36, baseline-single-pass 11 to 7, and
+baseline-structured 12 to 6. The structured baseline therefore now reports *fewer* spurious
+findings than Trace in the pooled figure. Eight of Trace's remaining ten belong to the two
+pre-batching `claude-opus-5` rows, and the thirteen sweep captures contribute two — which is what
+DEC-143's stratification exists to show, and the reason the pooled cell is not the claim.
+
+Alternatives Considered:
+
+- **Keep exact equality and rewrite the truth sets to the phrasing the runs produced.** Rejected:
+  authoring an expectation from a run's output is teaching to the test, and it would have to be
+  redone whenever a model renamed something.
+- **Match on `requirement_id` alone.** Rejected: it credits a finding about different ground, and
+  it would collapse two expectations that share a requirement — which no scenario has today and
+  the rule must not assume forever.
+- **Token overlap or substring containment on component names.** Rejected: every variant needs a
+  threshold nobody can derive, and `Training Store` versus `Training Store and Tuning Job` is a
+  containment the corpus would have to accept while rejecting others no rule distinguishes.
+- **An authored per-scenario alias table.** Deterministic and auditable, and still available if
+  the divergence count grows. Rejected for now because aliases authored after reading a run's
+  output are the first alternative wearing a data structure, and aliases authored from the input
+  document are a guess at every name a model might choose.
+- **Count a divergence as matched.** Rejected: it asserts an identity the matcher did not
+  establish, in the direction that flatters the tool.
+
+Tradeoffs:
+
+A genuinely wrong finding that happens to cite an expected requirement is no longer counted
+spurious — the rule buys precision honesty at the cost of some precision sensitivity, and the
+divergence list is where a reader sees the trade rather than a footnote claiming it does not
+exist. Recall is untouched, so translation-gateway still reports two missed expectations while its
+approved finding is manifestly one of them; the pair is reported and left for the reconciliation
+(#653) rather than settled by the matcher. The fingerprint (DEC-066) is deliberately unchanged:
+it is longitudinal identity, persisted on the object, and a matcher classification is not an
+identity, so recorded `content_fingerprint` values do not move. And the divergence class is a
+measurement of the truth sets as much as of the runs — a rising count means the corpus's component
+naming and the models' are drifting apart, which is a signal to read, not a number to optimise.
