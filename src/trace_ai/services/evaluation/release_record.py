@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.services.evaluation.history import load_history
+from trace_ai.services.evaluation.stability import measurements as stability_measurements
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -104,16 +105,24 @@ def render_evaluation_summary(
         f"F1 {_pct(latest.f1)}.",
     ]
     live_file = live_path if live_path is not None else LIVE_STABILITY
-    if live_file.is_file():
-        live: dict[str, Any] = json.loads(live_file.read_text(encoding="utf-8"))
-        means = live.get("metric_mean", {})
-        cost = means.get("estimated_cost")
-        cost_text = "unmeasured" if cost is None else f"${float(cost):.2f}"
+    entries = (
+        stability_measurements(json.loads(live_file.read_text(encoding="utf-8")))
+        if live_file.is_file()
+        else []
+    )
+    if entries:
+        measured = []
+        for live in entries:
+            means = live.get("metric_mean", {})
+            cost = means.get("estimated_cost")
+            cost_text = "unmeasured" if cost is None else f"${float(cost):.2f}"
+            measured.append(
+                f"{live.get('n')} runs of `{live.get('scenario')}` on `{live.get('profile')}`, "
+                f"{live.get('failed_runs')} failed, mean cost {cost_text} per completed run"
+            )
         lines.append(
-            f"- Live stability (DEC-077): {live.get('n')} runs of `{live.get('scenario')}` on "
-            f"`{live.get('profile')}`, {live.get('failed_runs')} failed, mean cost {cost_text} "
-            f"per completed run. Everything else replays offline; a dash on the scorecard is "
-            f"unmeasured, never zero."
+            f"- Live stability (DEC-077): {'; '.join(measured)}. Everything else replays "
+            f"offline; a dash on the scorecard is unmeasured, never zero."
         )
     else:
         lines.append("- No live-stability measurement is committed; every number above replays.")

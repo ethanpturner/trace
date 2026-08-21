@@ -26,6 +26,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from trace_ai.services.evaluation.stability import agreement_text as stability_agreement
+from trace_ai.services.evaluation.stability import measurements as stability_measurements
+
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from datetime import datetime
@@ -187,15 +190,20 @@ def _class_rates(feeds: Sequence[dict[str, Any]]) -> dict[str, float]:
     return {name: sum(rates) / len(rates) for name, rates in sorted(by_class.items())}
 
 
-def _stability_cell(summary: ToolSummary, live: Mapping[str, Any] | None) -> str:
-    """Measured for Trace once the DEC-077 artifact exists; the baselines are never run live."""
+def _stability_cell(summary: ToolSummary, live: Sequence[Mapping[str, Any]]) -> str:
+    """Measured for Trace once the DEC-077 artifact exists; the baselines are never run live.
+
+    Each measured scenario reports its own agreement. They are listed, never averaged: an
+    agreement count is over one scenario's expected items, and a mean across scenarios would
+    read as a stability figure for the pipeline that no run measured.
+    """
     if summary.label != _TRACE_LABEL or not live:
         return "not measured [^stability]"
-    agreement = live.get("item_agreement") or {}
-    n = int(live.get("n", 0))
-    matched = ", ".join(f"{key} {count}/{n}" for key, count in sorted(agreement.items()))
-    scenario = live.get("scenario", "")
-    return f"measured: {matched or f'0/{n} agreement'} ({scenario}, n={n}) [^stability]"
+    parts = [
+        f"{entry.get('scenario', '')} n={int(entry.get('n', 0))}: {stability_agreement(entry)}"
+        for entry in live
+    ]
+    return f"measured — {'; '.join(parts)} [^stability]"
 
 
 def render_comparison(
@@ -203,9 +211,10 @@ def render_comparison(
     *,
     generated_at: datetime,
     pins: Mapping[str, str],
-    live_stability: Mapping[str, Any] | None = None,
+    live_stability: Mapping[str, Any] | Sequence[Any] | None = None,
 ) -> str:
     """Render the per-tool comparison as Markdown from the feeds. Metrics and identifiers only."""
+    live = stability_measurements(live_stability)
     summaries = summaries_from_feeds(feeds)
     per_class = _class_rates(feeds)
     header = (
@@ -217,31 +226,37 @@ def render_comparison(
         f"| {summary.label} | {_schema_cell(summary)} | {_evidence_cell(summary)} | "
         f"{_spurious_cell(summary)} | "
         f"{_compliance_cell(summary, labelled_per_class=bool(per_class))} | "
-        f"{_stability_cell(summary, live_stability)} |"
+        f"{_stability_cell(summary, live)} |"
         for summary in summaries
     ]
-    if live_stability:
-        n = int(live_stability.get("n", 0))
-        failed = int(live_stability.get("failed_runs", 0))
-        means = live_stability.get("metric_mean", {})
-        stdevs = live_stability.get("metric_stdev", {})
-        cost = means.get("estimated_cost")
-        cost_sd = stdevs.get("estimated_cost", 0.0)
-        duration = means.get("execution_duration")
-        stability_footnote = (
-            "[^stability]: Measured per DEC-077: "
-            f"{n} completed live runs of {live_stability.get('scenario', '')} on "
-            f"{live_stability.get('profile', '')} ({failed} further attempts failed and are "
-            "counted), identical input, checkpoint decisions from the protocol's named default "
-            "policy with the defaulted count disclosed. "
-            + (
-                f"Cost ${cost:.2f} ± {cost_sd:.2f} per run; runtime {duration:.0f}s mean. "
+    if live:
+        measured = []
+        for entry in live:
+            n = int(entry.get("n", 0))
+            failed = int(entry.get("failed_runs", 0))
+            means = entry.get("metric_mean", {})
+            stdevs = entry.get("metric_stdev", {})
+            cost = means.get("estimated_cost")
+            cost_sd = stdevs.get("estimated_cost", 0.0)
+            duration = means.get("execution_duration")
+            priced = (
+                f", ${cost:.2f} ± {cost_sd:.2f} per run and {duration:.0f}s mean"
                 if cost is not None and duration is not None
                 else ""
             )
-            + "The per-metric variance table is on the [scorecard](scorecard.html). The "
-            "baselines are never run live, so their variance stays unmeasured. Reported, "
-            "never gated."
+            measured.append(
+                f"{n} completed live runs of {entry.get('scenario', '')} on "
+                f"{entry.get('profile', '')} ({failed} further attempts failed and are "
+                f"counted){priced}"
+            )
+        stability_footnote = (
+            "[^stability]: Measured per DEC-077 — "
+            + "; ".join(measured)
+            + ". Identical input, checkpoint decisions from the protocol's named default policy "
+            "with the defaulted count disclosed. Each scenario reports its own agreement and "
+            "they are not averaged. The per-metric variance tables are on the "
+            "[scorecard](scorecard.html). The baselines are never run live, so their variance "
+            "stays unmeasured. Reported, never gated."
         )
     else:
         stability_footnote = (

@@ -30,7 +30,7 @@ this surface are recorded in the journal and the decision log (through DEC-115).
 <!-- evaluation-summary -->
 - Retained snapshot 2026-08-18 (git `cfedb65`, catalog 0.1), the latest in `docs/eval/history.jsonl`.
 - Pooled over 16 authoritative rows across 14 scenarios: precision 80%, recall 84%, F1 82%.
-- Live stability (DEC-077): 5 runs of `unsigned-webhooks` on `primary-development`, 3 failed, mean cost $6.92 per completed run. Everything else replays offline; a dash on the scorecard is unmeasured, never zero.
+- Live stability (DEC-077): 5 runs of `missing-docs` on `openrouter-economy`, 0 failed, mean cost $2.62 per completed run; 5 runs of `reply-tuner` on `openrouter-economy`, 0 failed, mean cost $3.05 per completed run; 5 runs of `unsigned-webhooks` on `primary-development`, 3 failed, mean cost $6.92 per completed run. Everything else replays offline; a dash on the scorecard is unmeasured, never zero.
 <!-- /evaluation-summary -->
 
 ### Known regressions

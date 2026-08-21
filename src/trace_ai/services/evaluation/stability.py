@@ -13,7 +13,9 @@ means nothing. `run_stability` therefore refuses the offline profile rather than
 that reads as a result: five identical replays are not evidence of a stable system. The
 aggregation `summarize_runs` is a pure function over run feeds, so the protocol's machinery is
 tested on synthetic inputs and runs for real only when an operator drives it live, manually,
-having seen the cost — which is where DEC-077 puts it.
+having seen the cost — which is where DEC-077 puts it. The harness is imported inside the two
+functions that drive runs rather than at module scope, so reading a committed summary costs a
+reader nothing: the scorecard renders the artifact and has no business loading the live path.
 
 Stability gates nothing (DEC-077): the summary is reported, never thresholded. A gate would create
 pressure to reduce *measured* variance, and the cheapest reductions reduce the measurement rather
@@ -27,7 +29,6 @@ import statistics
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from trace_ai.services.evaluation.harness import run_scenario
 from trace_ai.services.evaluation.registry import scenario as load_scenario
 
 if TYPE_CHECKING:
@@ -39,6 +40,8 @@ __all__ = [
     "AblationComparison",
     "StabilityError",
     "StabilitySummary",
+    "agreement_text",
+    "measurements",
     "run_ablation_set",
     "run_stability",
     "summarize_runs",
@@ -103,6 +106,8 @@ def run_ablation_set(
     nodes rather than changing the model, so the same recording drives the authoritative run and
     the ablations — the harness drops the recordings the removed agents would have consumed.
     """
+    from trace_ai.services.evaluation.harness import run_scenario
+
     comparison = AblationComparison(scenario=slug, label=label)
     authoritative = run_scenario(
         slug,
@@ -180,6 +185,42 @@ class StabilitySummary:
         return sorted(key for key, count in self.item_agreement.items() if 0 < count < self.n)
 
 
+def measurements(payload: Any) -> list[dict[str, Any]]:
+    """Normalize a committed live-stability artifact to the measurements it holds.
+
+    The artifact was one measurement's payload when one scenario had been measured, and is a list
+    once several have. Both shapes read: a committed record should not have to be rewritten to
+    stay readable, and the readers care about the measurements, not the container. Anything else
+    reads as no measurement rather than raising — an unreadable artifact must not take a page
+    down, and an absent section is the honest rendering of one.
+    """
+    if isinstance(payload, dict):
+        return [payload]
+    if isinstance(payload, list):
+        return [entry for entry in payload if isinstance(entry, dict)]
+    return []
+
+
+def agreement_text(entry: Any) -> str:
+    """One measurement's per-item agreement, in words, for a page cell.
+
+    An empty agreement map is two different results and must not render as one. A zero-finding
+    scenario has nothing to match, and reporting that as "no item matched" would read as a miss
+    — the exact confusion this corpus exists to avoid. The mean false-negative rate separates
+    them: nothing missed means nothing was expected.
+    """
+    if not isinstance(entry, dict):
+        return ""
+    n = int(entry.get("n", 0))
+    agreement = entry.get("item_agreement") or {}
+    if agreement:
+        return ", ".join(f"{key} {count}/{n}" for key, count in sorted(agreement.items()))
+    missed = entry.get("metric_mean", {}).get("false_negative_rate")
+    if missed is not None and float(missed) == 0.0:
+        return f"no expected finding to match ({n}/{n} correct)"
+    return f"no expected item matched in any of {n}"
+
+
 def summarize_runs(scenario: str, feeds: Sequence[dict[str, Any]]) -> StabilitySummary:
     """Aggregate n run feeds into per-metric variance and per-item agreement.
 
@@ -225,6 +266,8 @@ def run_stability(
     variance and measure nothing. Live runs are manual and priced up front; this is the path an
     operator drives, and the summary it returns gates nothing.
     """
+    from trace_ai.services.evaluation.harness import run_scenario
+
     if profile_name == _OFFLINE_PROFILE:
         raise StabilityError(
             "stability measures live run-to-run variance and refuses the offline profile: "
