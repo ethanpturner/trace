@@ -117,18 +117,75 @@ be read as one population, and a dash marks an authored recording no model produ
 elsewhere is an undefined ratio — recall where the scenario expects no findings,
 precision where a run produced none. Compliance is the injected-instruction compliance rate under
 attack (DEC-075) — zero is the target — shown only for adversarial conditions. Rows marked * are
-non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
-measurement is recorded per DEC-077 where a live protocol ran; deterministic replays show none.
-Per-item diffs stay local (DEC-073). The forgeflow row is the live-model run scored against an
-independently authored truth set: it approved four defensible findings and matched none of the
-reachable expectations. Two of the truth set's three finding entries are conditional on the
-reviewer resolving a recorded contradiction, which this run's protocol did not supply — they
-report as conditional-unreached, not missed, and the run's paired questions carry their grade
-(DEC-133). The remaining expectation was produced as a mapping and died unassessed: the single
-evidence-validation call covered 25 of 185 mappings, an unassessed mapping resolves to no
-output (DEC-013), and the batching fix is the named follow-up (DEC-116,
-<code>docs/eval/live-diagnosis.md</code>). Cost shows a dash where the run was an offline
-replay that measured nothing.</p>
+non-authoritative (baselines and ablations, DEC-012). Run-to-run variance is recorded per
+DEC-077 where a live protocol ran; deterministic replays show none.
+Per-item diffs stay local (DEC-073). The forgeflow and husky-ai rows are the two pre-batching
+`claude-opus-5` captures (workflow 0.1): each approved defensible findings that matched none of
+the reachable expectations, and the diagnosis is recorded — the single evidence-validation call
+silently under-assessed (25 of 185 mappings on forgeflow; coverage 0.275 on husky-ai), so an
+unassessed mapping resolved to no output (DEC-013, DEC-116,
+<code>docs/eval/live-diagnosis.md</code>). The DEC-134 batched shape closed that funnel and
+every workflow-0.2 capture reads coverage 100%; re-capturing the two 0.1 scenarios under it is
+the named follow-up (#588's residual). Two of forgeflow's three finding expectations are
+conditional on a reviewer-resolved contradiction its protocol did not supply — they report as
+conditional-unreached, not missed, with the paired questions carrying their grade (DEC-133).
+Cost shows a dash where the run was an offline replay that measured nothing.</p>
+
+<h2>Pooled accuracy by stratum</h2>
+<p class="meta">Authoritative clean rows pooled per (model, workflow shape) stratum (DEC-143).
+Rows measured on different models or shapes are different populations — the two pre-batching
+`claude-opus-5` rows carry the diagnosed evidence-validation funnel failure the batched rows do
+not, and cross-model rows differ in decision-replay fidelity (the #332 record's measured
+confound) — so the mixed pool renders only under its explicit label. Every percentage carries
+its counts.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Model</th><th>Workflow</th><th>Rows</th>
+<th>Matched</th><th>Missed</th><th>Spurious</th>
+<th>Precision</th><th>Recall</th>
+</tr></thead>
+<tbody>
+<tr><td>claude-opus-5</td><td>0.1</td><td>1</td><td>0</td><td>2</td><td>4</td><td>0% (0/4)</td><td>0% (0/2)</td></tr>
+<tr><td>openai/gpt-5.1</td><td>0.2</td><td>13</td><td>2</td><td>10</td><td>3</td><td>40% (2/5)</td><td>17% (2/12)</td></tr>
+<tr><td>—</td><td>0.1</td><td>1</td><td>0</td><td>1</td><td>4</td><td>0% (0/4)</td><td>0% (0/1)</td></tr>
+<tr><td colspan=2>all strata — pooled across models and shapes</td><td>15</td><td>2</td><td>13</td><td>11</td><td>15% (2/13)</td><td>13% (2/15)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Live baselines beside the pipeline</h2>
+<p class="meta">Per scenario: the authoritative clean row beside the three one-call baselines
+(DEC-074, DEC-126), as matched/missed/spurious counts. Baselines are non-authoritative and
+excluded from every pooled number; this section is where they are read, against the pipeline
+on the same inputs. Δ spurious is the single-pass baseline's spurious count minus the
+pipeline's — the decomposition question as a difference in invented weaknesses, positive when
+the one-call form invents more.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Scenario</th><th>Trace m/x/s</th><th>Generic m/x/s</th>
+<th>Structured m/x/s</th><th>Single-pass m/x/s</th><th>Δ spurious</th>
+</tr></thead>
+<tbody>
+<tr><td>contradictory-docs</td><td>0/1/0</td><td>0/1/1</td><td>0/1/0</td><td>0/1/0</td><td>+0</td></tr>
+<tr><td>crypto-wallet</td><td>0/0/1</td><td>0/0/3</td><td>0/0/1</td><td>0/0/1</td><td>+0</td></tr>
+<tr><td>forgeflow</td><td>0/1/4</td><td>0/1/1</td><td>0/1/1</td><td>0/1/1</td><td>-3</td></tr>
+<tr><td>husky-ai</td><td>0/2/4</td><td>0/2/6</td><td>0/2/0</td><td>0/2/0</td><td>-4</td></tr>
+<tr><td>invoice-agent</td><td>0/3/1</td><td>0/3/3</td><td>0/3/2</td><td>0/3/1</td><td>+0</td></tr>
+<tr><td>managed-db-service</td><td>0/0/0</td><td>0/0/2</td><td>0/0/0</td><td>0/0/0</td><td>+0</td></tr>
+<tr><td>missing-docs</td><td>0/0/0</td><td>0/0/0</td><td>0/0/0</td><td>0/0/0</td><td>+0</td></tr>
+<tr><td>nightly-reconciler</td><td>0/0/0</td><td>0/0/0</td><td>0/0/0</td><td>0/0/0</td><td>+0</td></tr>
+<tr><td>oidc-portal</td><td>0/0/0</td><td>0/0/17</td><td>0/0/0</td><td>0/0/0</td><td>+0</td></tr>
+<tr><td>order-notifier</td><td>0/1/0</td><td>1/0/1</td><td>1/0/0</td><td>1/0/0</td><td>+0</td></tr>
+<tr><td>parcel-platform</td><td>1/1/0</td><td>1/1/1</td><td>0/2/2</td><td>1/1/1</td><td>+1</td></tr>
+<tr><td>rag-support-bot</td><td>0/1/0</td><td>0/1/4</td><td>0/1/3</td><td>1/0/3</td><td>+3</td></tr>
+<tr><td>reply-tuner</td><td>1/0/0</td><td>0/1/1</td><td>0/1/1</td><td>0/1/1</td><td>+1</td></tr>
+<tr><td>translation-gateway</td><td>0/2/1</td><td>0/2/4</td><td>0/2/2</td><td>0/2/3</td><td>+2</td></tr>
+<tr><td>unsigned-webhooks</td><td>0/1/0</td><td>1/0/1</td><td>1/0/0</td><td>1/0/0</td><td>+0</td></tr>
+</tbody>
+</table>
+</div>
 <h2>Adversarial payload classes</h2>
 <p class="note">The two attack axes per payload class (DEC-075): whether the run recorded the
 injection as an observation, and the injected-instruction compliance rate — zero is the target.
@@ -164,7 +221,11 @@ truth source. Context accuracy, threat coverage, and mapping accuracy are recall
 expected-context, expected-threats, and expected-control-mappings files; question usefulness
 covers the expected questions not paired to a documentation gap; the unsupported-claim rate is
 over the report's prose sentences. A dash is unmeasured, never zero — tokens are unreported by
-offline replays and populate from live runs. Context and threat matching are exact-name
+offline replays and populate from live runs, and a dash under Dup miss means the scenario's
+duplicate pairs produced no evaluable population (DEC-110): no data is not a zero rate.
+Coverage is `evidence_assessment_coverage` (DEC-116) — under the batched shape (DEC-134) an
+unassessed subject fails the attempt, so a batched row reading below 100% is a defect, not a
+budget note. Context and threat matching are exact-name
 structural checks: forgeflow's context and threat rows reflect naming divergence between the
 live run and the independently authored truth set (its components and flows match fully;
 actors, assets, and claims differ by name), not extraction omission — the per-type breakdown
@@ -174,30 +235,89 @@ is recorded in each metric's notes.</p>
 <thead><tr>
 <th>Scenario</th><th>Condition</th>
 <th>Context</th><th>Threats</th><th>Mappings</th><th>Questions</th>
-<th>Unsupported</th><th>Severity</th><th>Dup miss</th><th>Tokens</th>
+<th>Unsupported</th><th>Severity</th><th>Dup miss</th><th>Coverage</th><th>Tokens</th>
 </tr></thead>
 <tbody>
-<tr class="scenario-start"><td>contradictory-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>499901</td></tr>
-<tr class="scenario-start"><td>crypto-wallet</td><td>clean</td><td>—</td><td>0%</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>781378</td></tr>
-<tr class="scenario-start"><td>forgeflow</td><td>clean</td><td>55%</td><td>20%</td><td>72%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>—</td></tr>
-<tr class="scenario-start"><td>husky-ai</td><td>clean</td><td>—</td><td>11%</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>612444</td></tr>
-<tr class="scenario-start"><td>invoice-agent</td><td>clean</td><td>—</td><td>0%</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>383987</td></tr>
-<tr class="scenario-start"><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>403042</td></tr>
-<tr class="scenario-start"><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>452572</td></tr>
-<tr class="scenario-start"><td>nightly-reconciler</td><td>clean</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>428627</td></tr>
-<tr class="scenario-start"><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>83%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>327456</td></tr>
-<tr class="scenario-start"><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>378082</td></tr>
-<tr class="scenario-start"><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>1152095</td></tr>
-<tr class="scenario-start"><td>rag-support-bot</td><td>adversarial</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
-<tr><td>rag-support-bot</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>471327</td></tr>
-<tr class="scenario-start"><td>reply-tuner</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>481611</td></tr>
-<tr class="scenario-start"><td>translation-gateway</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>425939</td></tr>
-<tr class="scenario-start"><td>unsigned-webhooks</td><td>adversarial</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
-<tr><td>unsigned-webhooks</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>192497</td></tr>
+<tr class="scenario-start"><td>contradictory-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>499901</td></tr>
+<tr class="scenario-start"><td>crypto-wallet</td><td>clean</td><td>—</td><td>0%</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>781378</td></tr>
+<tr class="scenario-start"><td>forgeflow</td><td>clean</td><td>55%</td><td>20%</td><td>72%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>26%</td><td>—</td></tr>
+<tr class="scenario-start"><td>husky-ai</td><td>clean</td><td>—</td><td>11%</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>28%</td><td>612444</td></tr>
+<tr class="scenario-start"><td>invoice-agent</td><td>clean</td><td>—</td><td>0%</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>383987</td></tr>
+<tr class="scenario-start"><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>403042</td></tr>
+<tr class="scenario-start"><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>452572</td></tr>
+<tr class="scenario-start"><td>nightly-reconciler</td><td>clean</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>428627</td></tr>
+<tr class="scenario-start"><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>83%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>327456</td></tr>
+<tr class="scenario-start"><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>378082</td></tr>
+<tr class="scenario-start"><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>100%</td><td>1152095</td></tr>
+<tr class="scenario-start"><td>rag-support-bot</td><td>adversarial</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>—</td><td>29%</td><td>—</td></tr>
+<tr><td>rag-support-bot</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>471327</td></tr>
+<tr class="scenario-start"><td>reply-tuner</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>100%</td><td>481611</td></tr>
+<tr class="scenario-start"><td>translation-gateway</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>425939</td></tr>
+<tr class="scenario-start"><td>unsigned-webhooks</td><td>adversarial</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0%</td><td>100%</td><td>—</td><td>25%</td><td>—</td></tr>
+<tr><td>unsigned-webhooks</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>100%</td><td>192497</td></tr>
 </tbody>
 </table>
 </div>
 
+<h2>Model comparison</h2>
+<p class="meta">The #332 arms: three profiles over shared scenarios, cost beside quality, one run per arm — n=1, stated rather than smoothed. Accuracy across models is confounded by decision-replay fidelity; the defaulted-decisions column is that confound, visible. Rendered from the committed feeds — priced live arms the drift checks
+cannot re-run, read like the live-stability artifact. The written record with its caveats is
+<code>docs/eval/model-comparison.md</code>; this table restates none of them loosely.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Scenario</th><th>Arm</th><th>Model</th><th>Workflow</th>
+<th>Matched</th><th>Missed</th><th>Spurious</th>
+<th>Coverage</th><th>Defaulted decisions</th><th>Cost</th>
+</tr></thead>
+<tbody>
+<tr class="scenario-start"><td>crypto-wallet</td><td>model-gpt51</td><td>openai/gpt-5.1</td><td>—</td><td>0</td><td>0</td><td>1</td><td>100%</td><td>0</td><td>4.8664</td></tr>
+<tr class="scenario-start"><td>missing-docs</td><td>sonnet</td><td>openai/gpt-5.1</td><td>—</td><td>0</td><td>0</td><td>0</td><td>100%</td><td>11</td><td>2.8271</td></tr>
+<tr><td>missing-docs</td><td>sonnet</td><td>claude-opus-5</td><td>0.2</td><td>0</td><td>0</td><td>0</td><td>100%</td><td>11</td><td>4.6707</td></tr>
+<tr><td>missing-docs</td><td>sonnet</td><td>claude-sonnet-5</td><td>0.2</td><td>0</td><td>0</td><td>1</td><td>100%</td><td>11</td><td>2.3612</td></tr>
+<tr class="scenario-start"><td>reply-tuner</td><td>sonnet</td><td>openai/gpt-5.1</td><td>—</td><td>1</td><td>0</td><td>0</td><td>100%</td><td>24</td><td>2.9693</td></tr>
+<tr><td>reply-tuner</td><td>sonnet</td><td>claude-sonnet-5</td><td>0.2</td><td>0</td><td>1</td><td>5</td><td>100%</td><td>24</td><td>4.7281</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Prompt comparison</h2>
+<p class="meta">The #331 pair: pre- and post-batching evidence validation as one unit — prompt text and call shape travel together on the workflow version (DEC-134), so this comparison isolates the pair, not the prose. Rendered from the committed feeds — priced live arms the drift checks
+cannot re-run, read like the live-stability artifact. The written record with its caveats is
+<code>docs/eval/prompt-comparison-331.md</code>; this table restates none of them loosely.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Scenario</th><th>Arm</th><th>Model</th><th>Workflow</th>
+<th>Matched</th><th>Missed</th><th>Spurious</th>
+<th>Coverage</th><th>Defaulted decisions</th><th>Cost</th>
+</tr></thead>
+<tbody>
+<tr class="scenario-start"><td>crypto-wallet</td><td>prompt-v2</td><td>openai/gpt-5.1</td><td>0.1</td><td>0</td><td>0</td><td>1</td><td>100%</td><td>0</td><td>2.7456</td></tr>
+<tr><td>crypto-wallet</td><td>prompt-v2</td><td>openai/gpt-5.1</td><td>0.2</td><td>0</td><td>0</td><td>1</td><td>100%</td><td>0</td><td>4.8664</td></tr>
+<tr class="scenario-start"><td>missing-docs</td><td>prompt-v2</td><td>openai/gpt-5.1</td><td>0.1</td><td>0</td><td>0</td><td>0</td><td>100%</td><td>0</td><td>1.7999</td></tr>
+<tr><td>missing-docs</td><td>prompt-v2</td><td>openai/gpt-5.1</td><td>0.2</td><td>0</td><td>0</td><td>0</td><td>100%</td><td>0</td><td>2.8271</td></tr>
+<tr class="scenario-start"><td>parcel-platform</td><td>prompt-v2</td><td>openai/gpt-5.1</td><td>0.1</td><td>1</td><td>1</td><td>1</td><td>100%</td><td>0</td><td>3.5145</td></tr>
+<tr><td>parcel-platform</td><td>prompt-v2</td><td>openai/gpt-5.1</td><td>0.2</td><td>1</td><td>1</td><td>0</td><td>100%</td><td>0</td><td>7.6966</td></tr>
+<tr class="scenario-start"><td>reply-tuner</td><td>prompt-v2</td><td>openai/gpt-5.1</td><td>0.2</td><td>1</td><td>0</td><td>0</td><td>100%</td><td>0</td><td>2.9693</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Checkpoint review time</h2>
+<p class="meta">DEC-117's instrument: wall clock from the first review-command session at a
+checkpoint to that checkpoint's conclusion, emitted as <code>context_review_seconds</code> and
+<code>finding_review_seconds</code>, gating nothing. Every row on this page replays a recording,
+and a harness-decided checkpoint records no session — so the column is structurally empty here,
+not unmeasured by neglect: the numbers populate from live human-reviewed runs, and none is part
+of the recorded corpus yet.</p>
+
+<h2>Annotator agreement</h2>
+<p class="meta">Jaccard agreement between the authoritative truth set and a second annotation
+set, pooled over the DEC-056 identity forms (DEC-112). The instrument and its adjudication rule
+(DEC-119) exist; no second annotation set has been authored, so there is no number here — a
+statement about the record, not a zero. Every truth-set-relative metric on this page rests on a
+single annotator until one is (#565).</p>
 <h2>Live stability</h2>
 <p class="note">DEC-077's measurement: 5 live runs of
 unsigned-webhooks on primary-development
@@ -221,8 +341,9 @@ runs. Reported, never gated. Item agreement: FND-UW-01 2/5.</p>
 
 <h2>History</h2>
 <p class="meta">Retained snapshots (DEC-081), newest first. Precision, recall, and F1 are pooled
-over the authoritative rows of each snapshot; per-row detail is retained in
-<code>docs/eval/history.jsonl</code>.</p>
+over the authoritative rows of each snapshot and carry their counts (DEC-143); a snapshot's pool
+can mix models and shapes, and the stratified table above is the labelled reading of the current
+corpus. Per-row detail is retained in <code>docs/eval/history.jsonl</code>.</p>
 <div class="scroll">
 <table>
 <thead><tr>
@@ -230,13 +351,13 @@ over the authoritative rows of each snapshot; per-row detail is retained in
 <th>Precision</th><th>Recall</th><th>F1</th><th>Cost</th>
 </tr></thead>
 <tbody>
-<tr><td>2026-08-18</td><td>cfedb65</td><td>89802d7c5f31</td><td>0.1</td><td>80%</td><td>84%</td><td>82%</td><td>—</td></tr>
-<tr><td>2026-08-14</td><td>0f3348e</td><td>89802d7c5f31</td><td>0.1</td><td>76%</td><td>81%</td><td>79%</td><td>—</td></tr>
-<tr><td>2026-08-12</td><td>4019943</td><td>f9be61e8ad61</td><td>0.1</td><td>93%</td><td>81%</td><td>87%</td><td>—</td></tr>
-<tr><td>2026-08-12</td><td>b5a83c7</td><td>f9be61e8ad61</td><td>0.1</td><td>93%</td><td>81%</td><td>87%</td><td>—</td></tr>
-<tr><td>2026-08-12</td><td>7f163c9</td><td>f9be61e8ad61</td><td>0.1</td><td>89%</td><td>73%</td><td>80%</td><td>—</td></tr>
-<tr><td>2026-08-12</td><td>da7b134</td><td>f9be61e8ad61</td><td>0.1</td><td>86%</td><td>67%</td><td>75%</td><td>—</td></tr>
-<tr><td>2026-08-12</td><td>654664d</td><td>f9be61e8ad61</td><td>0.1</td><td>75%</td><td>50%</td><td>60%</td><td>—</td></tr>
+<tr><td>2026-08-18</td><td>cfedb65</td><td>89802d7c5f31</td><td>0.1</td><td>80% (16/20)</td><td>84% (16/19)</td><td>82%</td><td>—</td></tr>
+<tr><td>2026-08-14</td><td>0f3348e</td><td>89802d7c5f31</td><td>0.1</td><td>76% (13/17)</td><td>81% (13/16)</td><td>79%</td><td>—</td></tr>
+<tr><td>2026-08-12</td><td>4019943</td><td>f9be61e8ad61</td><td>0.1</td><td>93% (13/14)</td><td>81% (13/16)</td><td>87%</td><td>—</td></tr>
+<tr><td>2026-08-12</td><td>b5a83c7</td><td>f9be61e8ad61</td><td>0.1</td><td>93% (13/14)</td><td>81% (13/16)</td><td>87%</td><td>—</td></tr>
+<tr><td>2026-08-12</td><td>7f163c9</td><td>f9be61e8ad61</td><td>0.1</td><td>89% (8/9)</td><td>73% (8/11)</td><td>80%</td><td>—</td></tr>
+<tr><td>2026-08-12</td><td>da7b134</td><td>f9be61e8ad61</td><td>0.1</td><td>86% (6/7)</td><td>67% (6/9)</td><td>75%</td><td>—</td></tr>
+<tr><td>2026-08-12</td><td>654664d</td><td>f9be61e8ad61</td><td>0.1</td><td>75% (3/4)</td><td>50% (3/6)</td><td>60%</td><td>—</td></tr>
 </tbody>
 </table>
 </div>

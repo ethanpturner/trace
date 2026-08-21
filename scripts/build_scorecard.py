@@ -44,6 +44,19 @@ LIVE_STABILITY = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
 """The committed DEC-077 summary, written by an operator after a manual live protocol run.
 Read like the history file — never regenerated, because the drift checks cannot re-run a live
 measurement — and absent until the first measurement is committed."""
+MODEL_COMPARISON_FEEDS = PROJECT_ROOT / "docs" / "eval" / "model-comparison" / "feeds"
+PROMPT_COMPARISON_FEEDS = PROJECT_ROOT / "docs" / "eval" / "prompt-comparison"
+"""The committed comparison feeds (#332, #331): priced live arms, read like the live-stability
+artifact (DEC-143). Sorted by path so the render stays deterministic; absent directories render
+no section."""
+
+
+def _comparison_feeds(root: Path, pattern: str) -> list[dict[str, object]]:
+    if not root.is_dir():
+        return []
+    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(root.glob(pattern))]
+
+
 # Pinned so the committed page changes only when a metric does, never on the clock.
 GENERATED_AT = DETERMINISTIC_STAMP
 
@@ -75,6 +88,8 @@ def build_page(feeds: list[dict[str, object]], *, snapshot_date: str | None = No
         generated_at=GENERATED_AT,
         history=load_history(HISTORY),
         live_stability=live_stability,
+        model_comparison=_comparison_feeds(MODEL_COMPARISON_FEEDS, "*.json"),
+        prompt_comparison=_comparison_feeds(PROMPT_COMPARISON_FEEDS, "*/*/*.json"),
     )
 
 

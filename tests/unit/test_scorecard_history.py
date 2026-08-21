@@ -174,6 +174,8 @@ def test_the_history_contains_metrics_and_identifiers_only(tmp_path: Path) -> No
         "schema_valid",
         "cost",
         "model",
+        "workflow_version",
+        "evidence_coverage",
         "compliance",
         "context_accuracy",
         "threat_coverage",

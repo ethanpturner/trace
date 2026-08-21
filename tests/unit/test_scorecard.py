@@ -215,3 +215,102 @@ def test_a_row_is_attributed_to_the_model_its_feed_names() -> None:
     page = render_scorecard([captured, routed, authored], generated_at=STAMP)
     assert "<th>Model</th>" in page
     assert "claude-opus-5 + claude-sonnet-5" in page
+
+
+def _stratum_feed(
+    scenario: str,
+    *,
+    model: str,
+    workflow: str,
+    matched: dict[str, list[str]] | None = None,
+    missed: list[str] | None = None,
+    spurious: list[str] | None = None,
+) -> dict[str, object]:
+    feed = dict(_feed(scenario, "clean", matched=matched, missed=missed, spurious=spurious))
+    feed["models"] = [model]
+    feed["workflow_version"] = workflow
+    return feed
+
+
+def test_a_mixed_pool_renders_only_under_its_label() -> None:
+    """DEC-143's stratification rule: rows measured on different models or workflow shapes pool
+    per stratum, and the cross-stratum pool appears only under the explicit mixed label — never
+    as a bare number a reader could take for one population's."""
+    feeds = [
+        _stratum_feed("a", model="claude-opus-5", workflow="0.1", matched={"F-1": ["fnd-001"]}),
+        _stratum_feed("b", model="openai/gpt-5.1", workflow="0.2", missed=["F-2"]),
+    ]
+    page = render_scorecard(feeds, generated_at=STAMP)
+    assert "Pooled accuracy by stratum" in page
+    assert "all strata — pooled across models and shapes" in page
+
+    single = render_scorecard(feeds[:1], generated_at=STAMP)
+    assert "Pooled accuracy by stratum" in single
+    assert "all strata" not in single, "one stratum needs no mixed pool"
+
+
+def test_pooled_percentages_carry_their_denominators() -> None:
+    """DEC-143's denominator rule: a pooled cell states its counts, so a 100% over one row
+    cannot read like a 100% over fifty."""
+    feeds = [
+        _stratum_feed("a", model="m", workflow="0.2", matched={"F-1": ["fnd-001"]}),
+    ]
+    page = render_scorecard(feeds, generated_at=STAMP)
+    assert "100% (1/1)" in page
+
+
+def test_the_baseline_head_to_head_renders_beside_the_pipeline() -> None:
+    """The live-vs-live section (DEC-143): the clean row beside its baselines, with the
+    single-pass spurious delta signed."""
+    feeds = [
+        _feed("oidc-portal", "clean"),
+        _feed(
+            "oidc-portal",
+            "baseline-generic",
+            spurious=[f"fp-{i}" for i in range(17)],
+            authoritative=False,
+            schema_valid=True,
+        ),
+        _feed(
+            "oidc-portal",
+            "baseline-single-pass",
+            spurious=["fp-a"],
+            authoritative=False,
+            schema_valid=True,
+        ),
+    ]
+    page = render_scorecard(feeds, generated_at=STAMP)
+    assert "Live baselines beside the pipeline" in page
+    assert "0/0/17" in page, "the generic baseline's counts render"
+    assert "+1" in page, "the single-pass delta is signed"
+
+    without = render_scorecard([_feed("s", "clean")], generated_at=STAMP)
+    assert "Live baselines beside the pipeline" not in without
+
+
+def test_the_comparison_sections_render_from_committed_feeds() -> None:
+    """DEC-143: the #331/#332 comparison feeds are read like the live-stability artifact.
+    The defaulted-decisions column renders — the #332 confound made visible — and an empty
+    sequence renders no section."""
+    arm = _stratum_feed("missing-docs", model="claude-sonnet-5", workflow="0.2")
+    arm["label"] = "sonnet"
+    arm["defaulted_decisions"] = 11
+    page = render_scorecard([], generated_at=STAMP, model_comparison=[arm])
+    assert "Model comparison" in page
+    assert "Defaulted decisions" in page
+    assert ">11<" in page
+    assert "Prompt comparison" not in page
+
+    without = render_scorecard([], generated_at=STAMP)
+    assert "Model comparison" not in without
+
+
+def test_the_empty_human_instruments_state_their_absence() -> None:
+    """DEC-143: an instrument with no data renders its section with the reason, not silence —
+    review time is structurally absent from replays (DEC-117), and agreement waits on a second
+    annotation set (#565). No data is a statement, never a zero."""
+    page = render_scorecard([_feed("s", "clean")], generated_at=STAMP)
+    assert "Checkpoint review time" in page
+    assert "records no session" in page
+    assert "Annotator agreement" in page
+    assert "no second annotation set has been authored" in page.lower()
