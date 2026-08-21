@@ -1960,6 +1960,7 @@ def _runs_status(args: argparse.Namespace, service: AssessmentService) -> int:
     them). The command stores nothing, so polling it cannot disagree with the run.
     """
     from trace_ai.services.execution_ledger import ExecutionLedger
+    from trace_ai.services.run_repair import strand_description
 
     handle = service.handle(args.assessment_id)
     runs = handle.objects.list(WorkflowRun)
@@ -1989,6 +1990,9 @@ def _runs_status(args: argparse.Namespace, service: AssessmentService) -> int:
         phase = state.current_phase
         if state.pending_human_review is not None:
             awaiting = len(state.pending_human_review.object_ids)
+    # A row and a state file that disagree are reported as the disagreement they are, rather than
+    # by printing one side and letting the other pass unseen (DEC-144).
+    strand = strand_description(handle, run)
 
     if args.as_json:
         return _print_json(
@@ -2005,6 +2009,7 @@ def _runs_status(args: argparse.Namespace, service: AssessmentService) -> int:
                 "model_calls": counters["total_model_calls"],
                 "estimated_cost": counters["estimated_cost"],
                 "awaiting_review": awaiting,
+                "stranded": strand,
                 "error_summary": run.error_summary,
             },
         )
@@ -2027,6 +2032,9 @@ def _runs_status(args: argparse.Namespace, service: AssessmentService) -> int:
         print("estimated cost: none recorded")
     if awaiting:
         print(f"awaiting:       {awaiting} subject(s)")
+    if strand is not None:
+        print(f"stranded:       {strand}")
+        print(f"                repair it with `trace runs repair {args.assessment_id} {run.id}`")
     if run.error_summary:
         print(f"error:          {run.error_summary}")
     return 0
@@ -2066,7 +2074,7 @@ def _runs_prune(args: argparse.Namespace, service: AssessmentService) -> int:
 
 
 def _runs_repair(args: argparse.Namespace, service: AssessmentService) -> int:
-    """Mark an orphaned running run failed (DEC-137). A dry run without --force refuses."""
+    """Mark an orphaned or stranded run failed (DEC-137, DEC-144). A dry run refuses."""
     from trace_ai.services.run_repair import RunRepairError, describe_run, repair_run
 
     handle = service.handle(args.assessment_id)
@@ -2077,6 +2085,8 @@ def _runs_repair(args: argparse.Namespace, service: AssessmentService) -> int:
         f"started {candidate.started_at_display}  "
         f"{candidate.execution_record_count} execution record(s)  {cost}"
     )
+    if candidate.strand is not None:
+        print(f"stranded: {candidate.strand}")
     if not args.force:
         print(
             "nothing was changed; pass --force to mark it failed, asserting its process is gone",

@@ -1429,24 +1429,31 @@ def resume_assessment(
     if run.status is RunStatus.PAUSED:
         # A checkpoint pause: the checkpoint node re-runs and decides nothing new.
         state, _pending = resume(handle, run.id)
-        assessment = handle.objects.get(Assessment, assessment_id)
-        if assessment.status is ObjectStatus.PENDING_REVIEW:
-            service.resume_from_review(assessment_id)
     elif run.status is RunStatus.FAILED:
         # A failed run: restart from the phase it stopped in. The phases before it completed, so
         # their objects exist and are not re-run; only the failed phase re-executes.
         state = load_state(handle, run.id).restarted()
-        assessment = handle.objects.get(Assessment, assessment_id)
     else:
         raise ValueError(
             f"{run.id} is {run.status.value}, not paused or failed; there is nothing to resume"
         )
+    # Resuming ends the review session whichever stopped state the run resumed from. A failed run's
+    # assessment is ordinarily already `draft`, which is why this sat inside the paused branch --
+    # but a repaired strand (DEC-144) is a failed run whose pause had moved the assessment to
+    # `pending_review`, and leaving it there would make the next pause's `begin_review` refuse.
+    assessment = handle.objects.get(Assessment, assessment_id)
+    if assessment.status is ObjectStatus.PENDING_REVIEW:
+        service.resume_from_review(assessment_id)
+        assessment = handle.objects.get(Assessment, assessment_id)
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     ledger = ExecutionLedger(handle, run)
-    if run.status is RunStatus.FAILED:
-        # Clear the failed run's completion stamp and error before it runs again, so its row is a
-        # running run's rather than a completed one carrying a `running` status.
-        ledger.reopen()
+    # A run that is executing says `running`, whichever stopped state it resumed from. For a failed
+    # run this also clears the completion stamp and error, so its row is a running run's rather than
+    # a completed one carrying a `running` status. For a paused run it is what stops the row from
+    # reading `paused` for the whole resumed run while the state file records the phases going by --
+    # the disagreement that stranded runs killed mid-resume, because `runs repair` gates on
+    # `running` and `resume` gates on a paused state file, so neither verb reached them (#641).
+    ledger.reopen()
     orchestrator = Orchestrator(
         handle,
         ledger=ledger,

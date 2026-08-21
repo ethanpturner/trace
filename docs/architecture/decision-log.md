@@ -9450,3 +9450,74 @@ Tradeoffs:
   fails soft.
 - Two new `ScorecardRow` fields ride feed version 1 additively (DEC-136's precedent): old
   history rows reload with `None` and render dashes.
+
+## DEC-144: The row is what a run is, and a run the two records disagree about is the operator's to repair
+
+Date: 2026-08-21
+
+Status: Accepted
+
+Decision:
+
+**The run row is authoritative for what a run *is*; the state file records where it *was*.** The
+row is the persisted domain object DEC-006 makes authoritative, and `AssessmentState` is routing
+state written to `traces/` — derived, rewritten on every transition, and explicitly not a second
+authoritative store (DEC-016 rejected a framework checkpointer for exactly that reason;
+`data-model.md` section 31 keeps content out of it). So `state.status` is not a competing claim
+about the run's status. It is the last thing a process wrote, and a disagreement between the two
+is never two truths — it is a row left stale by a process that died between two writes.
+
+**A resumed run's row says `running` while it executes.** `resume_assessment` reopened the row
+only for a failed run; a run resumed from a checkpoint pause kept `paused` on its row for the
+whole of its execution while the state file recorded the phases going by. That was the source of
+the strand (#641): a process killed anywhere in a resumed run left `paused` on the row and
+`running` in the state file, which `trace runs repair` refused (its gate is a `running` row) and
+`trace resume` refused (the state file it reads is not a pause). Reopening on both paths removes
+the window, and makes `runs status` stop reporting `paused` for a run that is visibly executing.
+
+**The residual disagreement is repair's, on the operator's assertion.** A pause commits the row
+and then writes the state file — deliberately in that order, so a rolled-back `on_pause` cannot
+leave a paused state file for an unpaused row — and two stores cannot be written atomically, so
+a kill between them still strands a run. `trace runs repair` accepts that combination alongside
+DEC-137's orphaned `running` row, marks it failed through the ledger's own
+`complete(error_summary=...)`, and names the observed disagreement in the summary so the row's
+history says which condition was repaired. `trace resume` then restarts the phase the run
+stopped in. Nothing infers liveness: DEC-137's posture is unchanged, and the operator asserts.
+
+**`trace runs status` names the disagreement rather than printing one side.** After the reopen
+above, a `paused` row over a `running` state file is anomalous by construction, so reporting it
+carries no false positives, and the report points at the verb that reaches it.
+
+**Repair leaves a run `resume` can restart, which bounds what it accepts.** A `paused` row with
+no state file at all is refused: `resume` reads the same missing file, so failing that row would
+relabel it rather than recover it. An abandoned pause is `trace runs prune`'s (DEC-127).
+
+**Resuming ends the review session on both paths.** A repaired strand is a failed run whose pause
+had already moved the assessment to `pending_review`, and a failed run leaves its assessment in
+`draft` (DEC-031). The `resume_from_review` call moves out of the paused branch to cover both;
+without it the next pause's `begin_review` refuses and the recovered run dies at checkpoint 2.
+
+Alternatives Considered:
+
+- Teaching `resume` to treat a `running` state file over a `paused` row as resumable (rejected:
+  it is the tool reconciling two records on its own, and worse, that combination is exactly what
+  a *live* resumed run looked like before the reopen — a second `resume` would have started a
+  second process against one assessment. No liveness inference, per DEC-137).
+- Making the state file authoritative when the two disagree (rejected: it is derived routing
+  state; promoting it is the second authoritative store DEC-016 refused).
+- Writing the state file inside the pause transaction (rejected: the ordering is load-bearing —
+  a rolled-back `on_pause` would otherwise leave a paused state file for a row that never
+  paused, which is the same class of disagreement pointing the other way).
+- A new verb for the strand (rejected: it is DEC-137's condition one status-combination over,
+  with the same assertion, the same mechanics, and the same recovery).
+
+Tradeoffs:
+
+The reopen means a resumed run's row no longer records that it resumed from a pause; the state
+file's history and the execution records carry that, and the row's job is the run's current
+status. Repair still cannot help a paused row whose state file was never written — correctly, as
+there is nothing to resume into — so that case remains prune's, and a run whose state file is
+lost is unrecoverable in place, which the DEC-091 rebuild already covers for captures. The
+strand window shrinks to the microseconds between two writes rather than closing: two stores
+admit no atomic write, and the honest response is a verb that reaches the result, not a claim
+that it cannot happen.

@@ -2422,6 +2422,43 @@ def test_a_run_narrates_each_phase_to_stderr(
     assert FAKE_KEY not in captured.err
 
 
+def test_runs_status_names_a_stranded_run_and_the_verb_that_reaches_it(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """A row and a state file that disagree are reported as that (DEC-144, #641).
+
+    Printing one side and letting the other pass unseen is what left the field occurrences
+    looking like ordinary pauses while `resume` refused them.
+    """
+    from trace_ai.domain.execution import WorkflowRun
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.workflow.checkpoint import load_state, save_state
+
+    identifier = _paused_at_checkpoint_one(data_root, capsys, tmp_path)
+    with AssessmentStore.at_root(data_root) as store:
+        handle = AssessmentService(store, artifact_root=data_root).handle(identifier)
+        run_id = handle.objects.list(WorkflowRun)[-1].id
+        save_state(handle, load_state(handle, run_id).restarted())
+    capsys.readouterr()
+
+    assert invoke(data_root, "runs", "status", identifier) == 0
+    output = capsys.readouterr().out
+    assert "stranded:" in output
+    assert "the row says paused and the state file records" in output
+    assert "trace runs repair" in output
+
+    assert invoke(data_root, "runs", "status", identifier, "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["stranded"] is not None
+
+    # A clean pause says nothing of the sort.
+    second = _paused_at_checkpoint_one(data_root, capsys, tmp_path)
+    capsys.readouterr()
+    assert invoke(data_root, "runs", "status", second, "--json") == 0
+    assert _parsed_json(capsys.readouterr().out)["stranded"] is None
+
+
 def test_runs_status_reports_the_paused_checkpoint(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
