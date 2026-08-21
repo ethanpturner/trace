@@ -29,3 +29,10 @@ Each scenario directory holds `input/` (what Trace is given), `expected/` (the t
 supplied to the pipeline), and `recorded/` (the response envelopes, the checkpoint decision files,
 the report-hash pins, and `baselines/`). `results/` is derived output from local runs and is
 gitignored.
+
+**Before editing anything under `expected/`, read [Editing an authored
+expectation](../docs/architecture/evaluation-plan.md#editing-an-authored-expectation).** A truth
+set may be changed only on an argument from the scenario's own inputs, documentation, or internal
+consistency — never because a run disagreed with it. A run disagreeing is evidence about the run:
+one capture cannot separate a pipeline divergence from run-to-run variance, which the corpus has
+measured at three of five on identical inputs (DEC-149).
