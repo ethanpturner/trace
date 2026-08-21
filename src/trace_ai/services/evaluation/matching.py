@@ -221,11 +221,16 @@ def contradiction_resolved(observations: Sequence[Any]) -> bool:
 
 @dataclass(slots=True)
 class GapMatchOutcome:
-    """Produced documentation gaps, classified against the expected requirement set."""
+    """Produced documentation gaps, classified against the expected requirement set.
+
+    `non_matching` is a classification, never an error count (DEC-147): an expected-gap file is
+    a must-include list, so a produced gap outside it may be perfectly correct.
+    """
 
     matching: list[str] = field(default_factory=list)
     non_matching: list[str] = field(default_factory=list)
     produced_count: int = 0
+    covered_requirements: set[str] = field(default_factory=set)
 
 
 def match_gaps(
@@ -234,7 +239,12 @@ def match_gaps(
     *,
     requirement_by_mapping: Mapping[str, str],
 ) -> GapMatchOutcome:
-    """A gap matches through the requirement its related mapping resolves to (DEC-056)."""
+    """A gap matches through the requirement its related mapping resolves to (DEC-056).
+
+    `covered_requirements` is the expected side: which expected requirements at least one
+    produced gap reached. It is the recall denominator's numerator, and it is not
+    `len(matching)` — two produced gaps may reach the same expected requirement.
+    """
     outcome = GapMatchOutcome(produced_count=len(produced_gaps))
     for gap in produced_gaps:
         requirements = {
@@ -242,8 +252,10 @@ def match_gaps(
             for related in gap.related_object_ids
             if related in requirement_by_mapping
         }
-        if requirements & expected_gap_requirements:
+        covered = requirements & expected_gap_requirements
+        if covered:
             outcome.matching.append(gap.id)
+            outcome.covered_requirements |= covered
         else:
             outcome.non_matching.append(gap.id)
     return outcome

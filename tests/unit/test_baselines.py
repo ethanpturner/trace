@@ -154,7 +154,8 @@ def test_the_single_pass_baseline_scores_the_whole_conclusion_set(tmp_path: Path
     )
     assert outcome.schema_valid
     assert list(outcome.matched) == ["FND-UW-01"]
-    assert outcome.metrics["documentation_gap_precision"] == 1.0
+    assert outcome.metrics["documentation_gap_recall"] == 1.0
+    assert outcome.metrics["documentation_gaps_produced"] == 1.0
     assert outcome.metrics["component_count"] == 1.0
     assert outcome.feed_path is not None
     feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
@@ -180,4 +181,5 @@ def test_an_empty_single_pass_assessment_is_valid_and_scores_the_misses(tmp_path
     assert outcome.schema_valid
     assert outcome.missed == ["FND-UW-01"]
     assert outcome.metrics["false_negative_rate"] == 1.0
-    assert outcome.metrics["documentation_gap_precision"] == 0.0
+    assert outcome.metrics["documentation_gap_recall"] == 0.0
+    assert outcome.metrics["documentation_gaps_produced"] == 0.0
