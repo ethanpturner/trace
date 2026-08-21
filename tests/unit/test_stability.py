@@ -15,6 +15,7 @@ import pytest
 from trace_ai.services.evaluation.stability import (
     ABLATION_SET,
     StabilityError,
+    measurements,
     run_ablation_set,
     run_stability,
     summarize_runs,
@@ -129,3 +130,24 @@ def test_stability_refuses_the_offline_profile(tmp_path: Path) -> None:
             label="test",
             profile_name="offline-fake",
         )
+
+
+def test_a_committed_artifact_reads_whether_it_holds_one_measurement_or_several() -> None:
+    """#633: the artifact was one payload when one scenario had been measured, and is a list
+    once several have.
+
+    Both shapes read — a committed record of an earlier measurement should not have to be
+    rewritten to stay readable — and anything else reads as no measurement, because an
+    unreadable artifact must not take a page down and an absent section is the honest
+    rendering of one.
+    """
+    single = {"scenario": "unsigned-webhooks", "n": 5}
+    assert measurements(single) == [single]
+
+    first = {"scenario": "missing-docs", "n": 5}
+    second = {"scenario": "reply-tuner", "n": 5}
+    assert measurements([first, second]) == [first, second]
+
+    assert measurements(None) == []
+    assert measurements("not an artifact") == []
+    assert measurements([first, "junk", second]) == [first, second]

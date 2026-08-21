@@ -161,3 +161,62 @@ def test_the_render_is_deterministic_and_states_the_pins() -> None:
     assert first == render_comparison(feeds, generated_at=STAMP, pins=PINS)
     assert "registry 1.0, catalog 0.1" in first
     assert "STRIDE GPT" in first, "the excluded incumbent is named, not silently dropped"
+
+
+def test_the_stability_cell_lists_every_measured_scenario_and_averages_none() -> None:
+    """#633: agreement is over one scenario's expected items, so scenarios are listed.
+
+    A mean across scenarios would read as a stability figure for the pipeline that no run
+    measured. The footnote prices each measurement separately for the same reason.
+    """
+    live = [
+        {
+            "scenario": "missing-docs",
+            "profile": "openrouter-economy",
+            "n": 5,
+            "failed_runs": 0,
+            # A zero-finding path: nothing expected, so nothing missed.
+            "metric_mean": {
+                "estimated_cost": 2.8,
+                "execution_duration": 900.0,
+                "false_negative_rate": 0.0,
+            },
+            "metric_stdev": {"estimated_cost": 0.1},
+            "item_agreement": {},
+        },
+        {
+            "scenario": "reply-tuner",
+            "profile": "openrouter-economy",
+            "n": 5,
+            "failed_runs": 1,
+            "metric_mean": {"estimated_cost": 3.1, "execution_duration": 1100.0},
+            "metric_stdev": {"estimated_cost": 0.2},
+            "item_agreement": {"FND-RT-01": 4},
+        },
+    ]
+    page = render_comparison(
+        [_trace_feed("alpha")], generated_at=STAMP, pins=PINS, live_stability=live
+    )
+    assert "missing-docs n=5" in page and "reply-tuner n=5" in page
+    assert "FND-RT-01 4/5" in page
+    assert "$2.80" in page and "$3.10" in page
+    # The zero-finding scenario had nothing to match; that must not read as a miss (#633).
+    assert "no expected finding to match (5/5 correct)" in page
+
+
+def test_a_single_measurement_artifact_still_renders_the_stability_cell() -> None:
+    """The earlier artifact shape is one payload; it keeps reading (#633)."""
+    live = {
+        "scenario": "unsigned-webhooks",
+        "profile": "primary-development",
+        "n": 5,
+        "failed_runs": 3,
+        "metric_mean": {"estimated_cost": 6.92, "execution_duration": 2433.0},
+        "metric_stdev": {"estimated_cost": 3.28},
+        "item_agreement": {"FND-UW-01": 2},
+    }
+    page = render_comparison(
+        [_trace_feed("alpha")], generated_at=STAMP, pins=PINS, live_stability=live
+    )
+    assert "FND-UW-01 2/5" in page
+    assert "3 further attempts failed" in page

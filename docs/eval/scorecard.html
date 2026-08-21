@@ -319,11 +319,55 @@ set, pooled over the DEC-056 identity forms (DEC-112). The instrument and its ad
 statement about the record, not a zero. Every truth-set-relative metric on this page rests on a
 single annotator until one is (#565).</p>
 <h2>Live stability</h2>
-<p class="note">DEC-077's measurement: 5 live runs of
-unsigned-webhooks on primary-development
-(3 of 8 attempts failed), identical input, checkpoint decisions from the named
-default policy with 182 defaulted decisions across the
-runs. Reported, never gated. Item agreement: FND-UW-01 2/5.</p>
+<p class="note">DEC-077's protocol: n live runs per scenario, identical input, checkpoint
+decisions replayed by content fingerprint with the unmatched falling back to the named default
+policy — so the defaulted count qualifies the agreement beside it. Reported, never gated. Rows
+are listed, never differenced: each measures one scenario on one profile and workflow shape, so
+a row is not a baseline for another and the page states no trend across them.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Scenario</th><th>Profile</th><th>Completed runs</th><th>Failed attempts</th>
+<th>Defaulted decisions</th><th>Item agreement</th></tr></thead>
+<tbody>
+<tr><td>missing-docs</td><td>openrouter-economy</td><td>5</td><td>0</td><td>55</td><td>no expected finding to match (5/5 correct)</td></tr>
+<tr><td>reply-tuner</td><td>openrouter-economy</td><td>5</td><td>0</td><td>134</td><td>FND-RT-01 3/5</td></tr>
+<tr><td>unsigned-webhooks</td><td>primary-development</td><td>5</td><td>3</td><td>182</td><td>FND-UW-01 2/5</td></tr>
+</tbody>
+</table>
+</div>
+<h3>missing-docs</h3>
+<div class="scroll">
+<table>
+<thead><tr><th>Metric</th><th>Mean</th><th>Std dev</th></tr></thead>
+<tbody>
+<tr><td>Cost (USD)</td><td>2.62</td><td>0.273</td></tr>
+<tr><td>Runtime (s)</td><td>2923</td><td>428.4</td></tr>
+<tr><td>Model calls</td><td>16</td><td>1.265</td></tr>
+<tr><td>Tokens</td><td>4.332e+05</td><td>3.33e+04</td></tr>
+<tr><td>Evidence-assessment coverage</td><td>1</td><td>0</td></tr>
+<tr><td>Evidence coverage</td><td>1</td><td>0</td></tr>
+<tr><td>False-positive rate</td><td>0</td><td>0</td></tr>
+<tr><td>False-negative rate</td><td>0</td><td>0</td></tr>
+</tbody>
+</table>
+</div>
+<h3>reply-tuner</h3>
+<div class="scroll">
+<table>
+<thead><tr><th>Metric</th><th>Mean</th><th>Std dev</th></tr></thead>
+<tbody>
+<tr><td>Cost (USD)</td><td>3.049</td><td>0.5127</td></tr>
+<tr><td>Runtime (s)</td><td>2762</td><td>493.7</td></tr>
+<tr><td>Model calls</td><td>17</td><td>1.789</td></tr>
+<tr><td>Tokens</td><td>5.069e+05</td><td>7.429e+04</td></tr>
+<tr><td>Evidence-assessment coverage</td><td>1</td><td>0</td></tr>
+<tr><td>Evidence coverage</td><td>1</td><td>0</td></tr>
+<tr><td>False-positive rate</td><td>0</td><td>0</td></tr>
+<tr><td>False-negative rate</td><td>0.4</td><td>0.4899</td></tr>
+</tbody>
+</table>
+</div>
+<h3>unsigned-webhooks</h3>
 <div class="scroll">
 <table>
 <thead><tr><th>Metric</th><th>Mean</th><th>Std dev</th></tr></thead>
