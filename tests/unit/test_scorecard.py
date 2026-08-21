@@ -189,11 +189,77 @@ def test_the_live_stability_section_renders_from_the_committed_artifact() -> Non
     assert "Live stability" in page
     assert "primary-development" in page
     assert "FND-UW-01 4/5" in page
-    assert "1 of 6 attempts failed" in page
+    # The failed-attempt and defaulted-decision counts are figures in the run table, not prose:
+    # they qualify the agreement beside them, so they belong in the same row (#633).
+    assert "<th>Failed attempts</th>" in page and "<th>Defaulted decisions</th>" in page
+    assert "<td>1</td>" in page and "<td>40</td>" in page
     assert "Cost (USD)" in page and "2.31" in page
 
     without = render_scorecard([], generated_at=STAMP)
     assert "Live stability" not in without
+
+
+def test_the_stability_section_renders_every_measured_scenario_without_averaging() -> None:
+    """#633: the protocol measures per scenario, so the artifact holds one entry per scenario.
+
+    They render beside each other with their own agreement and their own variance table. An
+    average across scenarios would read as a stability figure for the pipeline, which no run
+    measured — a scenario's agreement is over that scenario's expected items.
+    """
+    live = [
+        {
+            "scenario": "missing-docs",
+            "profile": "openrouter-economy",
+            "n": 5,
+            "failed_runs": 0,
+            "defaulted_decisions": 12,
+            # A zero-finding path: nothing was expected, so nothing was missed.
+            "metric_mean": {"estimated_cost": 2.8, "false_negative_rate": 0.0},
+            "metric_stdev": {"estimated_cost": 0.1},
+            "item_agreement": {},
+        },
+        {
+            "scenario": "reply-tuner",
+            "profile": "openrouter-economy",
+            "n": 5,
+            "failed_runs": 1,
+            "defaulted_decisions": 7,
+            "metric_mean": {"estimated_cost": 3.1},
+            "metric_stdev": {"estimated_cost": 0.2},
+            "item_agreement": {"FND-RT-01": 3},
+        },
+    ]
+    page = render_scorecard([], generated_at=STAMP, live_stability=live)
+    assert "<h3>missing-docs</h3>" in page and "<h3>reply-tuner</h3>" in page
+    assert "FND-RT-01 3/5" in page
+    assert "2.8" in page and "3.1" in page
+    # A zero-finding path had nothing to match, which must not read as a miss (#633).
+    assert "no expected finding to match (5/5 correct)" in page
+    assert "no expected item matched" not in page
+
+
+def test_an_empty_agreement_reads_as_a_miss_only_when_something_was_expected() -> None:
+    """#633: an empty agreement map is two different results and must not render as one.
+
+    Nothing expected and nothing matched is a correct zero-finding run; something expected and
+    nothing matched is a total miss. The mean false-negative rate is what separates them, and
+    conflating the two would report the DEC-009 thesis case as a failure.
+    """
+    missed_everything = [
+        {
+            "scenario": "somewhere",
+            "profile": "openrouter-economy",
+            "n": 5,
+            "failed_runs": 0,
+            "defaulted_decisions": 0,
+            "metric_mean": {"estimated_cost": 1.0, "false_negative_rate": 1.0},
+            "metric_stdev": {"estimated_cost": 0.0},
+            "item_agreement": {},
+        }
+    ]
+    page = render_scorecard([], generated_at=STAMP, live_stability=missed_everything)
+    assert "no expected item matched in any of 5" in page
+    assert "no expected finding to match" not in page
 
 
 def test_a_row_is_attributed_to_the_model_its_feed_names() -> None:

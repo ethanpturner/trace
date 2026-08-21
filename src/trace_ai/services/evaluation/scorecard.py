@@ -19,6 +19,9 @@ import html
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from trace_ai.services.evaluation.stability import agreement_text as stability_agreement
+from trace_ai.services.evaluation.stability import measurements as stability_measurements
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
@@ -373,46 +376,48 @@ is recorded in each metric's notes.</p>
 </div>"""
 
 
-def _live_stability_section(live: dict[str, Any] | None) -> str:
-    """The DEC-077 measurement, rendered from the committed summary artifact.
+_STABILITY_METRICS = (
+    ("estimated_cost", "Cost (USD)"),
+    ("execution_duration", "Runtime (s)"),
+    ("model_call_count", "Model calls"),
+    ("token_usage", "Tokens"),
+    ("evidence_assessment_coverage", "Evidence-assessment coverage"),
+    ("finding_evidence_coverage", "Evidence coverage"),
+    ("false_positive_rate", "False-positive rate"),
+    ("false_negative_rate", "False-negative rate"),
+)
 
-    Read, never regenerated: live runs are manual and priced (DEC-077), so the drift checks
-    cannot re-run them — the committed `docs/eval/live-stability.json` is the record, the way
-    the history file is. Absent artifact, absent section. Cost and runtime are the two cells
-    the offline table cannot carry (its replays cost nothing by construction), which is why
-    they render here with the profile named.
+
+def _stability_run_row(live: dict[str, Any]) -> str:
+    """One measurement's headline figures: the counts DEC-077 requires be visible.
+
+    Failed attempts and defaulted decisions are figures here rather than prose because they
+    qualify the agreement beside them — an agreement count over runs whose decisions were
+    substituted means something different from one over runs that matched the recorded human.
     """
-    if not live:
-        return ""
+    n = int(live.get("n", 0))
+    failed = int(live.get("failed_runs", 0))
+    return (
+        f"<tr><td>{html.escape(str(live.get('scenario', '')))}</td>"
+        f"<td>{html.escape(str(live.get('profile', '')))}</td>"
+        f"<td>{n}</td><td>{failed}</td>"
+        f"<td>{int(live.get('defaulted_decisions', 0))}</td>"
+        f"<td>{html.escape(stability_agreement(live))}</td></tr>"
+    )
+
+
+def _stability_metric_table(live: dict[str, Any]) -> str:
+    """The per-metric variance for one measured scenario."""
     means = live.get("metric_mean", {})
     stdevs = live.get("metric_stdev", {})
-    shown = [
-        ("estimated_cost", "Cost (USD)"),
-        ("execution_duration", "Runtime (s)"),
-        ("model_call_count", "Model calls"),
-        ("token_usage", "Tokens"),
-        ("finding_evidence_coverage", "Evidence coverage"),
-        ("false_positive_rate", "False-positive rate"),
-        ("false_negative_rate", "False-negative rate"),
-    ]
     rows = [
         f"<tr><td>{label}</td><td>{means[name]:.4g}</td><td>{stdevs.get(name, 0.0):.4g}</td></tr>"
-        for name, label in shown
+        for name, label in _STABILITY_METRICS
         if name in means
     ]
-    agreement = ", ".join(
-        f"{html.escape(str(key))} {count}/{live.get('n', 0)}"
-        for key, count in sorted((live.get("item_agreement") or {}).items())
-    )
-    failed = int(live.get("failed_runs", 0))
-    attempted = int(live.get("n", 0)) + failed
-    agreement_text = agreement or "no expected item matched in any run"
-    return f"""<h2>Live stability</h2>
-<p class="note">DEC-077's measurement: {live.get("n", 0)} live runs of
-{html.escape(str(live.get("scenario", "")))} on {html.escape(str(live.get("profile", "")))}
-({failed} of {attempted} attempts failed), identical input, checkpoint decisions from the named
-default policy with {int(live.get("defaulted_decisions", 0))} defaulted decisions across the
-runs. Reported, never gated. Item agreement: {agreement_text}.</p>
+    if not rows:
+        return ""
+    return f"""<h3>{html.escape(str(live.get("scenario", "")))}</h3>
 <div class="scroll">
 <table>
 <thead><tr><th>Metric</th><th>Mean</th><th>Std dev</th></tr></thead>
@@ -421,6 +426,44 @@ runs. Reported, never gated. Item agreement: {agreement_text}.</p>
 </tbody>
 </table>
 </div>"""
+
+
+def _live_stability_section(live: dict[str, Any] | list[Any] | None) -> str:
+    """The DEC-077 measurement, rendered from the committed summary artifact.
+
+    Read, never regenerated: live runs are manual and priced (DEC-077), so the drift checks
+    cannot re-run them — the committed `docs/eval/live-stability.json` is the record, the way
+    the history file is. Absent artifact, absent section. Cost and runtime are the two cells
+    the offline table cannot carry (its replays cost nothing by construction), which is why
+    they render here with the profile named.
+
+    The artifact carries one measurement per scenario measured, so the section leads with the
+    run counts across scenarios and then gives each its variance table. Scenarios are rendered
+    beside each other, never differenced: a measurement on one scenario is not a baseline for
+    another, and the page states counts rather than implying a trend.
+    """
+    entries = stability_measurements(live)
+    if not entries:
+        return ""
+    metric_tables = "\n".join(
+        table for entry in entries if (table := _stability_metric_table(entry))
+    )
+    return f"""<h2>Live stability</h2>
+<p class="note">DEC-077's protocol: n live runs per scenario, identical input, checkpoint
+decisions replayed by content fingerprint with the unmatched falling back to the named default
+policy — so the defaulted count qualifies the agreement beside it. Reported, never gated. Rows
+are listed, never differenced: each measures one scenario on one profile and workflow shape, so
+a row is not a baseline for another and the page states no trend across them.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Scenario</th><th>Profile</th><th>Completed runs</th><th>Failed attempts</th>
+<th>Defaulted decisions</th><th>Item agreement</th></tr></thead>
+<tbody>
+{chr(10).join(_stability_run_row(entry) for entry in entries)}
+</tbody>
+</table>
+</div>
+{metric_tables}"""
 
 
 def _history_section(history: Sequence[ScorecardSnapshot]) -> str:
@@ -793,7 +836,7 @@ def render_scorecard(
     *,
     generated_at: datetime,
     history: Sequence[ScorecardSnapshot] = (),
-    live_stability: dict[str, Any] | None = None,
+    live_stability: dict[str, Any] | list[Any] | None = None,
     model_comparison: Sequence[dict[str, Any]] = (),
     prompt_comparison: Sequence[dict[str, Any]] = (),
 ) -> str:
