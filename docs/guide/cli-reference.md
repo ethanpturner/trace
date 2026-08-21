@@ -602,7 +602,10 @@ latest run is reported. A run still inside its first phase has not written a sta
 the phase line says so rather than guessing. An assessment with no runs exits 1. `--json` prints
 the same information as one DEC-096 envelope. Note the row of a run whose process was killed
 still says `running` — a status read reports the row and never repairs it; asserting the kill
-is `trace runs repair` (DEC-137).
+is `trace runs repair` (DEC-137). When the row and the state file disagree — a `paused` row over
+a state file still recording a running phase, which a process killed between a pause's two writes
+leaves behind — a `stranded:` line names the disagreement and the verb that reaches it (DEC-145),
+rather than printing one side and letting the other pass unseen.
 
 ```
 trace runs prune [assessment_id] [--older-than DAYS] [--force]
@@ -622,9 +625,14 @@ Omitting `assessment_id` examines the whole data root.
 trace runs repair <assessment_id> <run_id> [--reason TEXT] [--force]
 ```
 
-Marks an orphaned `running` run failed, on the operator's assertion that its process is gone
-(DEC-137). A killed process leaves its run at `running`; `resume` refuses it — neither paused nor
-failed — and prune covers paused runs only. Repair closes the row through the ledger's own
+Marks an orphaned or stranded run failed, on the operator's assertion that its process is gone
+(DEC-137, DEC-145). A killed process leaves its run at `running`; `resume` refuses it — neither
+paused nor failed — and prune covers paused runs only. A process killed between a pause's two
+writes instead leaves a `paused` row over a state file still recording a running phase, which
+`resume` refuses because the file it reads is not a pause; repair reaches that combination too,
+and names it in the summary. A `paused` row with no state file at all is not repairable: `resume`
+reads the same missing file, so failing the row would relabel it rather than recover it — an
+abandoned pause is prune's. Repair closes the row through the ledger's own
 completion, spend rolled up from the run's execution records, with an error summary naming the
 external kill; `--reason` puts the operator's own account of what happened in that summary. After
 repair, `trace resume` restarts the failed phase. Nothing is detected automatically — no

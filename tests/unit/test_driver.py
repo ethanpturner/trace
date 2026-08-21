@@ -54,6 +54,7 @@ from trace_ai.workflow.finding_review import (
     conclude_finding_review,
 )
 from trace_ai.workflow.limits import Budget, LimitKind
+from trace_ai.workflow.orchestrator import PhaseProgress
 from trace_ai.workflow.phases import NODES_BY_PHASE, Phase
 
 if TYPE_CHECKING:
@@ -651,6 +652,79 @@ def test_resuming_with_subjects_still_undecided_pauses_again(
         )
         assert outcome.paused
         assert outcome.state.current_phase is Phase.HUMAN_CONTEXT_REVIEW
+
+
+def test_a_resumed_run_says_running_on_its_row_while_it_executes(
+    prepared: tuple[Path, str],
+) -> None:
+    """The row a resumed run wears is a running run's, not the pause it resumed from (#641).
+
+    Before DEC-145 the row kept `paused` for the whole resumed run while the state file recorded
+    the phases going by, so a process killed anywhere in that stretch left a combination neither
+    `trace resume` nor `trace runs repair` would touch. The row is what the run *is*.
+    """
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        run_assessment(stage.service, assessment_id, model=_extraction_model(), profile=PROFILE)
+
+    observed: list[RunStatus] = []
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        _approve_checkpoint_one(handle)
+        run_id = handle.objects.list(WorkflowRun)[-1].id
+
+        def observe(_progress: PhaseProgress) -> None:
+            observed.append(handle.objects.get(WorkflowRun, run_id).status)
+
+        resume_assessment(
+            stage.service,
+            assessment_id,
+            model=_reasoning_model(),
+            profile=PROFILE,
+            on_phase=observe,
+        )
+
+    assert observed, "the observer saw no phase"
+    assert set(observed) == {RunStatus.RUNNING}
+
+
+def test_a_repaired_strand_resumes_and_finishes_the_run(prepared: tuple[Path, str]) -> None:
+    """The whole recovery, end to end: strand, repair, resume (DEC-145, #641).
+
+    The strand is built the way a kill builds one — the row paused, the state file still recording
+    the phase the process was running, because a pause commits the row before it writes the file.
+    Repair is what makes the run reachable again; the work already persisted is not re-run.
+    """
+    from trace_ai.services.run_repair import repair_run
+    from trace_ai.workflow.checkpoint import load_state, save_state
+
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        run_assessment(stage.service, assessment_id, model=_extraction_model(), profile=PROFILE)
+        run_id = stage.handle.objects.list(WorkflowRun)[-1].id
+
+    # The kill: the state file never got the pause the row already committed.
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        save_state(handle, load_state(handle, run_id).restarted())
+        assert handle.objects.get(WorkflowRun, run_id).status is RunStatus.PAUSED
+        with pytest.raises(ValueError, match="not paused; there is nothing to resume"):
+            resume_assessment(
+                stage.service, assessment_id, model=DeterministicModel(), profile=PROFILE
+            )
+
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        _approve_checkpoint_one(handle)
+        repaired = repair_run(handle, run_id, reason="killed mid-resume")
+        assert repaired.status is RunStatus.FAILED
+
+        outcome = resume_assessment(
+            stage.service, assessment_id, model=_reasoning_model(), profile=PROFILE
+        )
+        assert outcome.paused, "the repaired run resumed and reached the next checkpoint"
+        assert outcome.state.current_phase is Phase.HUMAN_FINDING_REVIEW
+        assert outcome.state.workflow_run_id == run_id
 
 
 def test_resuming_without_a_paused_run_is_refused(prepared: tuple[Path, str]) -> None:
