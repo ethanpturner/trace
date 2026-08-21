@@ -531,6 +531,32 @@ Some fixtures should include:
 
 This ensures Trace is tested under realistic conditions.
 
+## Editing an authored expectation
+
+A truth set is the ruler. It may be edited **only** on an argument from the scenario's own inputs,
+its own documentation, or its own internal consistency. A run's output is never an argument for
+changing an expectation — an expectation exists to be disagreed with, and one edited toward a run
+has stopped measuring anything (DEC-149).
+
+Before changing an expectation, classify the divergence:
+
+| Class | What it is | Where it is fixed |
+|---|---|---|
+| 1. Instrument definition | the metric's denominator, shape, or population is wrong | the metric and its definition here (DEC-147) |
+| 2. Matcher classification | the comparison misreads a correct result | `matching.py`, mirrored into `baselines.py` (DEC-148) |
+| 3. Truth-set inconsistency | the expectation contradicts itself, its scenario's docs, or its inputs | the truth set — **the only class an edit answers** (DEC-133) |
+| 4. Pipeline divergence | the run reached the substance in another layer, or concluded differently | the pipeline, or recorded as measured |
+| 5. Run-to-run variance | identical inputs produce the outcome only sometimes | repeated measurement (DEC-077); edit nothing |
+
+A divergence is presumed class 4 or class 5 until the truth set is shown wrong on its own terms.
+Classes 4 and 5 cannot be separated on a single run: reply-tuner's expected finding was measured at
+three of five runs on identical inputs, so one run disagreeing with an expectation establishes
+nothing about the expectation. A named mechanism is a hypothesis about class 4, not a separation
+from class 5.
+
+When an edit does clear that bar, it lands separately committed, with its justification in the
+commit that makes it and the superseded figures retained rather than replaced (DEC-143).
+
 # 11. Regression Tests
 
 Every important bug should become a permanent regression test.

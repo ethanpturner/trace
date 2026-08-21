@@ -9857,3 +9857,144 @@ it is longitudinal identity, persisted on the object, and a matcher classificati
 identity, so recorded `content_fingerprint` values do not move. And the divergence class is a
 measurement of the truth sets as much as of the runs — a rising count means the corpus's component
 naming and the models' are drifting apart, which is a signal to read, not a number to optimise.
+
+## DEC-149: A divergence is classified before it is acted on, and a truth set is edited only on an argument from its own inputs
+
+Date: 2026-08-21
+
+Status: Accepted
+
+Decision:
+
+**Every recorded divergence between an expectation and a run belongs to one of five classes, and
+the class determines where it is fixed.**
+
+1. **Instrument-definition defect** — a metric's denominator, shape, or population is wrong, so the
+   number does not mean what it is read to mean. Fixed in the metric and in the evaluation plan's
+   definition. DEC-147's class.
+2. **Matcher-classification defect** — the comparison misreads a correct result. Fixed in
+   `services/evaluation/matching.py` and mirrored into `baselines.py`, because arms scored by
+   different rules measure the rules. DEC-148's class.
+3. **Truth-set internal inconsistency** — the expectation contradicts itself, another file in the
+   same truth set, its scenario's documentation, or its scenario's inputs. Fixed by editing the
+   truth set. DEC-133's class, and **the only class an edit answers**.
+4. **Pipeline divergence** — the run reached the substance and expressed it in another layer, or
+   reached a defensible different conclusion. Fixed in the pipeline if it should be fixed, and
+   otherwise recorded as a measured property.
+5. **Run-to-run variance** — the same inputs produce the outcome only sometimes. Resolved by
+   repeated measurement under DEC-077's protocol, and by editing nothing.
+
+**The standing rule.** A truth set may be edited only on an argument from the scenario's own
+inputs, its own documentation, or its own internal consistency. **A run's output is never an
+argument for changing an expectation.** An expectation exists to be disagreed with; that is the
+whole of its function.
+
+**What is explicitly insufficient**, each because the corpus measured it:
+
+- *A single run disagreeing with an expectation.* #633 measured reply-tuner's expected finding at
+  three of five runs on identical inputs with zero failures. One run cannot separate class 4 from
+  class 5, and reply-tuner in particular **matched** in the sweep's single run — the corpus holds a
+  worked example of one expectation landing on both sides.
+- *A named mechanism.* A plausible account of why a run diverged is a hypothesis about class 4, not
+  a separation from class 5. Contradictory-docs' checkpoint-1 propagation was a named mechanism,
+  was fixed as DEC-141, and its effect on that scenario's score is still unmeasured.
+- *A metric reading badly.* Two of the four evidence classes filed under #653 dissolved into
+  classes 1 and 2 without a single expectation changing.
+- *A run's phrasing differing from an expectation's phrasing.* That is class 2 until the input
+  document is shown to support the run's phrasing and not the expectation's.
+
+**Where the burden sits.** A divergence is presumed to be class 4 or class 5 — a fact about the run
+— until the truth set is shown wrong on its own terms. The instrument is the ruler. A ruler edited
+to fit the thing it measures has stopped being one, and the edit is undetectable afterwards,
+because the score it produces is exactly the score that motivated it.
+
+**Classes 4 and 5 are not separable on one run, and the corpus stops implying they are.** Where a
+scenario has one live capture, its misses are recorded as *unseparated*. The provenance files
+written during the sweep call them lens divergences on the strength of a single run each; that
+wording overstates what one run establishes, and the table below is the correction.
+
+Why:
+
+**Two of the four evidence classes filed under #653 were never truth-set error, and finding that
+out cost no truth-set edits.** The gap over-minting — eleven gaps against one expected on
+nightly-reconciler, seventeen against two on parcel-platform, both scoring precision 0 — was a
+metric denominated on a list that was never exhaustive: class 1, closed by DEC-147.
+Translation-gateway's one correct finding scoring as a miss *and* a spurious was the comparison
+misreading it: class 2, closed by DEC-148. Had the reconciliation begun by editing expectations,
+both would have been "fixed" by making the truth sets describe the runs, and both instruments would
+still be wrong today.
+
+**The corpus's own thesis is the argument.** Trace exists because missing documentation is not
+proof of a vulnerability (DEC-009): the discipline is refusing a conclusion the evidence does not
+carry. A truth set edited toward a run's output is that same failure committed against the
+instrument rather than the system under review, and it is worse there, because the instrument is
+what would otherwise catch it.
+
+**The component qualifier is unbindable in the present benchmark corpus, which is why classes 2 and
+3 needed separating carefully.** No benchmark scenario carries a structured component declaration
+or an `expected-context.yaml`; only `demo/forgeflow` does. Every benchmark expectation's
+`affected_component` is therefore an authored coinage naming something the input describes in
+prose. Translation-gateway's input never writes "Translation Connector" — it says "a connector
+service between the helpdesk and an external translation SaaS" — so that expectation's name and the
+run's "Helpdesk Translate connector service" are two summaries of one prose description, neither
+wrong and neither bound to anything. With DEC-148's measurement that no two expectations in any
+scenario share a `requirement_id`, the qualifier today is both non-discriminating and unbindable.
+That is a finding about the corpus's construction, recorded here and decided nowhere yet.
+
+**Classification of every divergence the sweep recorded.** The table is this entry's proof that the
+taxonomy covers the real cases, and it is the next worker's work-list.
+
+| Divergence | Class | Status |
+|---|---|---|
+| Gap over-minting: nightly-reconciler 11/1, parcel-platform 17/2, translation-gateway | 1 | Closed, DEC-147. No truth set edited. |
+| translation-gateway FND-TG-01 scored miss *and* spurious | 2 | Closed, DEC-148. Now `divergent`; still missed. |
+| reply-tuner baselines' compound component strings under-credited | 2 | Closed, DEC-148. Symmetric across arms. |
+| forgeflow GW-13.2/13.3: findings file versus questions file | 3 | Closed, DEC-133; held by `test_truth_set_boundary.py`. |
+| contradictory-docs FND-CD-01 missed; checkpoint-1 resolution not reaching downstream lenses | 4, mechanism fixed | DEC-141 fixed the mechanism; the effect is unmeasured and needs a re-capture. |
+| invoice-agent FND-IA-01/02/03 missed; the run surfaced req-AI-003 instead | 4 or 5, unseparated | Open. One capture. |
+| order-notifier FND-ON-01 missed; evidence and critique lenses asked for meta-documentation | 4 or 5, unseparated | Open. One capture. |
+| parcel-platform FND-PP-02 missed; surfaced as a claim and questions | 4 or 5, unseparated | Open. One capture. |
+| translation-gateway FND-TG-02 missed; surfaced as questions | 4 or 5, unseparated | Open. One capture. |
+| unsigned-webhooks FND-UW-01 missed; judged a documentation gap, not an unmet control | 4 or 5, unseparated | Open. The prior opus n=5 measured this expectation at 2/5 under the pre-batching shape. |
+| rag-support-bot missed; the reviewer rejected four applicability-shaped candidates | 4, reviewer disposition | Open. Checkpoint-2 judgement rather than a pipeline lens — a distinct sub-case. |
+| crypto-wallet: an approved finding against a zero-finding expectation | 4 or 5, unseparated | Open. One capture. |
+| nightly-reconciler `requirement_mapping_accuracy` 0.0 against a met outcome | 4 | Open. The suppression carried through reviewer judgement, not the mapping verdict. |
+| A gap asserting undeterminability where an org control settles it | 1, unbuilt | Named in DEC-147's tradeoffs; the negative set holds the material, no matcher reaches it. |
+| `affected_component` unbound corpus-wide (no structured inputs outside forgeflow) | 3-adjacent | Recorded here, decided nowhere: binding it needs structured inputs, or the qualifier retires. |
+
+**Nothing in the table is settled as truth-set error.** Ten expectations are missed across the
+thirteen sweep captures and none has met the standing rule's bar, because each rests on one
+capture. Separating them is Decision 4's subject, not this one's.
+
+Alternatives Considered:
+
+- **Reconcile by re-reading each divergence and editing what looks wrong.** The approach #653 was
+  filed to prevent. Rejected: it cannot distinguish a wrong expectation from an unlucky run, and
+  the two decisions taken before this one show most of the pile was neither.
+- **Require repeated measurement before any truth-set edit, without exception.** Rejected as too
+  strong: an expectation contradicting its own scenario's input is wrong whatever any run does, and
+  forcing a paid re-run before fixing a self-contradiction spends money to learn nothing. Class 3
+  is exactly that carve-out.
+- **Forbid truth-set edits entirely and record divergences forever.** Rejected: it freezes known
+  errors into the ruler and makes the corpus less honest over time, not more.
+- **Let the second annotator (#565) adjudicate every divergence.** Deferred rather than rejected:
+  independent adjudication is the right evidence for the hard cases and Decision 5 owns it, but it
+  is a human bottleneck and cannot gate class 1, 2, or 3 work that needs no judgement call.
+- **Keep the sweep provenance's "lens, not omission" wording as the classification.** Rejected: it
+  reads as settled and rests on one run each. The wording stands in the provenance as what was
+  believed when written; this table is what the corpus now claims.
+
+Tradeoffs:
+
+The rule makes truth-set correction slower and more expensive on purpose, and the cost lands
+hardest where impatience is greatest: a scenario whose expectation looks obviously wrong after one
+run still needs an argument from its input, or a repeated measurement, before anything changes.
+Some genuinely wrong expectations will therefore sit in the corpus longer than a reader would like,
+and the scorecard will carry misses that later prove to be authoring error. That is the intended
+direction of the error — a ruler slow to change is worth more than one that tracks whatever it last
+measured. The classification is a judgement rather than a computation: nothing mechanically decides
+that a divergence is class 4 rather than class 3, and the table is a set of authored calls a second
+reader may dispute, which is why they are recorded one by one rather than asserted as a rate. And
+the rule cannot be enforced by a test — no assertion detects an expectation edited toward a run,
+because the edit's evidence is exactly the score it produces. What holds it is the written rule,
+the table, and the requirement that an edit's justification appear in the commit that makes it.
