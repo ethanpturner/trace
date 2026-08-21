@@ -9592,3 +9592,82 @@ lost is unrecoverable in place, which the DEC-091 rebuild already covers for cap
 strand window shrinks to the microseconds between two writes rather than closing: two stores
 admit no atomic write, and the honest response is a verb that reaches the result, not a claim
 that it cannot happen.
+
+## DEC-146: The benchmark corpus is a versioned package — the manifest is generated, the version is authored
+
+Date: 2026-08-21
+
+Status: Accepted
+
+Decision:
+
+**The corpus ships as a described package rather than a copied one.** `benchmarks/manifest.yaml`
+names every registered scenario, the files it carries in each group, the catalog and workflow
+versions it pins, the models its recordings attribute to, and a digest over each group; the
+scenario content itself stays exactly where it is. A published copy of the corpus in a second
+tree would be a second authoritative store of the same files, and it would drift the first time a
+capture was promoted into one and not the other. The package is a description of the repository's
+own corpus, and the repository is the distribution.
+
+**The manifest is assembled, never authored (DEC-076).** Every value in it is read: the scenario
+list from the registry (DEC-027), the catalog pin from the registry entry or the loader's current
+version exactly as an assessment resolves it (DEC-098), the model attribution from the recorded
+envelopes rather than provenance prose (DEC-136), the file inventory from the corpus. Nothing
+restates a fact that lives somewhere else, so nothing can disagree with it.
+`scripts/build_benchmark_manifest.py --check` runs in CI beside the scorecard, comparison,
+ablation, and mapping-variants currency checks, and fails when the committed manifest and the
+corpus disagree.
+
+**A digest covers path and content, grouped.** Each group — `input`, `expected`, `recorded`,
+`baselines`, `conditions` — hashes the sorted list of repo-relative path and content hash, so a
+renamed file moves the digest as surely as an edited one. The manifest describes an inventory, and
+a rename changes it. Group digests roll up to a scenario digest and those to a corpus digest, so a
+consumer can compare one line to establish they hold the same corpus.
+
+**The version is `MAJOR.MINOR`, and it is the one authored value.** MAJOR moves when previously
+reported scores stop being comparable: a truth set's expectations change, a scenario leaves, or the
+identity rule the matcher scores on moves. MINOR moves when the corpus grows or its provenance
+improves without disturbing what a score means: a scenario arrives, a recording is re-captured
+under an unchanged truth set, a baseline is added. This cannot be generated, because comparability
+is a judgment about meaning and a digest only sees bytes — a re-captured recording under an
+unchanged truth set and an edited expectation both move the same hashes.
+
+**What the version promises a consumer is narrow, and stated with what it refuses.** It promises
+the files are the files the manifest names at the digests it records, and that replaying the
+committed recordings offline reproduces the scores committed against that version. It refuses to
+promise that a live run reproduces those scores — the pipeline is model-assisted, and the committed
+stability measurement (DEC-077) shows a single-run result is weak evidence — that the truth sets
+are objectively correct, one author having written them with no second annotation pass yet
+(DEC-112, #565), or that numbers compare across MAJOR versions. `docs/eval/benchmark-package.md`
+is the specification, and its limitations section is its spine rather than a footnote: a benchmark
+that oversells what it establishes is worse than none, because a reader takes the numbers at face
+value.
+
+Alternatives Considered:
+
+- Publishing a copied corpus tree or a release tarball (rejected: a second copy of files the
+  repository already holds, drifting from the first capture promotion onward; the manifest plus
+  the repository is the same artifact without the drift).
+- Hashing content without paths (rejected: a rename would leave the digest unmoved while the
+  inventory the manifest describes had changed).
+- One digest over the whole scenario rather than per group (rejected: a consumer diagnosing a
+  mismatch learns which half moved — a re-captured recording and an edited truth set are very
+  different events, and the grouped digests separate them).
+- Generating the version from the corpus digest (rejected: it would bump on every capture
+  promotion and never distinguish a re-capture from a changed expectation, which is precisely the
+  distinction a consumer needs).
+- Semantic versioning with a patch level (rejected: nothing in the corpus changes without changing
+  either comparability or contents, so a third component would never be the honest answer).
+- Shipping before the sweep and the comparisons existed (rejected at filing, #574's own sequencing:
+  a benchmark published before its own live numbers exist undercuts the point).
+
+Tradeoffs:
+
+The version is authored, so it can be forgotten: `--check` catches a manifest that no longer
+describes the corpus, but nothing can catch a truth-set edit that should have been a MAJOR bump
+and was not. That is a judgment the check cannot make, and naming it here is the mitigation
+available. Digests move on every capture promotion, which is intended and does mean the manifest
+appears in most evaluation diffs. The package describes rather than packages: a consumer clones
+the repository rather than downloading an archive, which is the cost of refusing the second copy.
+And the corpus remains synthetic by construction (design-principles section 19) — the property
+that makes publication safe is also the limit on what publication establishes.
