@@ -10076,3 +10076,69 @@ ablation pages change where a dash replaces a number. `comparison.md`'s evidence
 stops pooling five zero-finding rows into its denominator. `tests/unit/test_evaluation_metrics.py`
 holds the invariant over a computed metric set, so a new percentage metric that reports over an
 empty population fails rather than shipping.
+
+## DEC-151: A citation is scored on whether it resolves, and the baselines' citations are measured rather than dismissed
+
+Date: 2026-08-26
+
+Status: Accepted
+
+Decision:
+
+**The comparison's evidence row reports what a baseline's citation can be checked against, not
+that it has none.** `citation_fidelity` is the share of a baseline's `evidence_quote` values that
+appear verbatim in one of the documents the run was given, under a shallow normalization —
+surrounding quotation marks, curly quotes, dashes, whitespace runs — and nothing else. It is
+rendered to `docs/eval/citation-fidelity.md` by `scripts/build_citation_fidelity.py`, offline from
+committed recordings, and CI checks it for drift like every other derived page.
+
+**The claim it replaces was false about this repository's own schema.** The footnote read: a
+baseline "links no claim to evidence because its output schema (`BaselineFindings`) carries a
+title, requirement, component, and rationale and no evidence reference; it cannot cite a document
+even in principle." `BaselineFinding.evidence_quote` is a required, non-empty string, added in the
+same work that built the baselines. Every baseline finding cites a passage. The strongest claim in
+the project's public comparison was resting on a description of a schema that had a field the
+description denied.
+
+**The measured difference is narrower and better.** Trace's citation is an `EvidenceReference`
+resolving to a stored excerpt whose content hash is re-verified on read. A baseline's is a string
+with no referent, so checking it means searching the documents for it, and fewer than half survive
+that search. "A citation a machine follows" against "a citation a reader trusts" is a sharper
+distinction than "cites" against "does not cite", and it is the one the evidence supports.
+
+**It is a resolvability rate and not a fabrication rate, and the page says so in its own voice.**
+Inspection of the corpus's unresolved citations found them to be, overwhelmingly, two real
+passages concatenated, a passage carrying its markdown emphasis, an elision written as an
+ellipsis, or a `From <file>:` prefix the model supplied. Publishing the number without that
+sentence would let a reader take it for dishonesty the corpus does not show.
+
+Why:
+
+- **An asserted differentiator is the thing this project keeps refusing to accept from others.**
+  DEC-074 built prompt baselines rather than describing what a simpler approach would do; DEC-075
+  measured injection compliance per class rather than claiming a defense. The evidence row was the
+  one headline claim still standing on a description, and the description was wrong.
+- **The measurement was free and already possible.** The forty-five baseline recordings and every
+  scenario's inputs are committed. Nothing replays, no model is called, and no key is needed —
+  the same posture as `scripts/replay_forgeflow.py`, and the reason a skeptic can re-run it.
+- **Normalization is where this metric could quietly become a different one.** Wide enough to
+  accept a paraphrase and it measures whether the model read the document; narrow enough to reject
+  a line break and it measures Markdown wrapping. The steps are enumerated in the module and
+  pinned by tests, including one asserting a paraphrase does not resolve and one asserting a
+  citation cannot resolve by straddling two documents.
+
+Alternatives Considered:
+
+- **Correct the footnote and publish no number** (rejected: the corrected sentence would still be
+  an assertion, and the number is a few file reads away. A project whose thesis is that
+  conclusions need evidence does not get to describe its competitors' output from their schema).
+- **Fuzzy or token-overlap matching** (rejected: it would raise the rate and stop measuring the
+  property. A citation a program cannot follow is unresolvable whether or not its words are
+  mostly present, and the point of the number is what survives automated checking).
+- **Publish the unresolved quotes so a reader can judge them** (rejected: DEC-076 admits metrics
+  and identifiers to a rendered page and no assessment content. A quote is source material whether
+  or not it resolved, and a quality report is not an exemption).
+- **Score Trace through the same search** (rejected: it would measure the wrong thing and flatter
+  the result. Trace's citations are identifiers into a store, and `finding_evidence_coverage`
+  already reports them resolving with their hashes verified. Re-deriving that by grepping the
+  documents would replace a stronger check with a weaker one).

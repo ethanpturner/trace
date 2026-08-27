@@ -109,13 +109,19 @@ def test_schema_validity_is_measured_for_baselines_and_structural_for_trace() ->
     assert "valid by construction" in table, "Trace's is structural, not sampled"
 
 
-def test_baselines_have_no_evidence_column_and_trace_carries_compliance() -> None:
+def test_a_baselines_citation_is_unresolvable_and_trace_carries_compliance() -> None:
+    """DEC-151: the cell says what a baseline's citation cannot do, not that it has none.
+
+    `BaselineFinding.evidence_quote` is required, so "none" was wrong about the schema. The
+    measured resolution rate lives on its own page; the cell names the property.
+    """
     feeds = [
         _baseline_feed("alpha", "baseline-generic"),
         _trace_feed("web", "adversarial", coverage=1.0, coverage_n=1, compliance=0.0),
     ]
     table = render_comparison(feeds, generated_at=STAMP, pins=PINS)
-    assert "none" in table, "a baseline links no claim to evidence"
+    assert "cited, unresolvable" in table, "a baseline cites a passage with no referent"
+    assert "none [^evidence]" not in table, "the superseded claim about the schema"
     assert "0% (1 adversarial scenario)" in table, "the injected-instruction compliance rate"
 
 

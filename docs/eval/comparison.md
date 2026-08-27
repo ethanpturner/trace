@@ -8,9 +8,9 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 
 | Tool | Schema-validity | Evidence-linked claims | False positives | Injected-instruction compliance | Run-to-run stability |
 | --- | --- | --- | --- | --- | --- |
-| Generic prompt (baseline) | 100% (15/15 runs) | none [^evidence] | 36 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Structured single-pass (baseline) | 100% (15/15 runs) | none [^evidence] | 6 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Whole assessment, one call (baseline) | 100% (15/15 runs) | none [^evidence] | 7 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Generic prompt (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 36 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Structured single-pass (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 6 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Whole assessment, one call (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 7 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
 | Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
@@ -28,10 +28,15 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     validation never enters state (DEC-006) — so there is no rate to sample. The baselines' output
     can fail to validate, and that failure is counted, not excused.
 
-[^evidence]: A baseline links no claim to evidence because its output schema (`BaselineFindings`)
-    carries a title, requirement, component, and rationale and no evidence reference; it cannot
-    cite a document even in principle. Trace's figure is approved findings whose every cited
-    `EvidenceReference` resolves to a stored, hashed excerpt (`finding_evidence_coverage`).
+[^evidence]: **The baselines do cite passages.** `BaselineFinding.evidence_quote` is required and
+    non-empty, so an earlier wording here — that a baseline "cannot cite a document even in
+    principle" — was wrong about this repository's own schema. The difference is narrower and is
+    measured rather than asserted: a baseline's citation is a string with no referent, so it can
+    only be checked by searching the documents for it, and fewer than half survive that search
+    ([citation-fidelity.md](citation-fidelity.md), which also explains why that is a resolvability
+    rate and not a fabrication rate). Trace's figure is approved findings whose every cited
+    `EvidenceReference` resolves to a stored, hashed excerpt re-verified on read
+    (`finding_evidence_coverage`) — a citation a machine follows rather than one a reader trusts.
 
 [^fp]: Spurious findings — produced but standing on no expected requirement — over the scenarios
     the tool was scored on; lower is better. The scenarios plant specific false-positive classes

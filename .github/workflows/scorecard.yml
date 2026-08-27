@@ -71,6 +71,12 @@ jobs:
       - name: The committed mapping-variants table matches the recorded runs
         run: uv run python scripts/measure_mapping_variants.py --check
 
+      # Citation fidelity: no sweep either. It reads the committed baseline recordings and the
+      # scenario inputs and compares strings, so a promoted capture that changes either moves the
+      # page without anything replaying.
+      - name: The committed citation-fidelity page matches the recordings
+        run: uv run python scripts/build_citation_fidelity.py --check
+
       # The benchmark package (DEC-146, #574): no sweep, just a walk over the corpus and its
       # digests. A promoted capture that does not regenerate the manifest leaves the published
       # package describing a corpus that no longer exists.
@@ -89,5 +95,6 @@ jobs:
             docs/eval/scorecard.html
             docs/eval/comparison.md
             docs/eval/ablation.md
+            docs/eval/citation-fidelity.md
           if-no-files-found: error
           retention-days: 30

@@ -11,9 +11,9 @@ Every populated cell is a number that appears in a committed feed, and every emp
 it is empty rather than leaving a blank a reader fills in optimistically. Three properties are
 stated as structural facts rather than measured, because measuring them would measure nothing:
 Trace's persisted objects are schema-valid by construction (an invalid proposal never persists,
-DEC-006); a baseline links no claim to evidence because `BaselineFindings` has no evidence field;
-and run-to-run stability is a live-run measurement (DEC-077) that deterministic replay cannot
-produce. The honest empty cell is the point — the market the survey describes is full of tools
+DEC-006); a baseline's citation resolves to nothing because `BaselineFinding.evidence_quote` is a
+string the model wrote rather than a reference to a stored excerpt; and run-to-run stability is a
+live-run measurement (DEC-077) that deterministic replay cannot produce. The honest empty cell is the point — the market the survey describes is full of tools
 whose comparison tables fill every cell and cite nothing.
 
 STRIDE GPT is not a row: it cannot run through the seam, so it is scored in the portfolio
@@ -154,7 +154,8 @@ def _schema_cell(summary: ToolSummary) -> str:
 
 def _evidence_cell(summary: ToolSummary) -> str:
     if summary.evidence_total is None:
-        return "none [^evidence]"
+        # A baseline cites passages; what it cannot do is give the citation a referent.
+        return "cited, unresolvable [^evidence]"
     if summary.evidence_total == 0:
         return "no approved findings"
     # evidence_covered is set whenever evidence_total is (both come from the same runs).
@@ -306,10 +307,15 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     validation never enters state (DEC-006) — so there is no rate to sample. The baselines' output
     can fail to validate, and that failure is counted, not excused.
 
-[^evidence]: A baseline links no claim to evidence because its output schema (`BaselineFindings`)
-    carries a title, requirement, component, and rationale and no evidence reference; it cannot
-    cite a document even in principle. Trace's figure is approved findings whose every cited
-    `EvidenceReference` resolves to a stored, hashed excerpt (`finding_evidence_coverage`).
+[^evidence]: **The baselines do cite passages.** `BaselineFinding.evidence_quote` is required and
+    non-empty, so an earlier wording here — that a baseline "cannot cite a document even in
+    principle" — was wrong about this repository's own schema. The difference is narrower and is
+    measured rather than asserted: a baseline's citation is a string with no referent, so it can
+    only be checked by searching the documents for it, and fewer than half survive that search
+    ([citation-fidelity.md](citation-fidelity.md), which also explains why that is a resolvability
+    rate and not a fabrication rate). Trace's figure is approved findings whose every cited
+    `EvidenceReference` resolves to a stored, hashed excerpt re-verified on read
+    (`finding_evidence_coverage`) — a citation a machine follows rather than one a reader trusts.
 
 [^fp]: Spurious findings — produced but standing on no expected requirement — over the scenarios
     the tool was scored on; lower is better. The scenarios plant specific false-positive classes
