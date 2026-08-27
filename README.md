@@ -808,6 +808,7 @@ version 0.1.
 | [Demo Script](docs/product/demo-script.md) | The ten-beat offline walkthrough and its recovery plan |
 | [Ablation Narrative](docs/product/ablation-narrative.md) | What each removed component changes, measured, with the framework story |
 | [Future Features](docs/product/future-features.md) | Deferred ideas and what would promote them |
+| [Competitive Landscape](docs/product/competitive-landscape.md) | Who else builds this as of August 2026, and which differentiators survive |
 | [Project Scope](docs/architecture/project-scope.md) | MVP boundaries, non-goals, constraints |
 | [Current Architecture](docs/architecture/current-architecture.md) | Pipeline, components, proposed technology |
 | [Agent Design](docs/architecture/agent-design.md) | The six agents, deterministic nodes, safety properties |
