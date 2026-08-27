@@ -148,6 +148,14 @@ author wrote. The instrument for measuring inter-annotator agreement is built (D
 no data, because no independent second annotation pass has been authored (#565). Until one exists,
 "precision 40%" means "40% against this author's reading", and the reading itself is unvalidated.
 
+**The corpus has measured what that costs, and the number is large.**
+[`authored-versus-live.md`](authored-versus-live.md) pools the retained 2026-08-18 snapshot, whose
+recordings were written offline, beside the current corpus, whose recordings are live captures —
+same truth sets, same matcher, same scenarios. The first reads 78% precision and 82% recall; the
+second reads 17% and 13%. Recordings written to exercise a truth set score well against it, which
+is the property they were built for and not a measurement of the pipeline. The gap is the size of
+that error, and it is the most useful thing this corpus knows about itself (DEC-153).
+
 **Recall varies from run to run; not-inventing is the measured-stable axis.** DEC-077's protocol
 was re-run on the model and call shape the corpus actually uses — `openai/gpt-5.1` through the
 gateway under workflow 0.2, two scenarios, five runs each, identical inputs

@@ -718,7 +718,7 @@ read source code, run a program, connect to a cloud account, or inspect a runnin
 weakness present in the implementation but absent from the documentation is outside its reach. It
 assesses what a system is described to be, and a description can be wrong.
 
-**What the evaluation does not prove.** Fourteen scenarios are registered, and every one carries an
+**What the evaluation does not prove.** Fifteen scenarios are registered, every one carrying an
 authoritative Trace run scored against its truth set, plus two adversarial conditions. Every truth
 set is authored by one person, so the numbers are a single annotator's judgment measured against
 itself — self-agreement, not an inter-annotator statistic, and not a claim of external ground
@@ -726,12 +726,23 @@ truth. The instrument for the stronger claim exists (DEC-112): a second annotati
 `benchmarks/<slug>/annotations/second/` is scored for agreement over the same identity forms the
 run matcher uses, and the scorecard reports it — but no second set has been authored yet, so the
 agreement section is empty and this limitation stands as written until a person records one.
-One live-model run has been captured and scored (the flagship recording), and run-to-run
-stability (DEC-077) has been measured once: over five completed live runs of one scenario, the
-expected finding matched in two — instability is real, reported, and gates nothing. The thirteen
-benchmark recordings are deterministic and offline, and the scorecard's offline cost cells read
-zero because its feeds regenerate from replays; the measured live costs live in the scorecard's
-own live-stability section. The
+
+The corpus has measured what single authorship costs, and the number is large.
+[`authored-versus-live.md`](docs/eval/authored-versus-live.md) pools the retained 2026-08-18
+snapshot — whose recordings were written offline — beside the current corpus, whose recordings are
+live captures, over the same truth sets, matcher and scenarios. The first reads 78% precision and
+82% recall; the second reads 17% and 13%. Recordings written to exercise a truth set score well
+against it, which is what they were built for and not a measurement of the pipeline; the gap is the
+size of that error (DEC-153).
+
+All fifteen recordings are now live captures (thirteen on `openai/gpt-5.1` through the gateway,
+two earlier pre-batching `claude-opus-5` captures), and they replay deterministically offline.
+Run-to-run stability (DEC-077) has been measured on the corpus's own model: ten runs across two
+scenarios, none failed, with `missing-docs` producing zero spurious findings in five of five and
+`reply-tuner` reproducing its expected finding in three of five. **Both adversarial recordings
+remain authored rather than captured** — no model has been run against a poisoned document in
+either scored condition, because `trace capture` has no condition parameter (DEC-152); the
+scorecard's adversarial section says so per row. The
 [scorecard](docs/eval/scorecard.html) carries the current numbers; they are small by construction
 and the sample is stated on the page rather than rounded away.
 
