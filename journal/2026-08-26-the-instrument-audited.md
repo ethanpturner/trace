@@ -106,6 +106,45 @@ The scorecard's adversarial section now carries a *Responses* column read from t
 attribution rather than from prose, so it cannot drift from the recording the way a sentence can.
 Both rows read `authored`.
 
+## The number the corpus already owned and had never drawn (DEC-153)
+
+The fourth finding needed no new measurement at all. The retained 2026-08-18 snapshot in
+`history.jsonl` pools **78% precision and 82% recall over fourteen clean authoritative rows, none
+of which attributes to a model.** The current corpus pools **17% and 13% over fifteen, fourteen of
+which do.** Same truth sets, same matcher, same scenarios. Both numbers were sitting in committed
+files and had never been put side by side, and the earlier one is still what a reader meets first:
+`releases.md` leads its v0.1 summary with it, correctly, as a dated snapshot — and its `--check`
+compares against `history.jsonl` rather than the current scorecard, so it stays green while the
+live number diverges from it.
+
+Two details were worth the care they took. **The page pools authoritative *clean* rows**, matching
+DEC-143's population, so it cannot disagree with the scorecard's own pooled row — a test asserts
+the counts appear in both. That costs two points against the release record's 80/84, and the page
+says why rather than leaving a reader to find two figures for one snapshot. And **the column reads
+"0 of 14 attribute to a model", not "authored"**, because those differ by one real row: ForgeFlow
+was a genuine live capture whose usage predated the attribution format. Writing "authored" would
+have been the same overclaim this session spent its day removing.
+
+What the gap measures is bounded and stated: not the pipeline degrading, but the size of the error
+in reading recordings-written-to-exercise-a-truth-set as a measurement of the pipeline. It is the
+closest thing this corpus has to a construct-validity statistic about itself.
+
+## The narratives that had drifted the other way
+
+`ablation-narrative.md` — described in the roadmap as the portfolio narrative's central artifact —
+still said "three scenarios carry a recording", "the generic baseline produces five spurious
+findings across four scenarios", and "no live-model run has been measured, so run-to-run stability
+is unmeasured and costs read zero". `presentation/traceability.md`, whose entire job is holding
+each slide claim to its source, carried 17/17 evidence-linked findings and an ablation row reading
+the vacuous denominator. The README's own limitations section said fourteen scenarios and one live
+run.
+
+All three now state the current record, and four claims come back **weaker** than the versions they
+replace — evidence validation is structurally required rather than shown to improve findings,
+context approval is out of the null, the baseline comparison carries its recall side, and the
+adversarial zero is authored. The closing summary now names its sources instead of restating their
+numbers, which is how it went stale while the generated tables beside it stayed correct.
+
 ## The common thread
 
 All three are the same failure at one remove: **the instrument reporting a value it had no data
@@ -129,10 +168,10 @@ precision one.
 
 ## Open next
 
-- **The rest of the audit's list**: the 80/84 → 17/13 authored-versus-live collapse wants its own
-  page in `docs/eval/`; `ablation-narrative.md` and `presentation/traceability.md` still carry
-  pre-sweep numbers; the comparison has no cost column because baseline recordings carry no usage,
-  so the one economic claim it implies is unmeasured on the baseline side.
+- **The comparison still has no cost column.** Baseline recordings carry no usage at all, so the
+  one economic claim the table implies — that the pipeline costs many times a single call for a
+  lower F1 — is measured on the pipeline side and inferred on the other. Capturing usage on the
+  next baseline run closes it and needs live spend, so it waits.
 - **`--condition` for `trace capture`** (DEC-152's named work), then the two live adversarial
   captures.
 - **`permissive` is decided and unbuilt.** DEC-013 specifies it as the harness-only threshold whose
