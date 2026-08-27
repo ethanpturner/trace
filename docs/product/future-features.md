@@ -8,7 +8,7 @@
 
 **Status:** Proposed
 
-**Last updated:** 2026-08-05
+**Last updated:** 2026-08-26
 
 ## 1. Purpose
 
@@ -328,6 +328,82 @@ This may include:
 
 This feature requires governance and access-control capabilities outside the initial MVP.
 
+## 5.6 Reusable Component Taxonomy and Applicability Predicates
+
+**Status:** Research
+
+DEC-036 keeps `component_type`, `asset_type`, `actor_type`, and `boundary_type` open, and
+`domain/vocabulary.py` normalizes spelling without relating terms. The consequence is that
+`postgres_db` and `relational_database` stay distinct permanently and both classify as
+`unclassified` in the STRIDE element table, so the DEC-063 coverage checklist has nothing to say
+about either.
+
+The unevaluated option is neither of the two DEC-036 considered. An open vocabulary may carry a
+structured relation used additively: a term is still never rejected, only related. Recording
+`postgres_db` under `managed_database` under `data_store` keeps the authored term and makes it
+reasonable-about. This does not close the vocabulary, and it spends no agent, because the relation
+would be authored data rather than a judgment made per call.
+
+Two MIT-licensed data files already carry most of the content:
+
+- Threagile's `pkg/types/technologies.yaml` — roughly sixty component types, each with `aliases`
+  and an `attributes` map of semantic predicates including `may_contain_secrets`,
+  `identity_store`, `processing_end_user_requests`, `no_authentication_required`, and
+  `high_value_target`. Its schema adds communication protocols with systematic
+  encrypted-and-unencrypted pairing, and closed enums for trust-boundary type, authentication, and
+  authorization.
+- The OWASP Threat Model Library's TM-BOM schema — the qualitative enums, and an object shape
+  whose required members are close to the ones `data-model.md` already names. It carries no
+  `component.type` field, which is the hole the Threagile file fills.
+
+Both are plain data, so both could be version-pinned and content-hashed the way `requirements/`
+and `org-controls/` already are. Neither requires a reasoner, a serialization layer, or a second
+constraint language.
+
+The `attributes` predicates bear directly on data-model open question 5 — how requirement
+applicability should be represented machine-readably — which is the last substantive open question
+in the data model and has been deferred three times. DEC-024 deferred it because
+`applicable_technologies` is populated on zero requirements and a deterministic pre-filter
+therefore has no input. A predicate map is an input.
+
+**Having an input does not make a pre-filter safe.** DEC-024's second objection is independent and
+untouched: a filter is a silent scope decision no reviewer sees, and a system that never considers
+most requirements fails invisibly because the requirement never appears at all. That objection has
+to be answered on its own terms before any filter is built, and this entry does not answer it.
+
+The risk this entry carries is DEC-011's, restated: a relation can encode a wrong belief as
+durably as a right one. DEC-036's objection returns in full the moment the relation is used to
+reject a term rather than to relate one. Additive-only is the condition under which the accepted
+record does not have to be reopened.
+
+## 5.7 Public-Domain Requirement Sources
+
+**Status:** Idea
+
+`source_frameworks` is provenance, and requirement text is written originally because ASVS 5.0 is
+CC BY-SA 4.0 and reproducing its wording would carry the share-alike term into the catalog.
+
+NIST's OSCAL content — SP 800-53 rev5, SP 800-171 and 800-172, SSDF 800-218, and CSF 2.0 — is
+CC0 and US Government public domain. It is the one major control catalog whose text may be
+reproduced verbatim with no licence consequence, which makes it a second provenance value that
+costs nothing to cite closely.
+
+Two sources are excluded on licence rather than on fit, and the exclusions should be recorded so
+they are not re-examined:
+
+- The CIS Controls are CC BY-NC-ND 4.0. No-derivatives permits no adaptation at any price and the
+  non-commercial term is a second, independent bar. The CIS Benchmarks are CC BY-NC-SA. There is
+  no relicensing route around either.
+- The Secure Controls Framework is CC BY-ND 4.0 and its terms name the prohibited use directly,
+  extending the no-derivatives term to content generated from SCF material using artificial
+  intelligence. An LLM-assisted requirements tool is the named case.
+
+OpenCRE is CC0 and maps ASVS, CWE, CAPEC, and NIST identifiers to each other with typed link
+kinds. The CC0 term covers the mappings and not the standards embedded in them: its ASVS records
+return the full requirement sentence inline, so an ingest would have to be gated to identifiers
+and link types or it re-imports the share-alike text it exists to avoid. Its ASVS edges are also
+still on 4.0.3 and would need the version hop.
+
 # 6. Evidence Integrations
 
 ## 6.1 Cloud Configuration Evidence
@@ -556,6 +632,27 @@ Provide more structured severity support using:
 
 Final severity should remain subject to reviewer judgment.
 
+## 7.8 Declared Cross-Object Constraints
+
+**Status:** Idea
+
+Every domain object validates itself. `extra="forbid"` refuses an invented field, and each
+validation node checks the relationships its phase owns. What no per-object schema can reach is a
+constraint that holds across the object graph: that no data flow references a component that was
+never extracted, that no finding cites evidence from a document outside its assessment, that no
+two components normalize to one identity, that every trust boundary has at least one flow crossing
+it.
+
+Some of these are checked today, in imperative code, at the node that happens to notice. If more
+accumulate, the shape worth borrowing is the one `workflow/transitions.py` already uses: a small
+table of predicates over the Pydantic objects — subject type, path, constraint, and the
+`ErrorClass` a violation routes on — rather than conditionals distributed across nodes.
+
+This is the one idea worth taking from SHACL, and it is worth taking without SHACL. A closed
+`ErrorClass` taxonomy is better for orchestrator routing than a generic validation report, because
+routing on a class rather than a message is already a commitment `agent-design.md` section 8
+makes. See the rejected entry in section 16 for why the formalism itself is refused.
+
 # 8. AI-Specific Capabilities
 
 ## 8.1 AI System Threat-Modeling Pack
@@ -741,6 +838,23 @@ Public benchmarks must remain:
 - Independently authored
 - Free from employer-derived content
 - Clear about expected-answer limitations
+
+## 9.7 External Threat-Model Corroboration
+
+**Status:** Idea
+
+Every truth set in the corpus is single-author, and `benchmarks/manifest.yaml` names that as the
+first limitation. #565's second annotator addresses it directly and needs a person.
+
+One partial check needs no person. The OWASP Threat Model Library publishes peer-reviewed threat
+models under MIT, including one for husky-ai — a scenario the corpus already registers with an
+independently authored truth set. Diffing that published model against the authored expectations
+would measure agreement between two independent readings of one system, which is what a second
+annotator measures.
+
+It is a weaker instrument than #565 and should not be reported as a substitute: the two documents
+were written for different purposes, so a divergence is not necessarily an error on either side,
+and one scenario is not the corpus. It is worth doing because it costs a diff.
 
 # 10. Collaboration and Governance
 
@@ -1091,6 +1205,9 @@ The following questions require investigation before becoming product commitment
 13. When is a documentation gap itself a material security risk?
 14. How can agent permissions be evaluated automatically?
 15. How should assessment quality be compared with expert manual reviews?
+16. How should an open type vocabulary carry a structured relation without becoming a closed one?
+17. Can requirement applicability be filtered without making scope a decision no reviewer sees?
+18. Which cross-object constraints are worth declaring as data rather than checking in code?
 
 # 15. Promotion Criteria
 
@@ -1212,6 +1329,97 @@ Trace agents should not directly modify:
 - Policies
 
 Initial integrations should remain read-only or require explicit human approval.
+
+## Graph Database for Domain Objects
+
+**Status:** Rejected for MVP
+
+The data is graph-shaped — the domain objects declare seventy-two edge types, most of them
+many-valued, and section 32's lineage chain is a nine-hop walk that ships. The scale is not. One
+complete assessment holds roughly nine hundred objects and four and a half thousand edges in one
+and a half megabytes. The smallest scale factor of the benchmark suite the graph-database industry
+uses to argue its own case is three orders of magnitude above that, and the published comparison
+nearest to Trace's size has the relational engine ahead on bounded fan-out from a known root,
+which is the shape of every query Trace makes. Trace issues no shortest-path and no
+path-enumeration query, which are the two shapes where the graph engine wins.
+
+The decisive objection is not performance. It is the one DEC-016 made about a framework
+checkpointer, and `services/findings/lineage.py` already states it about this exact artifact: the
+lineage walk is over identifiers the objects already carry, because DEC-006 makes the objects
+authoritative and a second persisted lineage would be a second copy that could disagree. A graph
+built alongside the store is that second copy. A graph that replaced the store instead would trade
+the second-store objection for a second-schema one, superseding DEC-020 and reopening DEC-127.
+
+The operational picture is also worse than it looks. Every embedded graph and RDF engine viable
+for a local single-user tool has a bus factor of one, and the strongest candidate was archived
+without announcement when its maintainers were acquired.
+
+If multi-hop reasoning over the context graph is ever needed beyond what the lineage walk does,
+loading the rows into an in-memory graph inside the node that needs them adds no store and no
+authority.
+
+The trigger to revisit is a traversal the pipeline cannot perform, at a scale where the in-Python
+joins measurably hurt, on a feature the roadmap has promoted. Sections 5.2 and 7.4 are the two
+candidates and both are unpromoted.
+
+## Formal Ontology Layer
+
+**Status:** Rejected for MVP
+
+The argument for pairing a probabilistic model with a formal ontology as an external guardrail
+describes a three-layer shape — typed structure, semantic validation before any state change, and
+reasoning that proceeds only after both gates pass — that Trace already implements. Agents propose
+schema-validated objects, a deterministic node stands behind each, `extra="forbid"` refuses an
+invented field, and no agent writes authoritative state. What is refused here is the narrower
+claim that the guardrail must be expressed as RDFS or OWL.
+
+OWL is the wrong tool for validation regardless of domain. It makes the open-world assumption, so
+a reasoner cannot conclude that anything is missing — it can detect only that an assertion
+contradicts an axiom. Every check the Context Validation node actually performs is a completeness
+check, and completeness is what the open-world assumption forbids.
+
+The deeper mismatch is on the distinction the project exists to protect. **OWL's unknown is
+passive and Trace's `unverified` is active.** OWL's unknown is the absence of an assertion: nobody
+said it, so the reasoner declines to conclude. A `DocumentationGap` records that a search was
+performed over a defined evidence scope and returned nothing, attributable to a run and reviewable
+by a person. Distinguishing those requires epistemic operators that OWL 2 does not have and
+mainstream reasoners do not implement.
+
+SHACL can express the completeness checks OWL cannot, and that is where it becomes dangerous
+rather than useful. Its native verdict vocabulary is violation, warning, and information — a
+constraint-importance scale, not an epistemic one — and it has no construct meaning that an
+absence is expected and benign. Placing a formalism whose default speech act is *violation*
+directly on top of the DEC-009 distinction would rely on a mapping convention to prevent the exact
+conflation the project exists to avoid.
+
+The measured case is also thin. The closest published implementation of this architecture in the
+security domain reports constraint-violation rates of zero to under two percent *before* its
+formal layer ran, because constrained structured output had already done the work; the formal
+layer could recover no more than that. Structured-output benchmarking meanwhile puts schema
+compliance near ceiling while value accuracy sits far below it, which is to say the error mass has
+moved to what an object asserts rather than to its shape. A formal validator operates on shape.
+
+There is measured evidence that the stronger form actively harms this kind of work. In the nearest
+published analog — LLM extraction of security documents into a graph, diffed against a reference —
+enforcing the ontology on the model's output raised node-level accuracy while suppressing
+discovery outright, which the authors describe as masking undocumented infrastructure. Supplying a
+weaker model with the reference ontology caused it to hallucinate ontology entities into the
+document. For a tool whose purpose is to find what documentation failed to mention, that is the
+wrong trade at any accuracy. This is measured support for DEC-036 rather than against it.
+
+Cost compounds it. The mainstream Python route to OWL reasoning is copyleft and bundles Java
+reasoners requiring a JVM, which no other dependency in the project does. Adoption would add a
+serialization step out of Pydantic, a reasoner, and a mapping of validation reports back into the
+`ErrorClass` taxonomy — three lossy translations in a codebase whose stated rule is one
+authoritative store.
+
+Section 7.8 records the one idea worth keeping: constraints expressed as declared data rather than
+as imperative code. That is available without the formalism.
+
+The trigger to revisit is a rigorous conformance benchmark using current models *and* a strong
+constrained-structured-output baseline. The evidence supporting this rejection is a small number
+of recent papers in a fast-moving and largely unreviewed literature, and it should be re-read
+rather than assumed after roughly eighteen months.
 
 # 17. Current Priority Boundary
 
