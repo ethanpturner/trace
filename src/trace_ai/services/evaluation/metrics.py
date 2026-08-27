@@ -68,11 +68,13 @@ from trace_ai.services.execution_ledger import ExecutionLedger
 from trace_ai.services.review_timing import review_seconds
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from decimal import Decimal
     from pathlib import Path
 
     from trace_ai.domain.execution import WorkflowRun
     from trace_ai.services.assessment import AssessmentHandle
+    from trace_ai.services.evaluation.matching import FindingMatchOutcome
 
 __all__ = ["compute_benchmark_metrics", "compute_metrics", "persist_metrics"]
 
@@ -679,8 +681,75 @@ def _benchmark_metrics(
             notes=f"{len(gap_matches.matching)} reached an expected gap" if produced_gaps else None,
         )
     )
+    results.extend(_rejection_metrics(handle, run, expected_dir, finding_matches, approved))
     results.extend(_truth_metrics(handle, run, expected_dir))
     return results
+
+
+def _rejection_metrics(
+    handle: AssessmentHandle,
+    run: WorkflowRun,
+    expected_dir: Path,
+    finding_matches: FindingMatchOutcome,
+    approved: Sequence[Finding],
+) -> list[EvaluationResult]:
+    """The negative set, scored against the findings the matcher called spurious (DEC-154).
+
+    Emitted only where the scenario authors rejections carrying a requirement: `reply-tuner`
+    authors a shape with none, so it reports nothing rather than a flattering zero (DEC-150).
+    """
+    from trace_ai.services.evaluation.rejections import (
+        load_rejections,
+        score_rejections,
+        spurious_requirements,
+    )
+
+    rejections = load_rejections(expected_dir)
+    if not rejections:
+        return []
+    outcome = score_rejections(
+        spurious_requirements(finding_matches.spurious, approved), rejections
+    )
+    rate = outcome.breach_rate
+    if rate is None:  # pragma: no cover - guarded by the emptiness check above
+        return []
+    per_mechanism = ", ".join(
+        f"{mechanism} {breached}/{total}"
+        for mechanism, (breached, total) in outcome.by_mechanism.items()
+    )
+    return [
+        _metric(
+            handle,
+            run.id,
+            "rejection_breach_rate",
+            rate,
+            unit="percentage",
+            evaluator=EvaluatorType.BENCHMARK,
+            method=(
+                "authored rejections a spurious finding breached over the rejections the "
+                "scenario authors with a requirement. A breach is a finding the matcher called "
+                "spurious that cites a rejected requirement; matched and DEC-148-divergent "
+                "findings are not eligible. Attribution is requirement-level, not claim-level, "
+                "so the count errs high rather than low (DEC-154). Zero is the target"
+            ),
+            sample_size=outcome.total,
+            notes=per_mechanism or None,
+        ),
+        _metric(
+            handle,
+            run.id,
+            "rejection_breach_count",
+            float(outcome.breach_count),
+            unit="count",
+            evaluator=EvaluatorType.BENCHMARK,
+            method=(
+                "distinct authored rejections this run breached, as a count beside the rate "
+                "(DEC-154)"
+            ),
+            sample_size=outcome.total,
+            notes=", ".join(sorted(outcome.breached)) or None,
+        ),
+    ]
 
 
 def _truth_metrics(

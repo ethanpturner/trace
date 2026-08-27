@@ -47,7 +47,7 @@ _TRACE_LABEL = "Trace"
 
 @dataclass(frozen=True, slots=True)
 class ToolSummary:
-    """One tool's runs collapsed to the five comparison metrics. Counts only, no content."""
+    """One tool's runs collapsed to the comparison metrics. Counts only, no content."""
 
     tool: str
     label: str
@@ -63,11 +63,20 @@ class ToolSummary:
     # injected-instruction compliance under attack: measured for Trace's adversarial runs only.
     compliance: float | None
     compliance_runs: int
+    # DEC-154: authored rejections a spurious finding breached, over the scoreable population.
+    rejections_breached: int
+    rejections_scoreable: int
 
 
 def _spurious(feed: dict[str, Any]) -> int:
     findings = (feed.get("items") or {}).get("findings", {})
     return len(findings.get("spurious") or [])
+
+
+def _rejections(feed: dict[str, Any]) -> tuple[int, int]:
+    """Breached and scoreable rejections for one run (DEC-154), zero-zero where unscoreable."""
+    entry = (feed.get("items") or {}).get("rejections") or {}
+    return len(entry.get("breached") or {}), int(entry.get("scoreable") or 0)
 
 
 def _metric(feed: dict[str, Any], name: str) -> dict[str, Any] | None:
@@ -138,6 +147,8 @@ def _summarize(tool: str, feeds: Sequence[dict[str, Any]]) -> ToolSummary:
         spurious=sum(_spurious(feed) for feed in feeds),
         compliance=compliance,
         compliance_runs=len(compliance_values),
+        rejections_breached=sum(_rejections(feed)[0] for feed in feeds),
+        rejections_scoreable=sum(_rejections(feed)[1] for feed in feeds),
     )
 
 
@@ -166,6 +177,17 @@ def _evidence_cell(summary: ToolSummary) -> str:
 
 def _spurious_cell(summary: ToolSummary) -> str:
     return f"{summary.spurious} over {summary.scenarios} scenarios [^fp]"
+
+
+def _rejection_cell(summary: ToolSummary) -> str:
+    """Breached over scoreable rejections, or a dash where the population is empty (DEC-150)."""
+    if summary.rejections_scoreable == 0:
+        return "— [^rejections]"
+    share = summary.rejections_breached / summary.rejections_scoreable
+    return (
+        f"{summary.rejections_breached} of {summary.rejections_scoreable} "
+        f"({_pct(share)}) [^rejections]"
+    )
 
 
 def _compliance_cell(summary: ToolSummary, *, labelled_per_class: bool = False) -> str:
@@ -225,12 +247,13 @@ def render_comparison(
     per_class = _class_rates(feeds)
     header = (
         "| Tool | Schema-validity | Evidence-linked claims | "
-        "False positives | Injected-instruction compliance | Run-to-run stability |"
+        "False positives | Rejections breached | Injected-instruction compliance | "
+        "Run-to-run stability |"
     )
-    divider = "| --- | --- | --- | --- | --- | --- |"
+    divider = "| --- | --- | --- | --- | --- | --- | --- |"
     rows = [
         f"| {summary.label} | {_schema_cell(summary)} | {_evidence_cell(summary)} | "
-        f"{_spurious_cell(summary)} | "
+        f"{_spurious_cell(summary)} | {_rejection_cell(summary)} | "
         f"{_compliance_cell(summary, labelled_per_class=bool(per_class))} | "
         f"{_stability_cell(summary, live)} |"
         for summary in summaries
@@ -333,6 +356,20 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     two pre-batching `claude-opus-5` captures whose funnel defect DEC-116 diagnosed and DEC-134
     fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
     is in the [scorecard](scorecard.html).
+
+[^rejections]: Authored rejections a spurious finding breached, over the rejections the scenarios
+    author with a requirement (DEC-154); lower is better and zero is the target. Every scenario
+    carries an `expected-rejections.yaml` — the claims a correct assessment does not make, each
+    with the mechanism that stops it — and until DEC-154 nothing scored them. A breach is a
+    finding the matcher already classified spurious that cites a rejected requirement, so a
+    matched finding cannot breach and neither can a DEC-148 divergence. **Attribution is
+    requirement-level, not claim-level**: a spurious finding on a rejected requirement counts
+    whether or not it makes the particular claim the rejection wrote, which can only report more
+    breaches than were committed, never fewer. `reply-tuner` authors rejections carrying no
+    requirement and is outside every denominator here (DEC-150). The pooled cell mixes workflow
+    shapes, and the two pre-batching `claude-opus-5` rows carrying DEC-116's funnel contribute
+    three of the pipeline's breaches; the stratified table is in DEC-154 and the per-scenario
+    detail is in the [scorecard](scorecard.html).
 
 [^injection]: The injected-instruction compliance rate is computed only where there is a defense
     to test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt

@@ -10260,3 +10260,91 @@ Alternatives Considered:
   against a live arm pooled the scorecard's way, and two pages would disagree about the same
   snapshot. Matching DEC-143's population costs two points on the earlier arm and buys the
   guarantee that nothing on this page contradicts the scorecard).
+
+## DEC-154: The negative set is scored, so abstention is measured rather than asserted
+
+Date: 2026-08-27
+
+Status: Accepted
+
+Amends: DEC-147 (which named the negative set as where a wrongly produced claim is graded)
+
+Decision:
+
+**Every scenario's `expected-rejections.yaml` is scored, for the pipeline and the baselines
+alike.** A produced finding the matcher classified `spurious` that cites a requirement a rejection
+names is a **breach** of that rejection. Two metrics follow: `rejection_breach_count`, the distinct
+rejections breached, and `rejection_breach_rate`, breaches over the rejections the scenario authors
+with a requirement. Zero is the target. Both are emitted only where that population is non-empty
+(DEC-150).
+
+**The rate is reported per rejection mechanism as well as in aggregate**, on DEC-075's reasoning
+that an aggregate over unlike classes is not a claim anyone can use. The corpus authors six:
+`no_evidence` (22 entries), `common_false_positives` (14), `documentation_gap` (5),
+`non_applicable_conditions` (3), `organizational_control` (2) and `duplicate_consolidation` (1).
+
+**Attribution is requirement-level, not claim-level, and the page says so.** A rejection names a
+claim in prose; the match is on its `requirement_id`. A spurious finding on that requirement counts
+as a breach whether or not it makes the particular claim the rejection wrote. The error is
+one-directional — it can report more breaches than were committed, never fewer — so the number errs
+against the tool it measures, which is the safe direction for a metric this project publishes about
+itself. Widening it to compare claim text would make the negative set the one place in the harness
+where a similarity threshold decides a score, and DEC-056's matcher never reads prose.
+
+**A scenario whose rejections carry no requirement is not scored.** Fourteen of the fifteen author
+`key`, `claim`, `mechanism`, `requirement_id`, `entry` and `why`. `reply-tuner` authors `key`,
+`conclusion` and `suppressed_by`, because nothing ever loaded these files and no schema was ever
+enforced on them. Its three entries are unscoreable, emit nothing, and render as a dash.
+Normalizing that file is a truth-set edit and needs its own argument from its own inputs (DEC-149);
+it is not smuggled inside a metric change.
+
+Why:
+
+- **DEC-147 already decided this and the grading was never built.** It says: "A gap that should not
+  have been produced is the negative set's business. The corpus already has the mechanism:
+  `expected-rejections.yaml` records 'the claims a correct assessment does not make, each with the
+  mechanism that stops it'... the rejection entry is where that wrongness is authored and graded."
+  Fifty entries across fifteen scenarios were read by exactly one thing — a ForgeFlow-only
+  regression test asserting mechanisms against constructed objects. No run was ever scored against
+  them and no baseline saw them at all.
+
+- **The existing spurious count conflates two different failures.** A spurious finding is either a
+  weakness invented from silence, which is the DEC-009 failure, or a real weakness mapped to a
+  requirement the expectation does not carry, which DEC-148 already classifies as divergence rather
+  than falsity. Everything else lands in one undifferentiated number. Splitting it on the authored
+  negative set is the only separation the truth sets can support, because it is the only one a
+  person wrote down in advance.
+
+- **It is the axis the instrument shows to be stable.** The DEC-077 protocol measured `missing-docs`
+  producing zero spurious findings in five of five runs while `reply-tuner`'s single expected
+  finding appeared in three of five. Not-inventing reproduces; recall does not. A metric denominated
+  on the negative set therefore carries more signal per run than the recall metrics beside it, at no
+  additional spend.
+
+- **The baselines are scored on it from committed recordings.** A baseline's spurious entries
+  already carry `requirement_id`, so the control arms gain the metric with no new capture and no
+  live spend.
+
+**What it measured, on the corpus as committed.** Stratified by workflow shape, because DEC-143
+makes rows from different shapes different populations:
+
+| Arm | Current shape (0.2), 13 scenarios | Pre-batching (0.1), 2 scenarios | Pooled |
+| --- | --- | --- | --- |
+| Generic prompt | 8/32 (25%) | 2/15 (13%) | 10/47 (21%) |
+| Structured single-pass | 3/32 (9%) | 0/15 (0%) | 3/47 (6%) |
+| Whole assessment, one call | 2/32 (6%) | 0/15 (0%) | 2/47 (4%) |
+| Trace | **2/32 (6%)** | 3/15 (20%) | 5/47 (11%) |
+
+On the current shape the pipeline breaches a quarter of what the generic prompt breaches and ties
+the strongest baseline. On `common_false_positives` — the mechanism where the catalog names the
+trap explicitly — it breaches **0 of 14** against the generic prompt's 5. The pooled row is worse
+than both structured baselines, and the stratification says why: the two workflow-0.1 rows are the
+pre-batching captures carrying DEC-116's diagnosed evidence-validation funnel, and they contribute
+three of the pipeline's five breaches. The pooled number is reported and is not the headline, for
+the same reason DEC-143 gave.
+
+The result is not uniformly favourable and is published as measured. Trace's remaining breaches
+concentrate in `no_evidence` (4 of 22, against 1 for each structured baseline), which is silence
+resolving to an assertion — the DEC-009 failure in its purest form. Two of those four are
+`crypto-wallet`, a scenario whose truth set expects no findings at all. That is a real weakness, it
+is the metric working, and it is what the metric was built to surface.

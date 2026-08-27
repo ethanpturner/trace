@@ -228,3 +228,59 @@ def test_a_single_measurement_artifact_still_renders_the_stability_cell() -> Non
     )
     assert "FND-UW-01 2/5" in page
     assert "3 further attempts failed" in page
+
+
+def _with_rejections(
+    feed: dict[str, Any], *, breached: dict[str, list[str]], scoreable: int
+) -> dict[str, Any]:
+    feed["items"]["rejections"] = {
+        "breached": breached,
+        "scoreable": scoreable,
+        "by_mechanism": {},
+    }
+    return feed
+
+
+def test_the_rejection_cell_reports_breached_over_scoreable() -> None:
+    """DEC-154's column: a share of the authored negative set, not a bare count."""
+    feeds = [
+        _with_rejections(
+            _baseline_feed("alpha", "baseline-generic"),
+            breached={"REJ-01": ["a title"]},
+            scoreable=4,
+        )
+    ]
+    summary = summaries_from_feeds(feeds)[0]
+    assert (summary.rejections_breached, summary.rejections_scoreable) == (1, 4)
+    assert "1 of 4 (25%)" in render_comparison(feeds, generated_at=STAMP, pins=PINS)
+
+
+def test_a_tool_with_no_scoreable_rejections_renders_a_dash() -> None:
+    """An empty denominator is a dash, never a flattering zero (DEC-150)."""
+    feeds = [
+        _with_rejections(_baseline_feed("alpha", "baseline-generic"), breached={}, scoreable=0)
+    ]
+    rendered = render_comparison(feeds, generated_at=STAMP, pins=PINS)
+    assert "— [^rejections]" in rendered
+    assert "0 of 0" not in rendered
+
+
+def test_rejections_aggregate_across_a_tools_runs() -> None:
+    feeds = [
+        _with_rejections(
+            _baseline_feed("alpha", "baseline-generic"), breached={"REJ-01": ["t"]}, scoreable=3
+        ),
+        _with_rejections(_baseline_feed("beta", "baseline-generic"), breached={}, scoreable=2),
+    ]
+    summary = summaries_from_feeds(feeds)[0]
+    assert (summary.rejections_breached, summary.rejections_scoreable) == (1, 5)
+
+
+def test_the_rejection_footnote_states_the_attribution_basis() -> None:
+    """The requirement-level caveat is load-bearing and must travel with the number."""
+    feeds = [
+        _with_rejections(_baseline_feed("alpha", "baseline-generic"), breached={}, scoreable=2)
+    ]
+    rendered = render_comparison(feeds, generated_at=STAMP, pins=PINS)
+    assert "requirement-level, not claim-level" in rendered
+    assert "never fewer" in rendered
