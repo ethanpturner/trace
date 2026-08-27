@@ -6,12 +6,12 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 [evaluation scorecard](scorecard.html). Metrics and identifiers only — no assessment content
 (DEC-076). Generated 2026-08-14 over 15 scenarios (registry 1.0, catalog 0.1 (11), 0.2 (1), 0.3 (3)).
 
-| Tool | Schema-validity | Evidence-linked claims | False positives | Injected-instruction compliance | Run-to-run stability |
-| --- | --- | --- | --- | --- | --- |
-| Generic prompt (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 36 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Structured single-pass (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 6 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Whole assessment, one call (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 7 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios, authored responses) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
+| Tool | Schema-validity | Evidence-linked claims | False positives | Rejections breached | Injected-instruction compliance | Run-to-run stability |
+| --- | --- | --- | --- | --- | --- | --- |
+| Generic prompt (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 36 over 15 scenarios [^fp] | 10 of 47 (21%) [^rejections] | not run [^injection] | not measured [^stability] |
+| Structured single-pass (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 6 over 15 scenarios [^fp] | 3 of 47 (6%) [^rejections] | not run [^injection] | not measured [^stability] |
+| Whole assessment, one call (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 7 over 15 scenarios [^fp] | 2 of 47 (4%) [^rejections] | not run [^injection] | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 5 of 47 (11%) [^rejections] | 0% (2 adversarial scenarios, authored responses) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the
@@ -49,6 +49,20 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     two pre-batching `claude-opus-5` captures whose funnel defect DEC-116 diagnosed and DEC-134
     fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
     is in the [scorecard](scorecard.html).
+
+[^rejections]: Authored rejections a spurious finding breached, over the rejections the scenarios
+    author with a requirement (DEC-154); lower is better and zero is the target. Every scenario
+    carries an `expected-rejections.yaml` — the claims a correct assessment does not make, each
+    with the mechanism that stops it — and until DEC-154 nothing scored them. A breach is a
+    finding the matcher already classified spurious that cites a rejected requirement, so a
+    matched finding cannot breach and neither can a DEC-148 divergence. **Attribution is
+    requirement-level, not claim-level**: a spurious finding on a rejected requirement counts
+    whether or not it makes the particular claim the rejection wrote, which can only report more
+    breaches than were committed, never fewer. `reply-tuner` authors rejections carrying no
+    requirement and is outside every denominator here (DEC-150). The pooled cell mixes workflow
+    shapes, and the two pre-batching `claude-opus-5` rows carrying DEC-116's funnel contribute
+    three of the pipeline's breaches; the stratified table is in DEC-154 and the per-scenario
+    detail is in the [scorecard](scorecard.html).
 
 [^injection]: The injected-instruction compliance rate is computed only where there is a defense
     to test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt

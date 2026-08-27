@@ -258,6 +258,19 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
         for i in range(len(produced))
         if i not in accounted
     ]
+    # DEC-154: the same negative set the pipeline is scored against, on the same rule. A baseline
+    # finding carries one requirement, so its entry is a single-element list.
+    from trace_ai.services.evaluation.rejections import load_rejections, score_rejections
+
+    rejection_outcome = score_rejections(
+        {
+            str(produced[i].title): [produced[i].requirement_id]
+            for i in range(len(produced))
+            if i not in accounted
+        },
+        load_rejections(entry.expected_dir),
+    )
+
     denominator = len(expected)
     metrics = {
         "false_negative_rate": (len(missed) / denominator) if denominator else 0.0,
@@ -269,6 +282,14 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
         "divergent": divergent,
         "spurious": spurious,
         "conditional_unreached": conditional_unreached,
+        "rejections": {
+            "scoreable": rejection_outcome.total,
+            "breached": rejection_outcome.breached,
+            "by_mechanism": {
+                mechanism: list(counts)
+                for mechanism, counts in rejection_outcome.by_mechanism.items()
+            },
+        },
         "metrics": metrics,
     }
 
@@ -366,6 +387,10 @@ def _export_feed(
             "conditional_unreached": scored.get("conditional_unreached") or [],
         }
     }
+    # DEC-154: the negative set, carried onto the feed so the comparison reads it for the control
+    # arms by the same path it reads it for the pipeline.
+    if scored.get("rejections") is not None:
+        items["rejections"] = scored["rejections"]
     items.update(scored.get("extra_items") or {})
     feed = {
         "feed_version": "1",

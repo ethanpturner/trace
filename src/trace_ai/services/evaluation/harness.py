@@ -764,6 +764,19 @@ def _items_for(
         {str(entry_["requirement_id"]) for entry_ in expected_gaps},
         requirement_by_mapping=requirement_by_mapping,
     )
+    from trace_ai.services.evaluation.rejections import (
+        load_rejections,
+        score_rejections,
+        spurious_requirements,
+    )
+
+    # DEC-154: the negative set, scored against the findings the matcher already called spurious.
+    # A matched or DEC-148-divergent finding is not eligible and never reaches the scorer.
+    rejections = load_rejections(expected_dir)
+    rejection_outcome = score_rejections(
+        spurious_requirements(finding_matches.spurious, approved_findings(handle)),
+        rejections,
+    )
     return {
         "findings": {
             "matched": finding_matches.matched,
@@ -776,6 +789,14 @@ def _items_for(
         "documentation_gaps": {
             "matching": gap_matches.matching,
             "non_matching": gap_matches.non_matching,
+        },
+        "rejections": {
+            "scoreable": rejection_outcome.total,
+            "breached": rejection_outcome.breached,
+            "by_mechanism": {
+                mechanism: list(counts)
+                for mechanism, counts in rejection_outcome.by_mechanism.items()
+            },
         },
     }
 

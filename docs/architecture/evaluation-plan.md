@@ -454,6 +454,40 @@ Goal:
 None. This is an observation, not a target — a gap volume is only interpretable beside the
 document set that produced it, and a target would be a quota, which section 20 rejects.
 
+## Rejection Breach Rate
+
+Definition:
+
+Authored rejections a spurious finding breached, over the rejections the scenario authors with a
+requirement. A **breach** is a produced finding the matcher classified `spurious` that cites a
+requirement an `expected-rejections.yaml` entry names. A matched finding cannot breach, and neither
+can one DEC-148 withheld as divergent, so what remains is a claim the truth set did not ask for
+standing on ground a person wrote down in advance as ground no claim belongs on.
+
+Reported per rejection mechanism as well as in aggregate, on DEC-075's reasoning that an aggregate
+over unlike classes is not a claim anyone can use. Emitted only where a scenario authors scoreable
+rejections (DEC-150), which is fourteen of the fifteen: `reply-tuner` authors `conclusion` and
+`suppressed_by` with no requirement, and reports nothing rather than a zero.
+
+Attribution is requirement-level rather than claim-level, so a spurious finding on a rejected
+requirement counts whether or not it makes the particular claim the rejection wrote. The error is
+one-directional — more breaches than were committed, never fewer — so the metric errs against the
+tool it measures (DEC-154).
+
+Goal:
+
+Lower. Zero is the target.
+
+## Rejection Breach Count
+
+Definition:
+
+Distinct authored rejections the run breached, reported as a count beside the rate.
+
+Goal:
+
+Lower.
+
 ## Clarifying Question Usefulness
 
 Definition:
