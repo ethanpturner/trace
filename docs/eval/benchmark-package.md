@@ -32,7 +32,7 @@ evaluating the corpus should read them rather than the scores alone:
 | [`ablation.md`](ablation.md) | Each component removed in turn, with the ablated runs marked non-authoritative. |
 | [`stability-633.md`](stability-633.md) | Run-to-run variance: two scenarios, five live runs each, on the model the corpus uses. |
 | [`prompt-comparison-331.md`](prompt-comparison-331.md) | The evidence-validation prompt pair, pre- and post-batching. |
-| [`model-comparison-332.md`](model-comparison-332.md) | Three model profiles, cost beside quality, with its confound stated. |
+| [`model-comparison.md`](model-comparison.md) | Three model profiles, cost beside quality, with its confound stated. |
 
 These are deliberately **not** in the manifest, and the boundary is the point. The manifest
 establishes which corpus you hold, so re-rendering a score must not move the corpus digest. The
@@ -187,7 +187,7 @@ which is why the scorecard renders strata rather than one pooled figure (DEC-143
 model attribution, so DEC-136 renders it unattributed rather than inventing a name. The manifest
 shows this as an empty `models` list.
 
-**Cross-model comparison is confounded.** `docs/eval/model-comparison-332.md` records the measured
+**Cross-model comparison is confounded.** `docs/eval/model-comparison.md` records the measured
 confound: replaying one model's recorded checkpoint decisions against a different model defaults a
 different number of subjects, so a foreign model's spurious findings partly measure the default
 reviewer rather than the model.
