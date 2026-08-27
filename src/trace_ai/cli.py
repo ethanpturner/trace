@@ -79,6 +79,7 @@ from trace_ai.services.context.review_file import (
 )
 from trace_ai.services.driver import resume_assessment, run_assessment
 from trace_ai.services.evaluation.capture import CaptureRefusedError
+from trace_ai.services.evaluation.registry import CLEAN_CONDITION
 from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES, record_rubric
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
@@ -794,6 +795,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     capture.add_argument(
+        "--condition",
+        default=CLEAN_CONDITION,
+        help=(
+            "the condition whose documents the capture runs against (default: clean). A named "
+            "condition stages into its own directory and reads the scenario's "
+            "conditions/<name>/input overlay, so an adversarial capture cannot resume a clean "
+            "one's recordings (DEC-075, DEC-152)"
+        ),
+    )
+    capture.add_argument(
         "--from-recorded",
         action="store_true",
         dest="from_recorded",
@@ -1314,6 +1325,21 @@ def _capture(args: argparse.Namespace) -> int:
     from trace_ai.services.evaluation.registry import scenario as registered_scenario
 
     target = registered_scenario(args.scenario)
+    condition = getattr(args, "condition", CLEAN_CONDITION)
+    # A condition the scenario does not declare is refused by name rather than staging an empty
+    # overlay: `input_documents` falls back to the clean set for an unknown name, so an
+    # unvalidated typo would spend real money capturing the clean condition under an
+    # adversarial label (DEC-152, DEC-075).
+    if condition != CLEAN_CONDITION and condition not in target.conditions:
+        raise CommandInputError(
+            f"scenario {target.slug!r} does not declare condition {condition!r}; "
+            f"declared: {', '.join(target.conditions) or 'none'}"
+        )
+    if condition != CLEAN_CONDITION and args.stage.startswith("baseline-"):
+        raise CommandInputError(
+            "a baseline is a single call over the clean documents (DEC-074); "
+            "--condition applies to the pipeline stages only"
+        )
     rehearsal_model = None
     if args.rehearse:
         # The rehearsal's whole model: the deterministic substitute serving the supplied
@@ -1350,6 +1376,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            condition=condition,
             on_phase=_print_phase_progress,
         )
     elif args.stage == "reason":
@@ -1359,6 +1386,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            condition=condition,
             on_phase=_print_phase_progress,
         )
     elif args.stage == "report":
@@ -1367,6 +1395,7 @@ def _capture(args: argparse.Namespace) -> int:
             profile_name=args.model_profile,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            condition=condition,
             on_phase=_print_phase_progress,
         )
     else:
