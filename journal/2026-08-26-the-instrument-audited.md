@@ -1,15 +1,15 @@
-# The instrument audited: three ways the evaluation was flattering itself
+# The instrument audited: four ways the evaluation was flattering itself
 
 A session that started from a strategic question — is this project differentiated enough to matter,
 and could an enterprise security team use it — and spent most of its value on what the question
 turned up on the way. The strategy answer is recorded elsewhere; this entry is the repository work,
-which was all one shape: **the evaluation was reporting things it had not measured, in three
+which was all one shape: **the evaluation was reporting things it had not measured, in four
 different ways, and every one of them read in the project's favour.**
 
 ## What prompted it
 
 A landscape and red-team pass over the project, checked against the corpus rather than taken on
-trust. Three of the checks came back with defects rather than opinions, and they had a common
+trust. Four of the checks came back with defects rather than opinions, and they had a common
 form. Each was a number on a published page that a reader would take for a measurement and that
 was not one. None was a lie; each was a disclosure that existed somewhere other than where the
 claim was made.
