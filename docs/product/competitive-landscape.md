@@ -125,9 +125,10 @@ injection and should only review trusted changes.
 Trace's fence is designed to hold, and its compliance rate is reported per payload class in
 [comparison.md](../eval/comparison.md). The zero currently rests on authored recordings: no model
 has been run against a poisoned document in either scored condition, because `trace capture` takes
-a scenario and a stage and has no condition parameter. Capturing the adversarial condition against
-a live model is open work, and until it lands the figure states what a correct run was expected to
-do rather than what one did.
+a scenario and a stage and has no condition parameter. DEC-152 records that distinction and makes
+the page say which kind of zero it is showing. Capturing the adversarial condition against a live
+model is open work, and until it lands the figure states what a correct run was expected to do
+rather than what one did.
 
 ### Local operation
 
