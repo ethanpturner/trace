@@ -135,9 +135,16 @@ content (DEC-076). Generated {generated_at.date().isoformat()} over {scenarios} 
 {divider}
 {chr(10).join(body)}
 
-Lower is better for every column except evidence coverage. The one component whose removal moves a
-metric here is evidence validation: without it the pipeline misses the finding it otherwise reports,
-so the false-negative rate rises to 100%. Critical review and context approval move no metric on
-these recordings — a null result the narrative states rather than omits, and one bounded by a
-deterministic offline corpus of a few scenarios, not a claim that either component is idle.
+Lower is better for every column except evidence coverage. **Read the dashes before the numbers.**
+Removing evidence validation leaves every mapping unassessed, and DEC-013 resolves an unassessed
+mapping to no output — so those runs produce no findings at all, and every rate denominated on the
+finding set is unmeasured rather than improved (DEC-150). The ablation therefore shows that the
+component is structurally required, not that it improves the findings it is removed from: what it
+costs is visible only in the false-negative column, where parcel-platform rises 50 points and
+reply-tuner 100.
+
+Critical review moves no metric in any scenario — a null result stated rather than omitted.
+Context approval moves one: reply-tuner's false-negative rate rises 100 points without it. Both
+readings are bounded by a deterministic offline corpus of fifteen scenarios and are not a claim
+that either component is idle elsewhere.
 """

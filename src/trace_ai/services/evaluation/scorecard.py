@@ -265,11 +265,17 @@ def _adversarial_section(rows: Sequence[ScorecardRow]) -> str:
     for row in carrying:
         marker = "" if row.authoritative else " *"
         detected = {True: "yes", False: "no", None: "—"}[row.attack_detected]
+        # The provenance of the responses this rate was computed from, read from the same
+        # DEC-136 attribution the main table uses rather than from prose. A zero produced by
+        # replaying responses a person wrote is not the same result as a zero a model under
+        # attack produced, and the two must not render identically (DEC-152).
+        provenance = html.escape(row.model) if row.model else "authored"
         first = True
         for name, rate in row.compliance_by_class:
             scenario_cells = (
                 f"<td rowspan={len(row.compliance_by_class)}>{html.escape(row.scenario)}</td>"
                 f"<td rowspan={len(row.compliance_by_class)}>{html.escape(row.condition)}{marker}</td>"
+                f"<td rowspan={len(row.compliance_by_class)}>{provenance}</td>"
                 f"<td rowspan={len(row.compliance_by_class)}>{detected}</td>"
                 if first
                 else ""
@@ -286,10 +292,16 @@ The rate is meaningful per class and meaningless as a universal claim; the aggre
 above never appears without this breakdown. One class, checkpoint bypass, is structural: a
 checkpoint advances only on a recorded reviewer decision (DEC-005), so its zero is shown with
 its basis rather than measured each run.</p>
+<p class="note"><strong>Read the Responses column first.</strong> It names the model whose
+responses the rate was computed from, or <em>authored</em> where the recording was written
+against the deterministic substitute rather than captured from a model under attack (DEC-152).
+An authored zero records what a correct run was expected to do; it is not a measurement of what a
+model did, and the two are not the same evidence. `trace capture` cannot yet run a condition, which
+is why these recordings are authored — the gap is in the capture path, not in the defense.</p>
 <div class="scroll">
 <table>
 <thead><tr>
-<th>Scenario</th><th>Condition</th><th>Attack detected</th>
+<th>Scenario</th><th>Condition</th><th>Responses</th><th>Attack detected</th>
 <th>Payload class</th><th>Compliance</th>
 </tr></thead>
 <tbody>

@@ -66,10 +66,21 @@ jobs:
       - name: The committed ablation table matches the recorded runs
         run: uv run python scripts/build_ablation.py --check
 
+      # Reuses the same sweep: the live arm is the current corpus and the other arm is the
+      # committed history file, so nothing replays twice (DEC-153).
+      - name: The committed authored-versus-live page matches the recorded runs
+        run: uv run python scripts/build_authored_versus_live.py --check --from-feeds "${RUNNER_TEMP}/feeds.json"
+
       # The DEC-024 cost evidence (#532): its own replay, because it rebuilds mapping packages
       # from the persisted assessments rather than reading the metric feeds.
       - name: The committed mapping-variants table matches the recorded runs
         run: uv run python scripts/measure_mapping_variants.py --check
+
+      # Citation fidelity: no sweep either. It reads the committed baseline recordings and the
+      # scenario inputs and compares strings, so a promoted capture that changes either moves the
+      # page without anything replaying.
+      - name: The committed citation-fidelity page matches the recordings
+        run: uv run python scripts/build_citation_fidelity.py --check
 
       # The benchmark package (DEC-146, #574): no sweep, just a walk over the corpus and its
       # digests. A promoted capture that does not regenerate the manifest leaves the published
@@ -89,5 +100,7 @@ jobs:
             docs/eval/scorecard.html
             docs/eval/comparison.md
             docs/eval/ablation.md
+            docs/eval/citation-fidelity.md
+            docs/eval/authored-versus-live.md
           if-no-files-found: error
           retention-days: 30

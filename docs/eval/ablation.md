@@ -9,69 +9,76 @@ content (DEC-076). Generated 2026-08-14 over 15 scenarios (registry 1.0, catalog
 
 | Scenario | Run | False-negative rate | Evidence coverage | False-positive rate | Duplicate rate |
 | --- | --- | --- | --- | --- | --- |
-| contradictory-docs | authoritative | 100% | 100% | 100% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% (-100) | 0% |
-|  | no critical review * | 100% | 100% | 100% | 0% |
-|  | no context approval * | 100% | 100% | 0% (-100) | 0% |
-| crypto-wallet | authoritative | 0% | 100% | 67% | 0% |
-|  | no evidence validation * | 0% | 100% | 0% (-67) | 0% |
-|  | no critical review * | 0% | 100% | 67% | 0% |
-|  | no context approval * | 0% | 100% | 0% (-67) | 0% |
+| contradictory-docs | authoritative | 100% | — | 100% | 0% |
+|  | no evidence validation * | 100% | — | — | — |
+|  | no critical review * | 100% | — | 100% | 0% |
+|  | no context approval * | 100% | — | — | — |
+| crypto-wallet | authoritative | — | 100% | 67% | 0% |
+|  | no evidence validation * | — | — | — | — |
+|  | no critical review * | — | 100% | 67% | 0% |
+|  | no context approval * | — | — | — | — |
 | forgeflow | authoritative | 100% | 100% | 20% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% (-20) | 0% |
+|  | no evidence validation * | 100% | — | — | — |
 |  | no critical review * | 100% | 100% | 20% | 0% |
 |  | no context approval * | 100% | 100% | 20% | 0% |
 | husky-ai | authoritative | 100% | 100% | 50% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% (-50) | 0% |
+|  | no evidence validation * | 100% | — | — | — |
 |  | no critical review * | 100% | 100% | 50% | 0% |
-|  | no context approval * | 100% | 100% | 0% (-50) | 0% |
+|  | no context approval * | 100% | — | — | — |
 | invoice-agent | authoritative | 100% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% | 0% |
+|  | no evidence validation * | 100% | — | — | — |
 |  | no critical review * | 100% | 100% | 0% | 0% |
-|  | no context approval * | 100% | 100% | 0% | 0% |
-| managed-db-service | authoritative | 0% | 100% | 100% | 0% |
-|  | no evidence validation * | 0% | 100% | 0% (-100) | 0% |
-|  | no critical review * | 0% | 100% | 100% | 0% |
-|  | no context approval * | 0% | 100% | 0% (-100) | 0% |
-| missing-docs | authoritative | 0% | 100% | 0% | 0% |
-|  | no evidence validation * | 0% | 100% | 0% | 0% |
-|  | no critical review * | 0% | 100% | 0% | 0% |
-|  | no context approval * | 0% | 100% | 0% | 0% |
-| nightly-reconciler | authoritative | 0% | 100% | 100% | 0% |
-|  | no evidence validation * | 0% | 100% | 0% (-100) | 0% |
-|  | no critical review * | 0% | 100% | 100% | 0% |
-|  | no context approval * | 0% | 100% | 100% | 0% |
-| oidc-portal | authoritative | 0% | 100% | 0% | 0% |
-|  | no evidence validation * | 0% | 100% | 0% | 0% |
-|  | no critical review * | 0% | 100% | 0% | 0% |
-|  | no context approval * | 0% | 100% | 0% | 0% |
-| order-notifier | authoritative | 100% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% | 0% |
-|  | no critical review * | 100% | 100% | 0% | 0% |
-|  | no context approval * | 100% | 100% | 0% | 0% |
+|  | no context approval * | 100% | — | — | — |
+| managed-db-service | authoritative | — | — | 100% | 0% |
+|  | no evidence validation * | — | — | — | — |
+|  | no critical review * | — | — | 100% | 0% |
+|  | no context approval * | — | — | — | — |
+| missing-docs | authoritative | — | — | — | — |
+|  | no evidence validation * | — | — | — | — |
+|  | no critical review * | — | — | — | — |
+|  | no context approval * | — | — | — | — |
+| nightly-reconciler | authoritative | — | — | 100% | 0% |
+|  | no evidence validation * | — | — | — | — |
+|  | no critical review * | — | — | 100% | 0% |
+|  | no context approval * | — | — | 100% | 0% |
+| oidc-portal | authoritative | — | — | — | — |
+|  | no evidence validation * | — | — | — | — |
+|  | no critical review * | — | — | — | — |
+|  | no context approval * | — | — | — | — |
+| order-notifier | authoritative | 100% | — | — | — |
+|  | no evidence validation * | 100% | — | — | — |
+|  | no critical review * | 100% | — | — | — |
+|  | no context approval * | 100% | — | — | — |
 | parcel-platform | authoritative | 50% | 100% | 67% | 0% |
-|  | no evidence validation * | 100% (+50) | 100% | 0% (-67) | 0% |
+|  | no evidence validation * | 100% (+50) | — | — | — |
 |  | no critical review * | 50% | 100% | 67% | 0% |
 |  | no context approval * | 50% | 100% | 67% | 0% |
-| rag-support-bot | authoritative | 100% | 100% | 100% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% (-100) | 0% |
-|  | no critical review * | 100% | 100% | 100% | 0% |
-|  | no context approval * | 100% | 100% | 100% | 0% |
+| rag-support-bot | authoritative | 100% | — | 100% | 0% |
+|  | no evidence validation * | 100% | — | — | — |
+|  | no critical review * | 100% | — | 100% | 0% |
+|  | no context approval * | 100% | — | 100% | 0% |
 | reply-tuner | authoritative | 0% | 100% | 50% | 0% |
-|  | no evidence validation * | 100% (+100) | 100% | 0% (-50) | 0% |
+|  | no evidence validation * | 100% (+100) | — | — | — |
 |  | no critical review * | 0% | 100% | 50% | 0% |
-|  | no context approval * | 100% (+100) | 100% | 0% (-50) | 0% |
+|  | no context approval * | 100% (+100) | — | — | — |
 | translation-gateway | authoritative | 100% | 100% | 50% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% (-50) | 0% |
+|  | no evidence validation * | 100% | — | — | — |
 |  | no critical review * | 100% | 100% | 50% | 0% |
-|  | no context approval * | 100% | 100% | 0% (-50) | 0% |
-| unsigned-webhooks | authoritative | 100% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% | 0% |
-|  | no critical review * | 100% | 100% | 0% | 0% |
-|  | no context approval * | 100% | 100% | 0% | 0% |
+|  | no context approval * | 100% | — | — | — |
+| unsigned-webhooks | authoritative | 100% | — | — | — |
+|  | no evidence validation * | 100% | — | — | — |
+|  | no critical review * | 100% | — | — | — |
+|  | no context approval * | 100% | — | — | — |
 
-Lower is better for every column except evidence coverage. The one component whose removal moves a
-metric here is evidence validation: without it the pipeline misses the finding it otherwise reports,
-so the false-negative rate rises to 100%. Critical review and context approval move no metric on
-these recordings — a null result the narrative states rather than omits, and one bounded by a
-deterministic offline corpus of a few scenarios, not a claim that either component is idle.
+Lower is better for every column except evidence coverage. **Read the dashes before the numbers.**
+Removing evidence validation leaves every mapping unassessed, and DEC-013 resolves an unassessed
+mapping to no output — so those runs produce no findings at all, and every rate denominated on the
+finding set is unmeasured rather than improved (DEC-150). The ablation therefore shows that the
+component is structurally required, not that it improves the findings it is removed from: what it
+costs is visible only in the false-negative column, where parcel-platform rises 50 points and
+reply-tuner 100.
+
+Critical review moves no metric in any scenario — a null result stated rather than omitted.
+Context approval moves one: reply-tuner's false-negative rate rises 100 points without it. Both
+readings are bounded by a deterministic offline corpus of fifteen scenarios and are not a claim
+that either component is idle elsewhere.

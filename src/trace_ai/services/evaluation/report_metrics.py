@@ -150,11 +150,7 @@ def compute_report_metrics(
                     handle,
                     run.id,
                     "unsupported_claim_rate",
-                    (
-                        sections_outcome.unsupported_statement_count / prose_sentences
-                        if prose_sentences
-                        else 0.0
-                    ),
+                    sections_outcome.unsupported_statement_count / prose_sentences,
                     unit="percentage",
                     method=(
                         "unsupported statements over the sentences of the agent-authored "
@@ -162,10 +158,9 @@ def compute_report_metrics(
                         "numerator alone"
                     ),
                     sample_size=prose_sentences,
-                    notes=None if prose_sentences else "no prose supplied",
                 )
             ]
-            if prose_passages
+            if prose_sentences
             else []
         ),
         _metric(
@@ -179,15 +174,20 @@ def compute_report_metrics(
                 "Stage 4 target is zero"
             ),
         ),
-        _metric(
-            handle,
-            run.id,
-            "report_finding_coverage",
-            coverage,
-            unit="percentage",
-            method="finding entries rendered over findings approved",
-            sample_size=approved_count,
-            notes=("the report correctly contained no findings" if approved_count == 0 else None),
+        *(
+            [
+                _metric(
+                    handle,
+                    run.id,
+                    "report_finding_coverage",
+                    coverage,
+                    unit="percentage",
+                    method="finding entries rendered over findings approved",
+                    sample_size=approved_count,
+                )
+            ]
+            if approved_count
+            else []
         ),
         _metric(
             handle,

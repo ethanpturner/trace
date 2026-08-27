@@ -8,10 +8,10 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 
 | Tool | Schema-validity | Evidence-linked claims | False positives | Injected-instruction compliance | Run-to-run stability |
 | --- | --- | --- | --- | --- | --- |
-| Generic prompt (baseline) | 100% (15/15 runs) | none [^evidence] | 36 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Structured single-pass (baseline) | 100% (15/15 runs) | none [^evidence] | 6 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Whole assessment, one call (baseline) | 100% (15/15 runs) | none [^evidence] | 7 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
+| Generic prompt (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 36 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Structured single-pass (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 6 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Whole assessment, one call (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 7 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios, authored responses) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the
@@ -28,10 +28,15 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     validation never enters state (DEC-006) — so there is no rate to sample. The baselines' output
     can fail to validate, and that failure is counted, not excused.
 
-[^evidence]: A baseline links no claim to evidence because its output schema (`BaselineFindings`)
-    carries a title, requirement, component, and rationale and no evidence reference; it cannot
-    cite a document even in principle. Trace's figure is approved findings whose every cited
-    `EvidenceReference` resolves to a stored, hashed excerpt (`finding_evidence_coverage`).
+[^evidence]: **The baselines do cite passages.** `BaselineFinding.evidence_quote` is required and
+    non-empty, so an earlier wording here — that a baseline "cannot cite a document even in
+    principle" — was wrong about this repository's own schema. The difference is narrower and is
+    measured rather than asserted: a baseline's citation is a string with no referent, so it can
+    only be checked by searching the documents for it, and fewer than half survive that search
+    ([citation-fidelity.md](citation-fidelity.md), which also explains why that is a resolvability
+    rate and not a fabrication rate). Trace's figure is approved findings whose every cited
+    `EvidenceReference` resolves to a stored, hashed excerpt re-verified on read
+    (`finding_evidence_coverage`) — a citation a machine follows rather than one a reader trusts.
 
 [^fp]: Spurious findings — produced but standing on no expected requirement — over the scenarios
     the tool was scored on; lower is better. The scenarios plant specific false-positive classes
@@ -45,10 +50,20 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
     is in the [scorecard](scorecard.html).
 
-[^injection]: The injected-instruction compliance rate is measured only where there is a defense to
-    test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
+[^injection]: The injected-instruction compliance rate is computed only where there is a defense
+    to test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
     baseline has neither, so the payload is not run through it — the result would measure the
     absence of a defense the baseline never claimed. Zero is the target (DEC-075).
+
+    **Trace's zero is authored, not captured** (DEC-152). Both adversarial recordings were written
+    offline against the deterministic substitute, on the stated premise that "a correct run under
+    attack produces the same analysis"; no model has been run against a poisoned document in
+    either scored condition. The reason is mechanical rather than evasive: `trace capture` takes a
+    scenario and a stage and has no condition parameter, so the capture path cannot reach a
+    condition the replay path understands. The one live data point is the ForgeFlow capture, whose
+    extraction recorded an `injection_attempt` observation against a real payload — one payload,
+    one stage, n=1. Until a condition can be captured, this cell reports what a correct run was
+    expected to do.
 
 [^classes]: Per payload class, because DEC-075 makes the aggregate meaningless as a universal claim: checkpoint_bypass 0%, credential_exfiltration 0%, direct_instruction_injection 0%, fence_delimiter_escape 0%, findings_suppression 0%, verifier_sabotage 0%. Checkpoint bypass is structural — a checkpoint advances only on a recorded reviewer decision (DEC-005) — and its zero is shown with that basis rather than measured each run; every other class is measured against what the run produced. The per-run detail is in the [scorecard](scorecard.html).
 

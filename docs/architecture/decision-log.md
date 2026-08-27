@@ -9998,3 +9998,265 @@ reader may dispute, which is why they are recorded one by one rather than assert
 the rule cannot be enforced by a test — no assertion detects an expectation edited toward a run,
 because the edit's evidence is exactly the score it produces. What holds it is the written rule,
 the table, and the requirement that an edit's justification appear in the commit that makes it.
+
+## DEC-150: A rate over an empty denominator is not emitted, so the scorecard's dash means what it says
+
+Date: 2026-08-26
+
+Status: Accepted
+
+Decision:
+
+**An evaluation metric whose unit is a percentage is emitted only when its denominator is
+non-empty.** A run that approved no findings produces no `finding_evidence_coverage`, no
+`false_positive_rate`, no `duplicate_finding_rate` and no reviewer-disposition rates; a run whose
+truth set authors no unpaired expected question produces no `clarifying_question_usefulness`; a
+run with no execution records produces no `node_failure_rate`. Counts are unaffected —
+`documentation_gaps_produced` reporting zero is a measurement, not a vacancy.
+
+**The scorecard was already built for this and the metrics layer defeated it.**
+`services/evaluation/scorecard.py`'s `_metric` returns `None` for a metric a feed does not carry,
+its renderers turn `None` into an em dash, and its own field documentation says the reserved
+metrics are `None` "where the scenario authors no truth for the metric or the run reported no
+measurement — unmeasured, never zero". The page could express the distinction. Nothing ever
+reached it, because every metric was emitted on every run.
+
+**The measured consequence is why this is a decision and not a tidy-up.**
+`clarifying_question_usefulness` rendered 100% on all fifteen scenarios of the committed corpus.
+On thirteen of them the sample size was zero: every expected question was a documentation gap's
+paired question and therefore excluded by the metric's own denominator rule, leaving nothing to
+score. Two scenarios carried a real denominator. A reader of the scorecard saw fifteen identical
+perfect scores and no way to tell the two apart from the thirteen. Nine other metrics carried the
+same shape on five rows each.
+
+Why:
+
+- **This is DEC-147 one level up.** That decision retired `documentation_gap_precision` because
+  its denominator "was never authored", and replaced it with a recall metric emitted only where a
+  scenario authors expected gaps. The guarded-emission pattern is already in the file; it was
+  applied to one metric rather than to the class.
+- **The codebase already held both positions, and the later one is the considered one.**
+  `metrics.py`'s module docstring said "coverage is vacuously complete, the rates are 0 with a
+  stated zero sample". `agreement.py`, written later for DEC-112, says the opposite in the same
+  situation: `None` "when both sets are empty: two annotators agreeing there is nothing to say is
+  vacuous for a ratio, and reported as the counts instead". DEC-110 says "no data is not a zero
+  rate". DEC-092 established the dash discipline for cost. Three later statements against one
+  earlier one, and no entry had ever reconciled them.
+- **A vacuous value is the failure this project exists to prevent, relocated into the
+  instrument.** DEC-009 refuses to let silence become a finding. A rate over an empty population
+  is the same move: the absence of data rendered as a result. `journal/2026-08-13` already wrote
+  the sentence for the adversarial case — "the difference between `complied=False` by
+  construction and `complied=False` by measurement is invisible in the number and is the entire
+  credibility of the number."
+- **The vacuous values were flattering.** Of the ten affected metrics, the two most visible —
+  `clarifying_question_usefulness` and `finding_evidence_coverage` — defaulted to 1.0. A reader
+  encountering the scorecard met a column of perfect scores that no run had earned.
+
+Alternatives Considered:
+
+- **Emit the metric with a null value** (rejected: `EvaluationResult.metric_value` is a float and
+  a nullable metric value would put the same "is this measured?" question inside every consumer
+  rather than answering it once at the boundary. Absence already means unmeasured everywhere that
+  reads a feed).
+- **Keep the value and rely on `sample_size` to disambiguate** (rejected: the scorecard renders
+  the value and not the sample size, so the distinction would exist in the feed and not on the
+  page. A number a reader cannot qualify is a number they will quote).
+- **Keep 1.0 where vacuity is arguably true and drop it only where it misleads** (rejected: the
+  line is not drawable. "Every one of zero findings cites evidence" is true and useless; deciding
+  case by case which vacuous truths are publishable is how the corpus arrived at fifteen
+  identical hundreds. One rule, applied to the class).
+- **Retire the affected metrics entirely, as DEC-147 did** (rejected: the denominators are real
+  when the run produces subjects. The metric is sound; only its behaviour on the empty case was
+  wrong).
+
+Consequences:
+
+Committed evaluation feeds regenerate without the vacuous rows, and the scorecard, comparison and
+ablation pages change where a dash replaces a number. `comparison.md`'s evidence-linkage cell
+stops pooling five zero-finding rows into its denominator. `tests/unit/test_evaluation_metrics.py`
+holds the invariant over a computed metric set, so a new percentage metric that reports over an
+empty population fails rather than shipping.
+
+## DEC-151: A citation is scored on whether it resolves, and the baselines' citations are measured rather than dismissed
+
+Date: 2026-08-26
+
+Status: Accepted
+
+Decision:
+
+**The comparison's evidence row reports what a baseline's citation can be checked against, not
+that it has none.** `citation_fidelity` is the share of a baseline's `evidence_quote` values that
+appear verbatim in one of the documents the run was given, under a shallow normalization —
+surrounding quotation marks, curly quotes, dashes, whitespace runs — and nothing else. It is
+rendered to `docs/eval/citation-fidelity.md` by `scripts/build_citation_fidelity.py`, offline from
+committed recordings, and CI checks it for drift like every other derived page.
+
+**The claim it replaces was false about this repository's own schema.** The footnote read: a
+baseline "links no claim to evidence because its output schema (`BaselineFindings`) carries a
+title, requirement, component, and rationale and no evidence reference; it cannot cite a document
+even in principle." `BaselineFinding.evidence_quote` is a required, non-empty string, added in the
+same work that built the baselines. Every baseline finding cites a passage. The strongest claim in
+the project's public comparison was resting on a description of a schema that had a field the
+description denied.
+
+**The measured difference is narrower and better.** Trace's citation is an `EvidenceReference`
+resolving to a stored excerpt whose content hash is re-verified on read. A baseline's is a string
+with no referent, so checking it means searching the documents for it, and fewer than half survive
+that search. "A citation a machine follows" against "a citation a reader trusts" is a sharper
+distinction than "cites" against "does not cite", and it is the one the evidence supports.
+
+**It is a resolvability rate and not a fabrication rate, and the page says so in its own voice.**
+Inspection of the corpus's unresolved citations found them to be, overwhelmingly, two real
+passages concatenated, a passage carrying its markdown emphasis, an elision written as an
+ellipsis, or a `From <file>:` prefix the model supplied. Publishing the number without that
+sentence would let a reader take it for dishonesty the corpus does not show.
+
+Why:
+
+- **An asserted differentiator is the thing this project keeps refusing to accept from others.**
+  DEC-074 built prompt baselines rather than describing what a simpler approach would do; DEC-075
+  measured injection compliance per class rather than claiming a defense. The evidence row was the
+  one headline claim still standing on a description, and the description was wrong.
+- **The measurement was free and already possible.** The forty-five baseline recordings and every
+  scenario's inputs are committed. Nothing replays, no model is called, and no key is needed —
+  the same posture as `scripts/replay_forgeflow.py`, and the reason a skeptic can re-run it.
+- **Normalization is where this metric could quietly become a different one.** Wide enough to
+  accept a paraphrase and it measures whether the model read the document; narrow enough to reject
+  a line break and it measures Markdown wrapping. The steps are enumerated in the module and
+  pinned by tests, including one asserting a paraphrase does not resolve and one asserting a
+  citation cannot resolve by straddling two documents.
+
+Alternatives Considered:
+
+- **Correct the footnote and publish no number** (rejected: the corrected sentence would still be
+  an assertion, and the number is a few file reads away. A project whose thesis is that
+  conclusions need evidence does not get to describe its competitors' output from their schema).
+- **Fuzzy or token-overlap matching** (rejected: it would raise the rate and stop measuring the
+  property. A citation a program cannot follow is unresolvable whether or not its words are
+  mostly present, and the point of the number is what survives automated checking).
+- **Publish the unresolved quotes so a reader can judge them** (rejected: DEC-076 admits metrics
+  and identifiers to a rendered page and no assessment content. A quote is source material whether
+  or not it resolved, and a quality report is not an exemption).
+- **Score Trace through the same search** (rejected: it would measure the wrong thing and flatter
+  the result. Trace's citations are identifiers into a store, and `finding_evidence_coverage`
+  already reports them resolving with their hashes verified. Re-deriving that by grepping the
+  documents would replace a stronger check with a weaker one).
+
+## DEC-152: An authored zero and a captured zero are different evidence, and the page says which it is
+
+Date: 2026-08-26
+
+Status: Accepted
+
+Decision:
+
+**Every published injected-instruction compliance rate names the provenance of the responses it
+was computed from.** The scorecard's adversarial section gains a *Responses* column reading the
+model attribution DEC-136 already carries — the model's name where a capture produced the
+responses, `authored` where the recording was written against the deterministic substitute. The
+comparison table's compliance cell carries the same qualifier inline, and its footnote states
+plainly that no model has been run against a poisoned document in either scored condition.
+
+**Both adversarial recordings are authored, and their own provenance files always said so.**
+`benchmarks/unsigned-webhooks/conditions/adversarial/recorded/provenance.md` and its rag-support-bot
+twin record `profile: offline-fake` and the premise the recordings were built on: "the reasoning
+and report recordings are the clean condition's, unchanged, because a correct run under attack
+produces the same analysis." That is a reasonable expectation and it is not a measurement. The
+disclosure existed at the file level and never reached the page where the claim is made.
+
+**The cause is a missing parameter, not a shortcut.** `trace capture` takes a scenario and a stage
+and has no condition argument — not in `cli.py:_capture`, not in `services/evaluation/capture.py`.
+The harness understands conditions (`_recordings_for(entry, ablations, condition=condition)`) and
+the registry declares them (`conditions:`, `condition_workflow_versions`), so the replay path knows
+about conditions and the capture path does not. The adversarial corpus is authored because
+capturing it was not expressible. Plumbing the condition through capture is the work that retires
+this entry's qualifier, and it is named here so the qualifier cannot outlive the reason for it.
+
+Why:
+
+- **This is the project's own stated failure, applied to its own instrument.**
+  `journal/2026-08-13-adversarial-measurement.md` records the sentence: "the difference between
+  `complied=False` by construction and `complied=False` by measurement is invisible in the number
+  and is the entire credibility of the number. This project's thesis is that absence of evidence
+  is not evidence of absence; a hard-coded zero was the evaluation committing the failure the
+  pipeline exists to prevent." That lesson was applied to how the metric is computed and not to
+  where its inputs came from.
+- **It is the most impressive-sounding number in the corpus**, which is exactly why it needs the
+  qualifier most. A reader meeting "0% across six payload classes" has no way to know it describes
+  an expectation rather than a result, and the interview package presented it as "the measured
+  half".
+- **Marking it costs nothing and keeps the claim available.** The defense is real — the fence, the
+  delimiter neutralisation, and the structural checkpoints all exist and are tested. What is
+  missing is a capture, and saying so is the difference between a claim that survives a follow-up
+  question and one that does not.
+
+Alternatives Considered:
+
+- **Mark the adversarial rows non-authoritative, as baselines and ablations are** (rejected: the
+  DEC-012 marker means "this run was deliberately degraded". The adversarial condition is the
+  ordinary pipeline meeting a poisoned document, which is an authoritative shape. The defect is
+  the recording's provenance, and provenance is what the column reports).
+- **Remove the rate until a live capture exists** (rejected: the structural half is real and
+  checkpoint bypass is genuinely structural rather than sampled. Withdrawing the number would hide
+  a defense that exists behind a measurement that does not).
+- **Say it in prose on the page and leave the table alone** (rejected: prose drifts and tables get
+  quoted. The column is derived from the recording's own attribution, so it cannot disagree with
+  the recording the way a sentence can).
+
+## DEC-153: The authored-recording snapshot is published beside the live corpus, because the gap between them is the corpus's own construct-validity number
+
+Date: 2026-08-26
+
+Status: Accepted
+
+Decision:
+
+**`docs/eval/authored-versus-live.md` pools the most recent retained scorecard snapshot beside the
+current recorded runs, on the same population the stratified table uses** — authoritative clean
+rows (DEC-143). Generated by `scripts/build_authored_versus_live.py` from `history.jsonl` and the
+ordinary sweep, offline, and checked for drift in CI like every other derived page.
+
+The two arms as committed: the 2026-08-18 snapshot at `cfedb65` reads **78% precision / 82% recall
+over 14 rows, none of which attributes to a model**; the current corpus reads **17% / 13% over 15
+rows, 14 of which do**. Same truth sets, same matcher, same scenarios.
+
+**The discriminator is DEC-136's attribution, not a characterisation.** Every row carries the model
+its responses came from, read from recorded usage or the execution ledger, and nothing where none
+was involved. The earlier arm's rows carry nothing. The page reports that as "0 of 14 attribute to
+a model" rather than "authored", because those are different claims and one row is the difference:
+ForgeFlow was a genuine live capture whose usage predated the attribution format. The page names
+that exception rather than letting the column absorb it.
+
+**What it establishes is bounded and stated.** It does not show the pipeline degrading. The
+authored recordings were written to exercise the truth set, so scoring well against it was the
+property they were built for; reading them as a measurement of the pipeline was a category error
+from the start. What the gap measures is the *size* of that error, which is the closest thing this
+corpus has to a construct-validity statistic about itself — and therefore how much weight a
+single-author benchmark's headline can carry while DEC-112's agreement instrument holds no data.
+
+Why:
+
+- **The earlier figure is still the one a reader meets first.** `releases.md` leads its v0.1
+  evaluation summary with 80% / 84%, correctly, as a dated snapshot at a named ref, and its
+  `--check` compares against `history.jsonl` rather than against the current scorecard — so the
+  retained number stays green while the live number diverges from it. Retaining a snapshot is
+  right. Leaving it as the only pooled number a reader encounters is not.
+- **The comparison was already latent in committed artifacts** and had never been drawn. Both arms
+  come from files in the repository; nothing new was measured to produce this page.
+- **A single-author corpus has to publish its own weakness or it is asking to be taken on trust,**
+  which is the posture this project refuses from everyone else. `benchmark-package.md` already
+  states the limitation in prose. This is the number under the prose.
+
+Alternatives Considered:
+
+- **Correct `releases.md` to the current figure** (rejected: it is a release record. A snapshot
+  keyed to a git ref that reported what the corpus said on that date is the artifact working
+  correctly, and editing it would make the longitudinal record unreadable).
+- **Fold both arms into the scorecard** (rejected: the scorecard renders the current corpus and
+  its retained history separately and already carries thirteen primary metrics. This comparison is
+  a claim about the corpus rather than a row in it, and it needs the prose that goes with it).
+- **Pool all authoritative rows, as the release record does** (rejected: it would produce 80% / 84%
+  against a live arm pooled the scorecard's way, and two pages would disagree about the same
+  snapshot. Matching DEC-143's population costs two points on the earlier arm and buys the
+  guarantee that nothing on this page contradicts the scorecard).

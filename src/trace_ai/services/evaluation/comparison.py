@@ -11,9 +11,9 @@ Every populated cell is a number that appears in a committed feed, and every emp
 it is empty rather than leaving a blank a reader fills in optimistically. Three properties are
 stated as structural facts rather than measured, because measuring them would measure nothing:
 Trace's persisted objects are schema-valid by construction (an invalid proposal never persists,
-DEC-006); a baseline links no claim to evidence because `BaselineFindings` has no evidence field;
-and run-to-run stability is a live-run measurement (DEC-077) that deterministic replay cannot
-produce. The honest empty cell is the point — the market the survey describes is full of tools
+DEC-006); a baseline's citation resolves to nothing because `BaselineFinding.evidence_quote` is a
+string the model wrote rather than a reference to a stored excerpt; and run-to-run stability is a
+live-run measurement (DEC-077) that deterministic replay cannot produce. The honest empty cell is the point — the market the survey describes is full of tools
 whose comparison tables fill every cell and cite nothing.
 
 STRIDE GPT is not a row: it cannot run through the seam, so it is scored in the portfolio
@@ -154,7 +154,8 @@ def _schema_cell(summary: ToolSummary) -> str:
 
 def _evidence_cell(summary: ToolSummary) -> str:
     if summary.evidence_total is None:
-        return "none [^evidence]"
+        # A baseline cites passages; what it cannot do is give the citation a referent.
+        return "cited, unresolvable [^evidence]"
     if summary.evidence_total == 0:
         return "no approved findings"
     # evidence_covered is set whenever evidence_total is (both come from the same runs).
@@ -173,7 +174,12 @@ def _compliance_cell(summary: ToolSummary, *, labelled_per_class: bool = False) 
     scenarios = summary.compliance_runs
     plural = "scenario" if scenarios == 1 else "scenarios"
     marker = " [^classes]" if labelled_per_class else ""
-    return f"{_pct(summary.compliance)} ({scenarios} adversarial {plural}){marker}"
+    # Every adversarial recording in the corpus is authored (DEC-152), and the cell says so
+    # rather than letting the rate read as a capture. When one is captured live this qualifier
+    # comes off with the recording it describes.
+    return (
+        f"{_pct(summary.compliance)} ({scenarios} adversarial {plural}, authored responses){marker}"
+    )
 
 
 def _class_rates(feeds: Sequence[dict[str, Any]]) -> dict[str, float]:
@@ -306,10 +312,15 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     validation never enters state (DEC-006) — so there is no rate to sample. The baselines' output
     can fail to validate, and that failure is counted, not excused.
 
-[^evidence]: A baseline links no claim to evidence because its output schema (`BaselineFindings`)
-    carries a title, requirement, component, and rationale and no evidence reference; it cannot
-    cite a document even in principle. Trace's figure is approved findings whose every cited
-    `EvidenceReference` resolves to a stored, hashed excerpt (`finding_evidence_coverage`).
+[^evidence]: **The baselines do cite passages.** `BaselineFinding.evidence_quote` is required and
+    non-empty, so an earlier wording here — that a baseline "cannot cite a document even in
+    principle" — was wrong about this repository's own schema. The difference is narrower and is
+    measured rather than asserted: a baseline's citation is a string with no referent, so it can
+    only be checked by searching the documents for it, and fewer than half survive that search
+    ([citation-fidelity.md](citation-fidelity.md), which also explains why that is a resolvability
+    rate and not a fabrication rate). Trace's figure is approved findings whose every cited
+    `EvidenceReference` resolves to a stored, hashed excerpt re-verified on read
+    (`finding_evidence_coverage`) — a citation a machine follows rather than one a reader trusts.
 
 [^fp]: Spurious findings — produced but standing on no expected requirement — over the scenarios
     the tool was scored on; lower is better. The scenarios plant specific false-positive classes
@@ -323,10 +334,20 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
     is in the [scorecard](scorecard.html).
 
-[^injection]: The injected-instruction compliance rate is measured only where there is a defense to
-    test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
+[^injection]: The injected-instruction compliance rate is computed only where there is a defense
+    to test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
     baseline has neither, so the payload is not run through it — the result would measure the
     absence of a defense the baseline never claimed. Zero is the target (DEC-075).
+
+    **Trace's zero is authored, not captured** (DEC-152). Both adversarial recordings were written
+    offline against the deterministic substitute, on the stated premise that "a correct run under
+    attack produces the same analysis"; no model has been run against a poisoned document in
+    either scored condition. The reason is mechanical rather than evasive: `trace capture` takes a
+    scenario and a stage and has no condition parameter, so the capture path cannot reach a
+    condition the replay path understands. The one live data point is the ForgeFlow capture, whose
+    extraction recorded an `injection_attempt` observation against a real payload — one payload,
+    one stage, n=1. Until a condition can be captured, this cell reports what a correct run was
+    expected to do.
 {classes_footnote}
 {stability_footnote}
 """
