@@ -193,9 +193,10 @@ def test_the_zero_finding_report_is_recorded_as_correct(prepared: dict[str, Any]
     )
     named = report_metrics(prepared, report)
 
-    assert named["report_finding_coverage"].metric_value == 1.0
-    assert named["report_finding_coverage"].notes is not None
-    assert "correctly contained no findings" in named["report_finding_coverage"].notes
+    # DEC-150: no approved finding means no coverage ratio at all. The report being correct
+    # about a zero-finding run is the report validator's business, not a 100% on the page.
+    assert "report_finding_coverage" not in named
+    assert named["report_invented_finding_count"].metric_value == 0.0
 
 
 # ------------------------------------------------------------------------------------------

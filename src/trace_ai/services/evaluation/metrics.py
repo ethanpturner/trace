@@ -24,8 +24,11 @@ different requirement scores as a false negative plus an unexpected finding, and
 outside any mapping cannot match. Both are conservative in the direction that keeps the
 false-negative rate honest.
 
-**Zero findings is a successful outcome and the metrics say so**: coverage is vacuously complete,
-the rates are 0 with a stated zero sample, and nothing divides by zero or reports a failure.
+**Zero findings is a successful outcome and the metrics say so** — by staying silent. A ratio
+whose denominator is empty is not emitted at all (DEC-150): a run that approved no findings has
+no evidence-coverage rate, and reporting one would put a 100% or a 0% on the scorecard beside
+rates that were measured. The scorecard renders an absent metric as a dash and its own rule is
+"unmeasured, never zero". Counts are unaffected — they have no denominator to be empty.
 """
 
 from __future__ import annotations
@@ -201,21 +204,17 @@ def compute_metrics(
         for finding in approved
         if all(evidence_id in stored_evidence for evidence_id in finding.evidence_ids)
     ]
-    results.append(
-        _metric(
-            handle,
-            run.id,
-            "finding_evidence_coverage",
-            _ratio(len(covered), len(approved)) if approved else 1.0,
-            unit="percentage",
-            sample_size=len(approved),
-            notes=(
-                "vacuously complete: zero approved findings is a successful outcome"
-                if not approved
-                else None
-            ),
+    if approved:
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "finding_evidence_coverage",
+                _ratio(len(covered), len(approved)),
+                unit="percentage",
+                sample_size=len(approved),
+            )
         )
-    )
 
     # --- evidence_assessment_coverage: the evidence agent's subjects that actually came back
     # assessed. An unassessed subject resolves to no output under DEC-013 with nothing recording
@@ -228,26 +227,24 @@ def compute_metrics(
     ]
     assessed_ids = {assessment.subject_id for assessment in repository.list(EvidenceAssessment)}
     unassessed_count = len([sid for sid in assessable_ids if sid not in assessed_ids])
-    results.append(
-        _metric(
-            handle,
-            run.id,
-            "evidence_assessment_coverage",
-            (
-                _ratio(len(assessable_ids) - unassessed_count, len(assessable_ids))
-                if assessable_ids
-                else 1.0
-            ),
-            unit="percentage",
-            sample_size=len(assessable_ids),
-            notes=(
-                f"{unassessed_count} of {len(assessable_ids)} assessable subjects received no "
-                "evidence assessment; an unassessed mapping resolves to no output (DEC-013)"
-                if unassessed_count
-                else None
-            ),
+    if assessable_ids:
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "evidence_assessment_coverage",
+                _ratio(len(assessable_ids) - unassessed_count, len(assessable_ids)),
+                unit="percentage",
+                sample_size=len(assessable_ids),
+                notes=(
+                    f"{unassessed_count} of {len(assessable_ids)} assessable subjects received "
+                    "no evidence assessment; an unassessed mapping resolves to no output "
+                    "(DEC-013)"
+                    if unassessed_count
+                    else None
+                ),
+            )
         )
-    )
     # --- checkpoint review timing (DEC-117): wall clock from the first review-command rendering
     # to the checkpoint's conclusion. Emitted only when a session exists and a conclusion follows
     # it — a harness-decided checkpoint writes no session, so a replayed or protocol-driven run
@@ -304,6 +301,10 @@ def compute_metrics(
         ("reviewer_rejection_rate", ReviewDisposition.REJECT),
         ("reviewer_edit_rate", ReviewDisposition.EDIT),
     ):
+        if not decided_subjects:
+            # No subject reached the reviewer, so there is no disposition to take a rate over.
+            # A zero here would read as "the reviewer approved nothing" (DEC-150).
+            continue
         results.append(
             _metric(
                 handle,
@@ -314,34 +315,34 @@ def compute_metrics(
                 method="ReviewerDecision records per subject; an edit then an approval counts "
                 "in both rates",
                 sample_size=len(decided_subjects),
-                notes="no decided findings" if not decided_subjects else None,
             )
         )
 
     # --- duplicate and false-positive rates over the proposed set.
     duplicates = [finding for finding in all_findings if finding.duplicate_of_id is not None]
     rejected = [finding for finding in all_findings if finding.status is ObjectStatus.REJECTED]
-    results.append(
-        _metric(
-            handle,
-            run.id,
-            "duplicate_finding_rate",
-            _ratio(len(duplicates), len(all_findings)),
-            unit="percentage",
-            sample_size=len(all_findings),
+    if all_findings:
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "duplicate_finding_rate",
+                _ratio(len(duplicates), len(all_findings)),
+                unit="percentage",
+                sample_size=len(all_findings),
+            )
         )
-    )
-    results.append(
-        _metric(
-            handle,
-            run.id,
-            "false_positive_rate",
-            _ratio(len(rejected), len(all_findings)),
-            unit="percentage",
-            method="rejected candidates over proposed findings; the reviewer is the judge",
-            sample_size=len(all_findings),
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "false_positive_rate",
+                _ratio(len(rejected), len(all_findings)),
+                unit="percentage",
+                method="rejected candidates over proposed findings; the reviewer is the judge",
+                sample_size=len(all_findings),
+            )
         )
-    )
 
     # --- benchmark metrics, only against an authored truth set.
     if expected_dir is not None:
@@ -410,16 +411,17 @@ def compute_metrics(
                 ),
             )
         )
-    results.append(
-        _metric(
-            handle,
-            run.id,
-            "node_failure_rate",
-            _ratio(len(failed), len(records)),
-            unit="percentage",
-            sample_size=len(records),
+    if records:
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "node_failure_rate",
+                _ratio(len(failed), len(records)),
+                unit="percentage",
+                sample_size=len(records),
+            )
         )
-    )
 
     return results
 
@@ -530,40 +532,42 @@ def _benchmark_metrics(
     finding_matches = match_findings(approved, reachable, component_names=component_names)
     unmatched_expected = finding_matches.missed
     consolidated = finding_matches.consolidated_count
-    results = [
-        _metric(
-            handle,
-            run.id,
-            "false_negative_rate",
-            _ratio(len(unmatched_expected), len(reachable)),
-            unit="percentage",
-            evaluator=EvaluatorType.BENCHMARK,
-            method=(
-                "expected findings unmatched over reachable expected findings; a finding "
-                "matches on the expected requirement_id and an affected component whose name "
-                "matches (DEC-056); a consolidated finding scores full credit per matched "
-                "expectation; an entry conditioned on contradiction resolution the run's "
-                "reviewer did not supply is unreached, not missed (DEC-133)"
-            ),
-            sample_size=len(reachable),
-            notes=(
-                f"unmatched: {unmatched_expected or 'none'}; consolidated findings matching "
-                f"more than one expectation: {consolidated}"
-                + (
-                    f"; unmatched on the component name while a produced finding stands on the "
-                    f"requirement (DEC-148): {sorted(finding_matches.divergent)}"
-                    if finding_matches.divergent
-                    else ""
-                )
-                + (
-                    f"; conditional expectations unreached without a resolved contradiction: "
-                    f"{conditional_unreached}"
-                    if conditional_unreached
-                    else ""
-                )
-            ),
+    results: list[EvaluationResult] = []
+    if reachable:
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "false_negative_rate",
+                _ratio(len(unmatched_expected), len(reachable)),
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "expected findings unmatched over reachable expected findings; a finding "
+                    "matches on the expected requirement_id and an affected component whose name "
+                    "matches (DEC-056); a consolidated finding scores full credit per matched "
+                    "expectation; an entry conditioned on contradiction resolution the run's "
+                    "reviewer did not supply is unreached, not missed (DEC-133)"
+                ),
+                sample_size=len(reachable),
+                notes=(
+                    f"unmatched: {unmatched_expected or 'none'}; consolidated findings matching "
+                    f"more than one expectation: {consolidated}"
+                    + (
+                        f"; unmatched on the component name while a produced finding stands on the "
+                        f"requirement (DEC-148): {sorted(finding_matches.divergent)}"
+                        if finding_matches.divergent
+                        else ""
+                    )
+                    + (
+                        f"; conditional expectations unreached without a resolved contradiction: "
+                        f"{conditional_unreached}"
+                        if conditional_unreached
+                        else ""
+                    )
+                ),
+            )
         )
-    ]
 
     concordance = _severity_concordance(approved, expected_findings, finding_matches.matched)
     if concordance is not None:
@@ -742,26 +746,25 @@ def _truth_metrics(
             f"{name} {context.matched_by_type[name]}/{context.expected_by_type[name]}"
             for name in sorted(context.expected_by_type)
         )
-        results.append(
-            _metric(
-                handle,
-                run.id,
-                "context_accuracy",
-                _ratio(context.matched_count, context.expected_count)
-                if context.expected_count
-                else 1.0,
-                unit="percentage",
-                evaluator=EvaluatorType.BENCHMARK,
-                method=(
-                    "expected context entries matched over expected, by the truth file's own "
-                    "keys: names for components, actors, assets, and boundaries; endpoint "
-                    "names for flows; (subject, predicate) for claims. Extraction presence "
-                    "only — field agreement is the checkpoint-1 reviewer's judgment"
-                ),
-                sample_size=context.expected_count,
-                notes=breakdown,
+        if context.expected_count:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "context_accuracy",
+                    _ratio(context.matched_count, context.expected_count),
+                    unit="percentage",
+                    evaluator=EvaluatorType.BENCHMARK,
+                    method=(
+                        "expected context entries matched over expected, by the truth file's own "
+                        "keys: names for components, actors, assets, and boundaries; endpoint "
+                        "names for flows; (subject, predicate) for claims. Extraction presence "
+                        "only — field agreement is the checkpoint-1 reviewer's judgment"
+                    ),
+                    sample_size=context.expected_count,
+                    notes=breakdown,
+                )
             )
-        )
 
     threats_file = expected_dir / "expected-threats.yaml"
     if threats_file.is_file():
@@ -774,26 +777,25 @@ def _truth_metrics(
             for threat in repository.list(Threat)
         ]
         threats = match_threats(expected_threats, produced_references=produced_references)
-        results.append(
-            _metric(
-                handle,
-                run.id,
-                "threat_coverage",
-                _ratio(threats.matched_count, threats.expected_count)
-                if threats.expected_count
-                else 1.0,
-                unit="percentage",
-                evaluator=EvaluatorType.BENCHMARK,
-                method=(
-                    "expected threats matched over expected; a produced threat matches when "
-                    "its affected components and assets cover the entry's must_reference "
-                    "lists by normalized name. Structural only — wording is never compared "
-                    "(DEC-043 defers semantic comparison)"
-                ),
-                sample_size=threats.expected_count,
-                notes=f"missed: {threats.missed_keys or 'none'}",
+        if threats.expected_count:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "threat_coverage",
+                    _ratio(threats.matched_count, threats.expected_count),
+                    unit="percentage",
+                    evaluator=EvaluatorType.BENCHMARK,
+                    method=(
+                        "expected threats matched over expected; a produced threat matches when "
+                        "its affected components and assets cover the entry's must_reference "
+                        "lists by normalized name. Structural only — wording is never compared "
+                        "(DEC-043 defers semantic comparison)"
+                    ),
+                    sample_size=threats.expected_count,
+                    notes=f"missed: {threats.missed_keys or 'none'}",
+                )
             )
-        )
 
     mappings_file = expected_dir / "expected-control-mappings.yaml"
     if mappings_file.is_file():
@@ -814,25 +816,24 @@ def _truth_metrics(
             for mapping in repository.list(ControlMapping)
         }
         mappings_outcome = match_expected_mappings(expected_entries, produced=produced_pairs)
-        results.append(
-            _metric(
-                handle,
-                run.id,
-                "requirement_mapping_accuracy",
-                _ratio(mappings_outcome.matched_count, mappings_outcome.expected_count)
-                if mappings_outcome.expected_count
-                else 1.0,
-                unit="percentage",
-                evaluator=EvaluatorType.BENCHMARK,
-                method=(
-                    "expected (requirement, satisfaction) pairs matched by a produced mapping "
-                    "stating both, over expected pairs; threat identity is not bound and the "
-                    "must_not_conclude negatives are asserted by tests, not scored here"
-                ),
-                sample_size=mappings_outcome.expected_count,
-                notes=f"missed: {mappings_outcome.missed_keys or 'none'}",
+        if mappings_outcome.expected_count:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "requirement_mapping_accuracy",
+                    _ratio(mappings_outcome.matched_count, mappings_outcome.expected_count),
+                    unit="percentage",
+                    evaluator=EvaluatorType.BENCHMARK,
+                    method=(
+                        "expected (requirement, satisfaction) pairs matched by a produced mapping "
+                        "stating both, over expected pairs; threat identity is not bound and the "
+                        "must_not_conclude negatives are asserted by tests, not scored here"
+                    ),
+                    sample_size=mappings_outcome.expected_count,
+                    notes=f"missed: {mappings_outcome.missed_keys or 'none'}",
+                )
             )
-        )
 
     questions_file = expected_dir / "expected-questions.yaml"
     if questions_file.is_file():
@@ -863,31 +864,26 @@ def _truth_metrics(
             paired_keys=paired_keys,
             produced_requirement_sets=produced_requirement_sets,
         )
-        results.append(
-            _metric(
-                handle,
-                run.id,
-                "clarifying_question_usefulness",
-                _ratio(questions_outcome.matched_count, questions_outcome.expected_count)
-                if questions_outcome.expected_count
-                else 1.0,
-                unit="percentage",
-                evaluator=EvaluatorType.BENCHMARK,
-                method=(
-                    "expected questions a produced question bears on, over expected; a "
-                    "produced question bears on its related threat's mapped requirements plus "
-                    "any requirement its text names. Questions paired to a documentation gap "
-                    "are excluded: one mapping routes to a gap or a question, never both "
-                    "(DEC-013), and the pair documents the gap's conversion"
-                ),
-                sample_size=questions_outcome.expected_count,
-                notes=(
-                    "every expected question is a gap's paired question"
-                    if not questions_outcome.expected_count
-                    else f"missed: {questions_outcome.missed_keys or 'none'}"
-                ),
+        if questions_outcome.expected_count:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "clarifying_question_usefulness",
+                    _ratio(questions_outcome.matched_count, questions_outcome.expected_count),
+                    unit="percentage",
+                    evaluator=EvaluatorType.BENCHMARK,
+                    method=(
+                        "expected questions a produced question bears on, over expected; a "
+                        "produced question bears on its related threat's mapped requirements plus "
+                        "any requirement its text names. Questions paired to a documentation gap "
+                        "are excluded: one mapping routes to a gap or a question, never both "
+                        "(DEC-013), and the pair documents the gap's conversion"
+                    ),
+                    sample_size=questions_outcome.expected_count,
+                    notes=f"missed: {questions_outcome.missed_keys or 'none'}",
+                )
             )
-        )
 
     return results
 

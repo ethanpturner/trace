@@ -306,9 +306,14 @@ def test_full_assessment_coverage_carries_no_note(prepared: dict[str, Any]) -> N
     assert coverage.notes is None
 
 
-def test_no_assessable_subjects_is_vacuously_covered(prepared: dict[str, Any]) -> None:
+def test_no_assessable_subjects_emits_no_coverage_rate(prepared: dict[str, Any]) -> None:
+    """A run with nothing to assess has no coverage ratio, not a coverage ratio of 1.0.
+
+    DEC-150: the denominator is empty, so the rate is unmeasured. The scorecard renders an
+    absent metric as a dash, which is what "unmeasured, never zero" means on the page.
+    """
     named = metrics_by_name(compute_metrics(prepared["handle"], prepared["run"]))
-    assert named["evidence_assessment_coverage"].metric_value == 1.0
+    assert "evidence_assessment_coverage" not in named
 
 
 # ------------------------------------------------------------------------------------------
@@ -611,14 +616,19 @@ def test_zero_findings_yields_a_valid_metric_set(prepared: dict[str, Any]) -> No
     results = compute_metrics(handle, prepared["run"], expected_dir=EXPECTED)
     named = metrics_by_name(results)
 
-    assert named["finding_evidence_coverage"].metric_value == 1.0
-    assert named["finding_evidence_coverage"].notes is not None
-    assert "successful outcome" in named["finding_evidence_coverage"].notes
-    assert named["reviewer_acceptance_rate"].metric_value == 0.0
+    # The rates whose denominator is the finding set are absent, not zero or one (DEC-150):
+    # a run that approved nothing has no coverage rate and no reviewer rate.
+    assert "finding_evidence_coverage" not in named
+    assert "reviewer_acceptance_rate" not in named
+    assert "false_positive_rate" not in named
+    assert "duplicate_finding_rate" not in named
+    # The truth set authors expectations, so the rate denominated on them survives.
     assert named["false_negative_rate"].metric_value == 1.0
     assert named["documentation_gap_recall"].metric_value == 0.0
+    # A count of zero is a measurement and stays.
     assert named["documentation_gaps_produced"].metric_value == 0.0
-    assert named["node_failure_rate"].metric_value == 0.0
+    # The fixture run records no node executions, so there is no failure rate to take.
+    assert "node_failure_rate" not in named
 
 
 # ------------------------------------------------------------------------------------------
@@ -730,3 +740,28 @@ def test_severity_concordance_is_absent_when_no_matched_finding_has_guidance(
 
     named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
     assert "severity_concordance" not in named
+
+
+# ------------------------------------------------------------------------------------------
+# DEC-150: a rate with an empty denominator is not emitted
+# ------------------------------------------------------------------------------------------
+
+
+def test_no_rate_is_emitted_over_an_empty_denominator(prepared: dict[str, Any]) -> None:
+    """The invariant, checked over every metric a bare run produces.
+
+    A percentage is a claim about a population. Emitted over an empty one it is not a small
+    number or a large one, it is not a number — and on the scorecard it renders identically to
+    a rate that was measured. This is the same failure DEC-147 retired
+    `documentation_gap_precision` for, one level up: the instrument reporting a value it had no
+    data for. Counts are exempt: a count of zero is a measurement.
+    """
+    offenders = [
+        (result.metric_name, result.metric_value)
+        for result in compute_metrics(prepared["handle"], prepared["run"], expected_dir=EXPECTED)
+        if result.unit == "percentage" and result.sample_size == 0
+    ]
+    assert not offenders, (
+        f"rates emitted over an empty denominator: {offenders}. A percentage over no population "
+        f"is unmeasured; omit it and let the scorecard render its dash (DEC-150)."
+    )

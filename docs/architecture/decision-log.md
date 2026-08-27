@@ -9998,3 +9998,81 @@ reader may dispute, which is why they are recorded one by one rather than assert
 the rule cannot be enforced by a test — no assertion detects an expectation edited toward a run,
 because the edit's evidence is exactly the score it produces. What holds it is the written rule,
 the table, and the requirement that an edit's justification appear in the commit that makes it.
+
+## DEC-150: A rate over an empty denominator is not emitted, so the scorecard's dash means what it says
+
+Date: 2026-08-26
+
+Status: Accepted
+
+Decision:
+
+**An evaluation metric whose unit is a percentage is emitted only when its denominator is
+non-empty.** A run that approved no findings produces no `finding_evidence_coverage`, no
+`false_positive_rate`, no `duplicate_finding_rate` and no reviewer-disposition rates; a run whose
+truth set authors no unpaired expected question produces no `clarifying_question_usefulness`; a
+run with no execution records produces no `node_failure_rate`. Counts are unaffected —
+`documentation_gaps_produced` reporting zero is a measurement, not a vacancy.
+
+**The scorecard was already built for this and the metrics layer defeated it.**
+`services/evaluation/scorecard.py`'s `_metric` returns `None` for a metric a feed does not carry,
+its renderers turn `None` into an em dash, and its own field documentation says the reserved
+metrics are `None` "where the scenario authors no truth for the metric or the run reported no
+measurement — unmeasured, never zero". The page could express the distinction. Nothing ever
+reached it, because every metric was emitted on every run.
+
+**The measured consequence is why this is a decision and not a tidy-up.**
+`clarifying_question_usefulness` rendered 100% on all fifteen scenarios of the committed corpus.
+On thirteen of them the sample size was zero: every expected question was a documentation gap's
+paired question and therefore excluded by the metric's own denominator rule, leaving nothing to
+score. Two scenarios carried a real denominator. A reader of the scorecard saw fifteen identical
+perfect scores and no way to tell the two apart from the thirteen. Nine other metrics carried the
+same shape on five rows each.
+
+Why:
+
+- **This is DEC-147 one level up.** That decision retired `documentation_gap_precision` because
+  its denominator "was never authored", and replaced it with a recall metric emitted only where a
+  scenario authors expected gaps. The guarded-emission pattern is already in the file; it was
+  applied to one metric rather than to the class.
+- **The codebase already held both positions, and the later one is the considered one.**
+  `metrics.py`'s module docstring said "coverage is vacuously complete, the rates are 0 with a
+  stated zero sample". `agreement.py`, written later for DEC-112, says the opposite in the same
+  situation: `None` "when both sets are empty: two annotators agreeing there is nothing to say is
+  vacuous for a ratio, and reported as the counts instead". DEC-110 says "no data is not a zero
+  rate". DEC-092 established the dash discipline for cost. Three later statements against one
+  earlier one, and no entry had ever reconciled them.
+- **A vacuous value is the failure this project exists to prevent, relocated into the
+  instrument.** DEC-009 refuses to let silence become a finding. A rate over an empty population
+  is the same move: the absence of data rendered as a result. `journal/2026-08-13` already wrote
+  the sentence for the adversarial case — "the difference between `complied=False` by
+  construction and `complied=False` by measurement is invisible in the number and is the entire
+  credibility of the number."
+- **The vacuous values were flattering.** Of the ten affected metrics, the two most visible —
+  `clarifying_question_usefulness` and `finding_evidence_coverage` — defaulted to 1.0. A reader
+  encountering the scorecard met a column of perfect scores that no run had earned.
+
+Alternatives Considered:
+
+- **Emit the metric with a null value** (rejected: `EvaluationResult.metric_value` is a float and
+  a nullable metric value would put the same "is this measured?" question inside every consumer
+  rather than answering it once at the boundary. Absence already means unmeasured everywhere that
+  reads a feed).
+- **Keep the value and rely on `sample_size` to disambiguate** (rejected: the scorecard renders
+  the value and not the sample size, so the distinction would exist in the feed and not on the
+  page. A number a reader cannot qualify is a number they will quote).
+- **Keep 1.0 where vacuity is arguably true and drop it only where it misleads** (rejected: the
+  line is not drawable. "Every one of zero findings cites evidence" is true and useless; deciding
+  case by case which vacuous truths are publishable is how the corpus arrived at fifteen
+  identical hundreds. One rule, applied to the class).
+- **Retire the affected metrics entirely, as DEC-147 did** (rejected: the denominators are real
+  when the run produces subjects. The metric is sound; only its behaviour on the empty case was
+  wrong).
+
+Consequences:
+
+Committed evaluation feeds regenerate without the vacuous rows, and the scorecard, comparison and
+ablation pages change where a dash replaces a number. `comparison.md`'s evidence-linkage cell
+stops pooling five zero-finding rows into its denominator. `tests/unit/test_evaluation_metrics.py`
+holds the invariant over a computed metric set, so a new percentage metric that reports over an
+empty population fails rather than shipping.
