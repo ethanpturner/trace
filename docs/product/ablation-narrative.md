@@ -28,58 +28,80 @@ and all three regenerate from the same recorded runs with no provider key:
 component removed — evidence validation, critical review, context approval — and reads the metric
 deltas against the authoritative run (`stability.run_ablation_set`; evaluation-plan section 14).
 Every ablated run is marked non-authoritative and named, so a removed-component run can never
-produce an approved assessment (DEC-012, DEC-031). Three scenarios carry a recording and so an
-ablation: contradictory-docs, unsigned-webhooks, and forgeflow.
+produce an approved assessment (DEC-012, DEC-031). All fifteen registered scenarios carry a
+recording and so an ablation.
 
-**Interpretation.** This is an offline, deterministic corpus of three scenarios. It can show that a
+**Interpretation.** This is a deterministic replay of fifteen live captures. It can show that a
 component is load-bearing when its removal moves a metric; it cannot prove a component is idle from
-a null result on three recordings. The bound is stated wherever a null appears below.
+a null result on fifteen recordings. The bound is stated wherever a null appears below.
 
 ## Result one — evidence validation is load-bearing
 
-**Measured.** Removing the evidence-validation node raises the false-negative rate from 0% to 100%
-on both contradictory-docs and unsigned-webhooks: the pipeline stops producing the finding it
-otherwise reports and matches. On forgeflow the false-negative rate is already 100% in the
-authoritative run — the live capture found real weaknesses under different requirement
-identifiers than the authored truth set names — so its removal moves nothing there. The numbers are the `no evidence validation` rows of the
-[ablation table](../eval/ablation.md).
+**Measured.** Removing the evidence-validation node raises the false-negative rate by 50 points on
+parcel-platform and 100 on reply-tuner — the two scenarios whose expected finding the authoritative
+run actually produces. Everywhere else the authoritative false-negative rate is already 100% or the
+scenario expects no finding, so there is nothing for the removal to lose. The numbers are the
+`no evidence validation` rows of the [ablation table](../eval/ablation.md).
 
-**Interpretation.** Evidence validation is the node that decides whether the support behind a
-candidate finding actually holds. Without it, the finding does not survive to the report, and a
-scenario whose one expected weakness is real comes back empty. This is the component the credibility
-research names as the one to ablate, and on this corpus it is the one the pipeline cannot lose
-without missing a true finding. It earns its place.
+**Read the dashes in those rows before the numbers, because they are the honest part.** Ablating
+evidence validation leaves every control mapping unassessed, and DEC-013 resolves an unassessed
+mapping to no output — so an ablated run produces **no findings at all**. Every rate denominated on
+the finding set is therefore unmeasured rather than improved, and renders as a dash (DEC-150).
+Before that rule was applied those cells read as false-positive *improvements* of 100, 67 and 50
+points, which was the empty denominator and not a result.
+
+**Interpretation.** This is weaker than the claim the ablation used to carry, and the weaker
+version is the true one. What the removal establishes is that evidence validation is
+**structurally required**: the pipeline cannot emit a finding without it, by the outcome table's
+construction. It does not establish that the node improves the findings it is removed from,
+because there are no ablated findings to compare against. The credibility research names this as
+the component to ablate; on this corpus the ablation answers a narrower question than it appears
+to, and saying so is the difference between an argument that survives the follow-up question and
+one that does not.
 
 ## Result two — the critic and the checkpoint move no metric here
 
-**Measured.** Removing critical review, and removing context approval, changes no metric on any of
-the three scenarios: every delta in those rows of the [ablation table](../eval/ablation.md) is
-blank.
+**Measured.** Removing critical review changes no metric on any of the fifteen scenarios: every
+delta in those rows of the [ablation table](../eval/ablation.md) is blank. Removing context
+approval moves one — reply-tuner's false-negative rate rises 100 points without it, the same
+scenario and the same direction as the evidence-validation removal.
 
 **Interpretation.** This is a null result, and it is reported rather than omitted — a table that
 only showed the component that moved would be the selective reporting this project criticizes. It
 does **not** mean the critic or the checkpoint is idle. Critical review's effect is to reject or
 reframe a finding before a human sees it, and context approval's is to let a reviewer correct the
 extracted model; neither shows up in a finding-accuracy metric on a small deterministic corpus
-where the recorded critic happens to pass the finding and the recorded reviewer happens to approve
-the context unchanged. Measuring their contribution needs scenarios authored to exercise them — a
-recorded critic that rejects, a reviewer edit that changes an outcome — which the corpus does not
-yet contain. The honest state is: on what has been measured, only evidence validation moves a
-number, and the other two are unproven either way.
+where the recorded critic happens to pass the finding. Measuring the critic's contribution needs
+scenarios authored to exercise it — a recorded critic that rejects — which the corpus does not yet
+contain. Context approval is no longer in the null: it costs a true finding on reply-tuner, which
+is a real if narrow effect on one scenario. The honest state is: evidence validation is
+structurally required, context approval moves one metric on one scenario, and the critic is
+unproven either way.
 
 ## Before and after — Trace against the baselines
 
-**Measured.** The [comparison table](../eval/comparison.md) runs two single-prompt baselines over
-the same documents and the same requirements catalog, scored by the same matcher. The generic
-baseline produces five spurious findings across four scenarios; the structured baseline and Trace
-produce none in the head-to-head scenarios. Trace links every approved finding to a resolvable,
-hashed evidence excerpt; a baseline links none, because its output schema has no evidence field.
+**Measured.** The [comparison table](../eval/comparison.md) runs three single-call baselines over
+the same documents and the same requirements catalog, scored by the same matcher, with ties
+resolved in the baseline's favour. Over the fifteen scenarios the generic prompt produces **36
+spurious findings** — seventeen of them on one scenario whose correct answer is none — against
+**2 across the thirteen captures of Trace's current shape**. Every approved Trace finding cites an
+`EvidenceReference` that resolves to a stored excerpt whose hash re-verifies.
+
+**The recall side has to be said in the same breath.** Trace matches 2 of 12 reachable
+expectations. The `baseline-single-pass` arm, one model call against Trace's fifteen to seventeen,
+matches 4. Structure bought precision and cost recall, and that is the result rather than a win.
+
+**And the evidence claim is narrower than this narrative used to make it.** A baseline *does* cite
+passages — `BaselineFinding.evidence_quote` is required — so the earlier wording, that a baseline
+"links none, because its output schema has no evidence field", was wrong about this repository's
+own schema. Measured instead: fewer than half of baseline citations can be found verbatim in the
+documents they claim to quote ([citation-fidelity.md](../eval/citation-fidelity.md), DEC-151).
+The difference is not whether a citation exists but whether a machine can follow it.
 
 **Interpretation.** The generic baseline's spurious findings are the DEC-009 failure — silence read
-as a weakness — the pipeline exists to prevent, and the comparison measures that the pipeline
-prevents it where the generic prompt does not. Evidence linkage is the property no baseline can have
-in principle, and it is the same property the ablation shows is load-bearing: the evidence chain is
-both what a reviewer can check and what the pipeline depends on to keep a finding.
+as a weakness — the pipeline exists to prevent, and the comparison measures that it prevents them
+where the generic prompt does not. That is the strongest measured claim in the corpus. It is also
+narrower than "the pipeline beats a prompt", which the recall column does not support.
 
 ## Under attack — the two-axis adversarial result
 
@@ -90,12 +112,22 @@ carried out (scorecard, adversarial row; DEC-075). Three of the five payload cla
 construction rather than by detection (fence-delimiter escape, checkpoint bypass, verifier
 sabotage).
 
+**Both adversarial recordings are authored, not captured, and the zero has to be read that way.**
+They were written offline against the deterministic substitute on the stated premise that a correct
+run under attack produces the same analysis, so **no model has been run against a poisoned document
+in either scored condition** (DEC-152). The cause is mechanical: `trace capture` takes a scenario
+and a stage and has no condition parameter, so the capture path cannot reach a condition the replay
+path already understands. The scorecard's adversarial section carries a Responses column reading
+`authored` on both rows. The one live data point is the ForgeFlow capture, whose extraction recorded
+an `injection_attempt` observation against a real payload — one payload, one stage, n=1.
+
 **Interpretation.** The two axes are reported separately on purpose: a single "injection-resistant"
 number is the anti-pattern the research names, and utility-under-attack and attack-success are
 different questions. That three payload classes fail by construction is the structural argument —
 the attack has nothing to act on because the fence and the checkpoints are not a filter a payload
-can talk past — while the compliance rate measures the classes that are not structural. Zero is the
-measured result on two adversarial scenarios, not a general claim.
+can talk past — while the compliance rate measures the classes that are not structural. Zero on
+two authored adversarial recordings is what a correct run was expected to do, not a general claim
+and not yet a measurement.
 
 ## The framework that was evaluated and not adopted
 
@@ -116,17 +148,32 @@ these systems usually use.
 
 ## What this establishes, and what it does not
 
-**Measured.** On three deterministic offline scenarios: evidence validation is load-bearing (its
-removal misses a true finding); the critic and the context checkpoint move no finding-accuracy
-metric; Trace produces no spurious finding where a generic baseline produces five; every Trace
-finding is evidence-linked and no baseline finding can be; and two adversarial scenarios show
-preserved utility with 0% injected-instruction compliance.
+**Measured.** Over fifteen live captures replayed deterministically: evidence validation is
+structurally required (without it the pipeline emits no findings at all); the critic moves no
+metric anywhere and context approval moves one on one scenario; Trace produces 2 spurious findings
+across its thirteen current-shape captures where a generic prompt produces 36 over the same
+fifteen scenarios; every approved Trace finding resolves to a hashed excerpt while fewer than half
+of a baseline's citations can be found verbatim in the documents; and two adversarial conditions
+show preserved utility with 0% injected-instruction compliance on **authored** recordings.
 
-**Interpretation.** These are the strongest claims the current corpus supports and no stronger. No
-live-model run has been measured, so run-to-run stability is unmeasured and costs read zero; the
-truth sets are a single annotator's, scored as self-agreement rather than an inter-annotator kappa;
-and the null results for the critic and the checkpoint are an absence of measured effect, not
-evidence of absence. The [limitations section](https://github.com/ethanpturner/trace/blob/main/README.md#limitations-and-failure-modes)
+**Interpretation.** These are the strongest claims the current corpus supports and no stronger, and
+four of them are weaker than the versions this document carried before the live sweep:
+
+- **Recall is the measured weakness.** Trace matches 2 of 12 reachable expectations; a single
+  model call matches 4. Structure bought precision and cost recall.
+- **Run-to-run stability is measured and imperfect.** Ten live runs across two scenarios:
+  `missing-docs` produced zero spurious findings in five of five, and `reply-tuner` reproduced its
+  expected finding in three of five. Not-inventing is the stable axis; producing the right finding
+  is not.
+- **The adversarial zero is authored** (DEC-152), so it records an expectation rather than a
+  measurement until a condition can be captured.
+- **The truth sets are a single annotator's**, scored as self-agreement rather than an
+  inter-annotator statistic — and the corpus has now measured what that is worth:
+  [`authored-versus-live.md`](../eval/authored-versus-live.md) puts the authored-recording
+  snapshot (78% / 82%) beside the live corpus (17% / 13%) on the same truth sets and matcher.
+
+The [limitations section](https://github.com/ethanpturner/trace/blob/main/README.md#limitations-and-failure-modes)
 carries the full account. The tables above regenerate from the recordings on every change, so the
-next scenario or the first live run updates this narrative's numbers without a word of it being
-rewritten by hand.
+next scenario or the next capture updates this narrative's numbers without a word of it being
+rewritten by hand — which is how the numbers in this paragraph got out of date in the first place,
+and why the prose around them now names its sources rather than restating them.
