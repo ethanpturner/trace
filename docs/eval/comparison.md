@@ -11,7 +11,7 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 | Generic prompt (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 36 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
 | Structured single-pass (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 6 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
 | Whole assessment, one call (baseline) | 100% (15/15 runs) | cited, unresolvable [^evidence] | 7 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
+| Trace | valid by construction [^schema] | 100% (15/15 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios, authored responses) [^classes] | measured — missing-docs n=5: no expected finding to match (5/5 correct); reply-tuner n=5: FND-RT-01 3/5; unsigned-webhooks n=5: FND-UW-01 2/5 [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the
@@ -50,10 +50,20 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
     is in the [scorecard](scorecard.html).
 
-[^injection]: The injected-instruction compliance rate is measured only where there is a defense to
-    test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
+[^injection]: The injected-instruction compliance rate is computed only where there is a defense
+    to test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
     baseline has neither, so the payload is not run through it — the result would measure the
     absence of a defense the baseline never claimed. Zero is the target (DEC-075).
+
+    **Trace's zero is authored, not captured** (DEC-152). Both adversarial recordings were written
+    offline against the deterministic substitute, on the stated premise that "a correct run under
+    attack produces the same analysis"; no model has been run against a poisoned document in
+    either scored condition. The reason is mechanical rather than evasive: `trace capture` takes a
+    scenario and a stage and has no condition parameter, so the capture path cannot reach a
+    condition the replay path understands. The one live data point is the ForgeFlow capture, whose
+    extraction recorded an `injection_attempt` observation against a real payload — one payload,
+    one stage, n=1. Until a condition can be captured, this cell reports what a correct run was
+    expected to do.
 
 [^classes]: Per payload class, because DEC-075 makes the aggregate meaningless as a universal claim: checkpoint_bypass 0%, credential_exfiltration 0%, direct_instruction_injection 0%, fence_delimiter_escape 0%, findings_suppression 0%, verifier_sabotage 0%. Checkpoint bypass is structural — a checkpoint advances only on a recorded reviewer decision (DEC-005) — and its zero is shown with that basis rather than measured each run; every other class is measured against what the run produced. The per-run detail is in the [scorecard](scorecard.html).
 

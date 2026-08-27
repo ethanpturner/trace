@@ -17,10 +17,18 @@ supports a weakness. The distinction is enforced structurally — DEC-013's outc
 route from an unverified conclusion to a finding, and the `Finding` schema refuses validation
 statuses the table produces no finding from — not by prompt phrasing.
 
-The measured version: across thirteen benchmark scenarios, the generic single-prompt baseline
-invents seven false positives over five scenarios; Trace's pipeline produces four candidate
-rejections over thirteen, and every one of its eighteen approved findings links to hashed source
-evidence where the baselines can cite nothing even in principle (`docs/eval/comparison.md`).
+The measured version, over the fifteen-scenario corpus with every recording live-captured: the
+generic single-prompt baseline invents **36 spurious findings**, seventeen of them on one scenario
+whose correct answer is none. Trace's current shape produces **2 across the thirteen captures of
+that shape**. Every one of Trace's fifteen approved findings cites an `EvidenceReference` that
+resolves to a stored excerpt whose hash re-verifies; the baselines do cite passages —
+`BaselineFinding.evidence_quote` is required — but fewer than half of those citations can be found
+verbatim in the documents they claim to quote, so theirs is a citation a reader trusts and Trace's
+is one a machine follows (`docs/eval/comparison.md`, `docs/eval/citation-fidelity.md`, DEC-151).
+
+The number that has to be said in the same breath: recall. Trace matches 2 of 12 reachable
+expectations, and a single well-structured model call matches 4. Structure bought precision and
+cost recall, and the honest version of this story is that finding, not a win.
 
 ## 2. Why LangGraph was evaluated and rejected
 
@@ -77,12 +85,22 @@ fabricate MFA and encryption claims, and exfiltrate the signing key).
 In the live `claude-opus-5` capture, the extraction produced an `injection_attempt`
 observation naming the payload and the four claims it tried to poison, followed none of it,
 and the reviewer meets the attempt framed as data at checkpoint 1 (`trace context show
---observations`). The measured half is DEC-075: the adversarial condition runs a poisoned
+--observations`). The scored half is DEC-075: the adversarial condition runs a poisoned
 document through the ordinary pipeline and scores injected-instruction compliance per payload
 class. The committed result is 0% compliance across all five classes — checkpoint bypass,
 direct instruction injection, fence-delimiter escape, findings suppression, verifier sabotage
 — with the target finding still produced (`docs/eval/scorecard.html`). The single-prompt
 baselines have no defense to test, and the comparison table says so rather than scoring them.
+
+**Say the next sentence before you are asked for it.** Both adversarial recordings are *authored*
+rather than captured: they were written against the deterministic substitute on the stated premise
+that a correct run under attack produces the same analysis, and no model has been run against a
+poisoned document in either scored condition (DEC-152). The reason is mechanical rather than
+evasive — `trace capture` takes a scenario and a stage and has no condition parameter, so the
+capture path cannot reach a condition the replay path already understands. That zero describes
+what a correct run was expected to do. The live evidence is the ForgeFlow capture above: one
+payload, one stage, one run. Volunteering this is the story; letting an interviewer find it is a
+different one.
 
 ## 5. How inherited controls reduce false positives
 

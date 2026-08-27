@@ -122,7 +122,9 @@ def test_a_baselines_citation_is_unresolvable_and_trace_carries_compliance() -> 
     table = render_comparison(feeds, generated_at=STAMP, pins=PINS)
     assert "cited, unresolvable" in table, "a baseline cites a passage with no referent"
     assert "none [^evidence]" not in table, "the superseded claim about the schema"
-    assert "0% (1 adversarial scenario)" in table, "the injected-instruction compliance rate"
+    assert "0% (1 adversarial scenario, authored responses)" in table, (
+        "the compliance rate, qualified by where its responses came from (DEC-152)"
+    )
 
 
 def test_the_compliance_cell_carries_the_per_class_footnote() -> None:

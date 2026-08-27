@@ -174,7 +174,12 @@ def _compliance_cell(summary: ToolSummary, *, labelled_per_class: bool = False) 
     scenarios = summary.compliance_runs
     plural = "scenario" if scenarios == 1 else "scenarios"
     marker = " [^classes]" if labelled_per_class else ""
-    return f"{_pct(summary.compliance)} ({scenarios} adversarial {plural}){marker}"
+    # Every adversarial recording in the corpus is authored (DEC-152), and the cell says so
+    # rather than letting the rate read as a capture. When one is captured live this qualifier
+    # comes off with the recording it describes.
+    return (
+        f"{_pct(summary.compliance)} ({scenarios} adversarial {plural}, authored responses){marker}"
+    )
 
 
 def _class_rates(feeds: Sequence[dict[str, Any]]) -> dict[str, float]:
@@ -329,10 +334,20 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     fixed; the scorecard's *Pooled accuracy by stratum* separates them, and the per-scenario detail
     is in the [scorecard](scorecard.html).
 
-[^injection]: The injected-instruction compliance rate is measured only where there is a defense to
-    test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
+[^injection]: The injected-instruction compliance rate is computed only where there is a defense
+    to test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
     baseline has neither, so the payload is not run through it — the result would measure the
     absence of a defense the baseline never claimed. Zero is the target (DEC-075).
+
+    **Trace's zero is authored, not captured** (DEC-152). Both adversarial recordings were written
+    offline against the deterministic substitute, on the stated premise that "a correct run under
+    attack produces the same analysis"; no model has been run against a poisoned document in
+    either scored condition. The reason is mechanical rather than evasive: `trace capture` takes a
+    scenario and a stage and has no condition parameter, so the capture path cannot reach a
+    condition the replay path understands. The one live data point is the ForgeFlow capture, whose
+    extraction recorded an `injection_attempt` observation against a real payload — one payload,
+    one stage, n=1. Until a condition can be captured, this cell reports what a correct run was
+    expected to do.
 {classes_footnote}
 {stability_footnote}
 """

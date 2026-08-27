@@ -10142,3 +10142,64 @@ Alternatives Considered:
   the result. Trace's citations are identifiers into a store, and `finding_evidence_coverage`
   already reports them resolving with their hashes verified. Re-deriving that by grepping the
   documents would replace a stronger check with a weaker one).
+
+## DEC-152: An authored zero and a captured zero are different evidence, and the page says which it is
+
+Date: 2026-08-26
+
+Status: Accepted
+
+Decision:
+
+**Every published injected-instruction compliance rate names the provenance of the responses it
+was computed from.** The scorecard's adversarial section gains a *Responses* column reading the
+model attribution DEC-136 already carries — the model's name where a capture produced the
+responses, `authored` where the recording was written against the deterministic substitute. The
+comparison table's compliance cell carries the same qualifier inline, and its footnote states
+plainly that no model has been run against a poisoned document in either scored condition.
+
+**Both adversarial recordings are authored, and their own provenance files always said so.**
+`benchmarks/unsigned-webhooks/conditions/adversarial/recorded/provenance.md` and its rag-support-bot
+twin record `profile: offline-fake` and the premise the recordings were built on: "the reasoning
+and report recordings are the clean condition's, unchanged, because a correct run under attack
+produces the same analysis." That is a reasonable expectation and it is not a measurement. The
+disclosure existed at the file level and never reached the page where the claim is made.
+
+**The cause is a missing parameter, not a shortcut.** `trace capture` takes a scenario and a stage
+and has no condition argument — not in `cli.py:_capture`, not in `services/evaluation/capture.py`.
+The harness understands conditions (`_recordings_for(entry, ablations, condition=condition)`) and
+the registry declares them (`conditions:`, `condition_workflow_versions`), so the replay path knows
+about conditions and the capture path does not. The adversarial corpus is authored because
+capturing it was not expressible. Plumbing the condition through capture is the work that retires
+this entry's qualifier, and it is named here so the qualifier cannot outlive the reason for it.
+
+Why:
+
+- **This is the project's own stated failure, applied to its own instrument.**
+  `journal/2026-08-13-adversarial-measurement.md` records the sentence: "the difference between
+  `complied=False` by construction and `complied=False` by measurement is invisible in the number
+  and is the entire credibility of the number. This project's thesis is that absence of evidence
+  is not evidence of absence; a hard-coded zero was the evaluation committing the failure the
+  pipeline exists to prevent." That lesson was applied to how the metric is computed and not to
+  where its inputs came from.
+- **It is the most impressive-sounding number in the corpus**, which is exactly why it needs the
+  qualifier most. A reader meeting "0% across six payload classes" has no way to know it describes
+  an expectation rather than a result, and the interview package presented it as "the measured
+  half".
+- **Marking it costs nothing and keeps the claim available.** The defense is real — the fence, the
+  delimiter neutralisation, and the structural checkpoints all exist and are tested. What is
+  missing is a capture, and saying so is the difference between a claim that survives a follow-up
+  question and one that does not.
+
+Alternatives Considered:
+
+- **Mark the adversarial rows non-authoritative, as baselines and ablations are** (rejected: the
+  DEC-012 marker means "this run was deliberately degraded". The adversarial condition is the
+  ordinary pipeline meeting a poisoned document, which is an authoritative shape. The defect is
+  the recording's provenance, and provenance is what the column reports).
+- **Remove the rate until a live capture exists** (rejected: the structural half is real and
+  checkpoint bypass is genuinely structural rather than sampled. Withdrawing the number would hide
+  a defense that exists behind a measurement that does not).
+- **Say it in prose on the page and leave the table alone** (rejected: prose drifts and tables get
+  quoted. The column is derived from the recording's own attribution, so it cannot disagree with
+  the recording the way a sentence can).
