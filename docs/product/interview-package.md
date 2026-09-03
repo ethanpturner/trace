@@ -1,6 +1,6 @@
 # Interview package
 
-Eight stories, each sourced from the decision log and the measured record. Every claim below
+Nine stories, each sourced from the decision log and the measured record. Every claim below
 cites the decision entry or the number behind it; nothing is asserted that the repository does
 not carry. Each story is sized to be told in one to two minutes and to survive the follow-up
 question, which is the point of sourcing them.
@@ -189,3 +189,44 @@ The MVP's constraints are decisions, not accidents, and each names its expansion
 
 The closing line of the story is the project's own: the roadmap's exit criterion for the
 public release is that it "does not imply production readiness it has not earned."
+
+## 9. Why the same distinction now spans four projects
+
+**The story.** DEC-009 is the founding rule here: missing documentation is never proof of a
+vulnerability. A finding means evidence supports a weakness; a documentation gap means it could not
+be determined whether a control exists. That distinction turned out to be portable, and three
+sibling projects now apply it to different layers of the AI stack.
+
+- **[whence](https://github.com/ethanpturner/whence)** — model supply chain. Resolves a published
+  model's dependency graph and records, per edge, whether a relationship was *asserted* by the
+  publisher or *established* by the tool. Model signing attests bytes and says nothing about
+  lineage; AI-BOM generators transcribe what a model card claims. Phase one runs.
+- **[tearline](https://github.com/ethanpturner/tearline)** — retrieval entitlements. Checks that an
+  index's per-chunk permissions match the source system's and that retrieval respects them. OWASP's
+  RAG guidance prescribes exactly these controls and names no tool for any of them. Verification
+  runs against fixtures.
+- **[attestrun](https://github.com/ethanpturner/attestrun)** — evaluation attestation. Binds a run's
+  inputs and result into a manifest and re-derives the claim offline, because published AI-security
+  results are largely not checkable.
+
+**Why it generalises.** Each domain has a system that cannot distinguish *this was checked and
+holds* from *nobody looked*, and each resolves it the same way: a three-valued verdict —
+`verified`, `contradicted`, `unverifiable` — with no boolean and no confidence score, because a
+score collapses "not determined" onto the same axis as "not true".
+
+**The follow-up this survives.** *Isn't that just a naming convention?* No — it changes what the
+tools refuse to say. `whence` emits `unverifiable` on essentially every lineage edge, because model
+cards name a base and stop; a tool reporting those as verified would be asserting a check it never
+performed. `tearline` refuses to run a differential probe under one identity, because a single
+identity's results establish nothing about a boundary, and "no leak detected" would be false
+assurance produced by a check that appeared to succeed.
+
+**The strongest evidence it is load-bearing.** In `whence`, a namespace-ownership check consulted
+only organizations, which would have reported every *user*-owned namespace as abandoned and flagged
+live owners as having released names they still hold. In its structural lineage check, two
+successive field sets produced a 26% then a 3% false-positive rate against real published models
+before measurement narrowed them to zero. Both were caught by the same discipline this project
+started with: state what was established, and refuse to state more.
+
+**What this says about the work.** Trace is where the rule was argued. Whether it was *right* is a
+question three independent applications now bear on, and two of them run.

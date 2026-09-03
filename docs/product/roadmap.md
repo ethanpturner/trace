@@ -1027,7 +1027,12 @@ agents — is delivered in full. The immediate sequence now:
    three failed stability runs — so the sweep does not buy eleven repetitions of a known failure
    mode. Then record the keyed measurements: the eleven-scenario live sweep with live baselines
    (#484), the prompt- and model-comparison protocols (#331, #332), and the usage backfill.
-2. Record the demo video (#353), the last Stage 6 asset, narrating the measured results.
+2. Record the demo video (#353), the last Stage 6 asset, narrating the measured results. It is
+   the only Stage 6 deliverable that cannot be produced from the repository: the CI-rendered GIF is
+   the committed silent fallback, and the narration requires a person. The portfolio narrative is
+   otherwise complete, and now reaches past this repository — see interview package story 9, which
+   places Trace as the origin of a distinction three sibling projects apply to other layers of the
+   AI stack.
 3. Execute the remaining decided-family items before opening new decisions. The parser and
    serializer families named here previously — DEC-070's OpenAPI parser and DEC-072's Mermaid
    serializer — are delivered (#504, #503), and the families since grew (DEC-113, DEC-115). What
