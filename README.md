@@ -38,6 +38,21 @@ The recording is rendered from [`demo/forgeflow/pipeline-demo.tape`](demo/forgef
 by [VHS](https://github.com/charmbracelet/vhs), and CI re-renders it when the tape or the command
 surface changes — the demo is derived from the commands, not captured beside them.
 
+
+## Related projects
+
+Trace's founding distinction — DEC-009, that missing documentation is never proof of a
+vulnerability — is applied to three other layers of the AI stack by sibling projects:
+
+| | Domain | Status |
+|---|---|---|
+| [whence](https://github.com/ethanpturner/whence) | Model supply chain: is a declared lineage asserted or established? | Phase one runs |
+| [tearline](https://github.com/ethanpturner/tearline) | Retrieval entitlements: does the index agree with the source system? | Runs against fixtures |
+| [attestrun](https://github.com/ethanpturner/attestrun) | Evaluation attestation: is a published result re-derivable? | Minimal implementation |
+
+All four use the same three-valued verdict — `verified`, `contradicted`, `unverifiable` — and none
+of them uses a boolean or a confidence score.
+
 ## Problem
 
 Modern software development moves faster than traditional security architecture review processes.
