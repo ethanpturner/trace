@@ -1,0 +1,116 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12248,
+    "output_tokens": 8225,
+    "cache_read_tokens": 11392,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.098984",
+    "duration_seconds": 99.6885476661846
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "thr-005 describes an on-path attacker between the Chat Notifier (cmp-002) and the Chat Platform API (cmp-004) on data flow df-003, which carries Deployment Events (ast-001) and may include the secret Chat Bot Token (ast-002). This matches req-DATA-001\u2019s applicable conditions that the system transmits confidential or restricted data and that this data crosses a network boundary the system does not control.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "thr-005 involves the Chat Bot Token (ast-002), which is a credential the Chat Notifier (cmp-002) uses to authenticate to the Chat Platform API (cmp-004) when posting deployment notifications, as described in team notes (evd-011). This meets req-SECRET-001\u2019s applicable condition that the system holds a credential that authenticates it to an external platform, so the requirement bears on the custody of the token at issue in this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "thr-005 concerns an attacker misusing the Chat Bot Token (ast-002) that the Chat Notifier (cmp-002) uses to reach the Chat Platform API (cmp-004) (evd-006, evd-011). req-SECRET-002 would apply if this access is considered access to customer resources on an external platform and if the chat platform offers short-lived or installation-scoped credentials, but the supplied documentation does not establish either fact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Transport protection for Chat Notifier \u2192 Chat Platform API is undocumented",
+        "description": "The system overview states that the Chat Notifier formats deployment events and posts them to the internal chat channel over the chat platform\u2019s API (evd-006), and team notes state that this uses a bot token (evd-011). Data flow df-003 crosses trust boundary tb-002 and records encryption_in_transit as unknown. The documentation does not state whether this outbound connection uses HTTPS/TLS, where any TLS termination occurs, or how the Chat Platform API\u2019s identity is verified, so it is not possible to determine whether the Chat Bot Token (ast-002) or Deployment Events (ast-001) are protected in transit against an on-path attacker as described in thr-005.",
+        "importance": "Without documentation of transport protections on df-003, the assessment cannot determine whether req-DATA-001 is satisfied for the Chat Notifier\u2019s calls to the Chat Platform API or whether thr-005 is already mitigated by encryption and authentication in transit.",
+        "related_object_ids": [
+          "thr-005",
+          "df-003",
+          "cmp-002",
+          "cmp-004",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing the protocol and transport protections used for data flow df-003, including whether HTTPS/TLS is used, where termination occurs, and how the Chat Platform API\u2019s server identity is validated.",
+          "Any deployment or network configuration descriptions that show how traffic from the Chat Notifier to the Chat Platform API is routed and protected across trust boundary tb-002."
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Storage and lifetime of the Chat Bot Token are undocumented",
+        "description": "Team notes state that chat posting uses a bot token held by the notifier (evd-011), but the supplied documentation does not describe where or how this token is stored (for example, a managed secrets service, environment variable, or CI variable), how access to it is controlled, or whether it is rotated or short-lived. Reviewer question qst-003 records this as not established. As a result, the assessment cannot determine how the credential at issue in thr-005 is custodied or how easily it can be rotated or revoked after compromise.",
+        "importance": "This gap prevents verification of controls relevant to req-SECRET-001 and potentially req-SECRET-002 for the Chat Bot Token (ast-002). For thr-005, it also obscures how easily the system can respond to token interception on the notifier\u2013chat platform path by revoking, rotating, or limiting the lifetime of the token.",
+        "related_object_ids": [
+          "thr-005",
+          "ast-002",
+          "cmp-002"
+        ],
+        "requested_evidence": [
+          "Documentation naming where the Chat Bot Token is stored (for example, a specific managed secrets service, CI secret store, or configuration mechanism) and how access is controlled.",
+          "Any documented rotation or expiry policy for the Chat Bot Token, including whether a short-lived or installation-scoped credential mechanism is used and how rotation is performed in practice."
+        ],
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

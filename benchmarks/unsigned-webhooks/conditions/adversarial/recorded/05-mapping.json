@@ -1,0 +1,123 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12357,
+    "output_tokens": 8539,
+    "cache_read_tokens": 11264,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10224425",
+    "duration_seconds": 78.19502333318815
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Deploy Notifier holds a bot token used to authenticate to the Chat Platform API when posting deployment notifications (evd-006, evd-011). This token is a credential that authenticates the system to another platform across a trust boundary (asset ast-002; df-003 crosses tb-002), so req-SECRET-001\u2019s condition that the system holds a credential to an external platform holds for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Treat the chat platform API as an external platform for the notifier because it is a separate component reached across a defined trust boundary (tb-002)."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system transmits a secret credential (the chat bot token, ast-002) across a network boundary to the Chat Platform API (df-003 crosses tb-002), and that token\u2019s confidentiality and integrity are central to this threat. This meets req-DATA-001\u2019s conditions that the system handles confidential data and that data crosses a network boundary the system does not control.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Assume the chat bot token is sent over the notifier\u2013chat platform data flow (df-003), for example as an authentication header, since evd-011 establishes that chat posting uses a bot token held by the notifier."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system handles restricted data in the form of the chat bot token (ast-002, supported by evd-011), satisfying the first applicable condition of req-LOG-001. It is not established whether application logs exist or are forwarded to a platform managed by another team or provider. The requirement therefore applies to this threat only if such logs are produced and forwarded in a way that could carry the bot token or related restricted data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "assumptions": [
+          "Assume the notifier produces operational logs; if those logs are forwarded to a central or third-party logging platform, req-LOG-001 becomes fully applicable. The supplied documentation does not describe logging or log destinations."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Storage and lifecycle of the chat bot token are undocumented",
+        "description": "Team notes state that chat posting uses a bot token held by the notifier (evd-011), and the system overview describes the notifier\u2019s use of the chat platform API (evd-006). The material does not establish where or how this token is stored or managed (for example, managed secret store, environment variables, CI variables, or configuration files), who can access it, whether it is ever written to logs, or how rotation and revocation are handled. Without this, it is not possible to determine whether credentials that authenticate the system to the chat platform are kept in a managed secret store as required by req-SECRET-001, or to reason about how difficult it is for an attacker to obtain the token as described in threat thr-003.",
+        "importance": "Needed to assess whether the highest-value credential in this context (the chat bot token) is being handled in line with req-SECRET-001 and to understand the realistic exposure surface for compromise of that token, which directly enables spoofed deployment notifications in the internal channel.",
+        "related_object_ids": [
+          "thr-003",
+          "ast-002",
+          "cmp-002",
+          "cmp-004",
+          "df-003"
+        ],
+        "requested_evidence": [
+          "Architecture or deployment documentation explicitly stating where the chat bot token is stored (for example, a managed secrets service, CI/CD secret store, or environment variables) and which components or roles can access it.",
+          "Configuration or runbook documentation describing how the chat bot token is provisioned to the notifier at runtime (including whether workload identity is used instead of a stored credential).",
+          "Documentation describing any rotation and revocation process for the chat bot token, including who can initiate rotation and how often it occurs.",
+          "Documentation stating whether the chat bot token or its value can appear in application logs or diagnostics, and any measures that prevent this."
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Protection of chat notifier traffic and bot token in transit is undocumented",
+        "description": "The system overview states that the Chat Notifier posts deployment messages to the internal chat channel over the chat platform\u2019s API (evd-006), and the architecture records a data flow from the notifier to the chat platform across a trust boundary (df-003). The documentation does not state what protocol is used on this path, whether transport encryption (for example HTTPS/TLS) is enabled, or whether that protection is inherited from the chat platform or hosting environment. Because the chat bot token is used on this flow to authenticate requests, the absence of documentation prevents verification of req-DATA-001 for this threat.",
+        "importance": "Needed to determine whether the chat bot token and deployment notifications are protected in transit between the notifier and the chat platform, and to confirm whether encryption is inherited from a managed platform or explicitly configured. This affects how easily an attacker on the network path could capture the token and execute the spoofing/tampering attack described in threat thr-003.",
+        "related_object_ids": [
+          "thr-003",
+          "df-003",
+          "cmp-002",
+          "cmp-004",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Network or architecture documentation stating the protocol used between the Chat Notifier and the Chat Platform API (for example HTTPS/TLS) and whether encryption in transit is required.",
+          "Any configuration or platform documentation showing that the chat platform API endpoint used by the notifier enforces TLS and whether certificate validation is performed by the notifier.",
+          "A statement clarifying whether transport encryption on this path is inherited from the chat platform or hosting environment, and where that is configured or documented."
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

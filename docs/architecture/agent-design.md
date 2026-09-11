@@ -1486,6 +1486,23 @@ Model evaluations must be clearly labeled as model-generated judgments, not obje
 
 The MVP should minimize agent tool access.
 
+## What the interface may put in the trusted half
+
+**Only strings the application owns** (DEC-160). The package an agent receives has two halves: the
+region the prompt tells it to follow, and the fenced region it is told is material under review.
+The first carries identifiers the application allocated, enum values it declared, counts and line
+numbers its ingestion assigned, sentences it wrote, and the assessment name the operator typed.
+
+Anything a document spells is in the second half, whatever its shape. A filename, a Markdown
+heading, and a JSON pointer ride the excerpt's own `<source-content ...>` marker as escaped
+attribute values, and the boundary block states that a value on a marker is source content on the
+same terms as the text between markers. Structured input parsed from a machine-readable artifact
+(DEC-070) is one more fenced block, marked `kind="structured_input"`.
+
+The distinction is not where a string is *printed* but who *chose its characters*. A filename is
+metadata about a document and is also a sentence somebody wrote, and the second fact is the one
+that decides which half it belongs in.
+
 ## Permitted agent-facing retrieval
 
 Agents may receive evidence through an application-controlled retrieval interface.

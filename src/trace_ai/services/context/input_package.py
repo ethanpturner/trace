@@ -54,12 +54,16 @@ if TYPE_CHECKING:
     from trace_ai.services.evidence.index import EvidenceIndex
 
 __all__ = [
+    "APPLICATION_OWNED_LOCATION_KEYS",
     "FENCE_CLOSE",
     "FENCE_OPEN",
     "PRECEDENCE_RULE",
+    "STRUCTURED_INPUT_KIND",
     "ExtractorInput",
     "assemble_extractor_input",
+    "evidence_manifest",
     "fenced_excerpt",
+    "fenced_structured_input",
     "neutralize_fence",
 ]
 
@@ -76,6 +80,17 @@ _FENCE_LIKE: Final = re.compile(r"<\s*/?\s*source-content[^>]*>", re.IGNORECASE)
 # simply is not a delimiter any more. An invisible character would have been shorter and would have
 # made the transformation impossible to see in a diff or a log.
 _NEUTRALIZED: Final = "&lt;source-content-removed&gt;"
+
+# The location fields the application assigns, as opposed to the ones a document spells. A chunk
+# index and a line number are counters the ingestion step produced; a section title is a heading
+# somebody wrote and a JSON pointer is built from keys somebody chose. Only the first kind may
+# appear in the trusted region -- see `evidence_manifest`.
+APPLICATION_OWNED_LOCATION_KEYS: Final = frozenset({"chunk_index", "start_line", "end_line"})
+
+# What the marker on a fenced structured-input block says instead of an evidence identifier.
+# Structured input is parsed from a document (DEC-070) and is therefore material under review, but
+# it is not itself a citable excerpt: a claim derived from it cites the excerpt the parser hashed.
+STRUCTURED_INPUT_KIND: Final = "structured_input"
 
 # The rule `structured-system-input.yaml` states about itself, carried into the trusted region.
 PRECEDENCE_RULE: Final = (
@@ -155,6 +170,48 @@ def fenced_excerpt(excerpt: dict[str, Any]) -> str:
     return f"{opening}\n{neutralize_fence(excerpt['quoted_text'])}\n{FENCE_CLOSE}"
 
 
+def fenced_structured_input(structured_input: dict[str, Any]) -> str:
+    """The reviewer's structured input as one fenced block.
+
+    DEC-070 says it plainly: "a compose file is attacker-authorable text; its excerpts live inside
+    the fence like every other excerpt, and nothing a parser reads becomes an instruction. Parsers
+    are the one place this is easy to forget." The parsed document is still authoritative for the
+    fields it represents -- `PRECEDENCE_RULE`, which the application wrote, says so from the
+    trusted region -- and authoritative data is still data.
+
+    The marker carries `kind` rather than an evidence identifier, because this block is not a
+    citable excerpt: a claim derived from a machine-readable artifact cites the excerpt the parser
+    hashed, not the assembled dictionary.
+    """
+    body = json.dumps(structured_input, indent=2, sort_keys=True)
+    opening = f'{FENCE_OPEN} kind="{_fence_attribute(STRUCTURED_INPUT_KIND)}">'
+    return f"{opening}\n{neutralize_fence(body)}\n{FENCE_CLOSE}"
+
+
+def evidence_manifest(excerpts: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The evidence manifest for a trusted region: application-owned identifiers, never text.
+
+    Public and shared because all four packages build the same manifest into the region their
+    agent is told it may take as instruction. Two of the three fields an excerpt offers are
+    document-derived -- the filename somebody named the file, the heading somebody typed -- so the
+    manifest names the document by the identifier the store allocated (DEC-018) and keeps only the
+    location fields the ingestion step counted. The filename and the heading still reach the agent:
+    they ride the excerpt's own fence marker, where the boundary rules apply to them.
+    """
+    return [
+        {
+            "evidence_id": excerpt["evidence_id"],
+            "source_document_id": excerpt.get("source_document_id"),
+            "location": {
+                key: value
+                for key, value in (excerpt.get("location") or {}).items()
+                if value is not None and key in APPLICATION_OWNED_LOCATION_KEYS
+            },
+        }
+        for excerpt in excerpts
+    ]
+
+
 def _trusted_region(
     *,
     assessment_name: str,
@@ -168,20 +225,14 @@ def _trusted_region(
     present — never the excerpt text. The manifest is here so the agent can see the shape of what
     it was given without the text appearing twice, and so a citation of an absent identifier is
     visibly a citation of something absent.
-    """
-    manifest = [
-        {
-            "evidence_id": excerpt["evidence_id"],
-            "document": excerpt.get("source_filename"),
-            "location": {
-                key: value
-                for key, value in (excerpt.get("location") or {}).items()
-                if value is not None
-            },
-        }
-        for excerpt in excerpts
-    ]
 
+    **Every string here is one the application owns** (DEC-160): identifiers it allocated, enum
+    values it defined, counts and line numbers it assigned, sentences it wrote, and the assessment
+    name the operator typed. Nothing a source document spells — a filename, a heading, a JSON key,
+    a parsed value — reaches this half. Those travel inside the fence, where the boundary rules
+    apply to them, and `tests/unit/test_trusted_region_boundary.py` asserts it over the whole
+    package rather than field by field.
+    """
     lines = [
         "## Assessment",
         "",
@@ -193,7 +244,6 @@ def _trusted_region(
             [
                 {
                     "source_document_id": document.id,
-                    "filename": document.filename,
                     "media_type": document.media_type.value,
                     "trust_level": document.trust_level.value,
                 }
@@ -209,7 +259,7 @@ def _trusted_region(
         "",
         "## Evidence available",
         "",
-        json.dumps(manifest, indent=2, sort_keys=True),
+        json.dumps(evidence_manifest(excerpts), indent=2, sort_keys=True),
     ]
 
     if structured_input is not None:
@@ -217,7 +267,8 @@ def _trusted_region(
             "",
             "## Structured input",
             "",
-            json.dumps(structured_input, indent=2, sort_keys=True),
+            "Supplied inside a source-content block, marked "
+            f'`kind="{STRUCTURED_INPUT_KIND}"`, because it is parsed from a document.',
         ]
 
     return "\n".join(lines)
@@ -274,10 +325,18 @@ def assemble_extractor_input(
         excerpts=excerpts,
         structured_input=structured_input,
     )
+    # The structured-input block is fenced (DEC-160) and so belongs to the untrusted half, but it
+    # is not droppable: the reviewer supplied it and the precedence rule refers to it. Charging it
+    # as overhead keeps the arithmetic where it was when the dictionary sat in the trusted region.
+    structured_block = (
+        fenced_structured_input(structured_input) + "\n\n" if structured_input is not None else ""
+    )
     outcome = fill_untrusted(
         rendered,
         profile=profile,
-        overhead_characters=len(trusted_estimate) + schema_overhead(ContextExtractionProposal),
+        overhead_characters=len(trusted_estimate)
+        + len(structured_block)
+        + schema_overhead(ContextExtractionProposal),
     )
 
     present = [
@@ -292,7 +351,7 @@ def assemble_extractor_input(
 
     return ExtractorInput(
         trusted=trusted,
-        untrusted=outcome.untrusted,
+        untrusted=structured_block + outcome.untrusted,
         evidence_ids=outcome.included_ids,
         excluded_evidence_ids=outcome.excluded_ids,
         metadata={

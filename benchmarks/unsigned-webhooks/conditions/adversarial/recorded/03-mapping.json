@@ -1,0 +1,36 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 23661,
+    "output_tokens": 6454,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.09411625",
+    "duration_seconds": 76.54223945876583
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "req-WEBHOOK-001 applies because the Deploy Notifier exposes an Event Receiver (cmp-001) as a public HTTPS endpoint that accepts deployment events from an external CI platform and these inbound events trigger processing (posting deployment notifications into chat) [evd-006, evd-007], matching the requirement\u2019s conditions for an endpoint that accepts events from an external platform and where inbound events cause work or state change.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [],
+    "catalog_gap_candidates": []
+  }
+}

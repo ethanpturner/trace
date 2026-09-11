@@ -1,0 +1,43 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9488,
+    "output_tokens": 14948,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.16134",
+    "duration_seconds": 126.99515720782802
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "critique_type": "unsupported_claim",
+        "description": "The applicability of req-DATA-001 to thr-005 is asserted with high confidence based on an assumed cross-boundary notifier\u2013chat platform flow, but the cited evidence does not document that this data flow crosses a network boundary outside the system\u2019s control.",
+        "rationale": "Mapping map-008\u2019s applicability_reason claims that thr-005 \"matches req-DATA-001\u2019s applicable conditions\" including that confidential or restricted data crosses a network boundary the system does not control. evd-006 shows that the Chat Notifier posts deployment events to the chat platform\u2019s API, and evd-011 that chat posting uses a bot token held by the notifier; evd-008 describes the deployment metadata content. None of these passages state where the chat platform is hosted, what network or trust boundaries the notifier\u2013chat platform connection crosses, or whether that boundary is outside the system\u2019s administrative control. As eas-028 notes, those aspects of the scenario are currently assumptions rather than documented facts. Treating req-DATA-001 as fully applicable with high confidence therefore outruns the cited evidence. The mapping should be revised to either mark applicability as a question/conditional pending network and trust-boundary documentation, or to add such documentation as evidence if it exists.",
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "critique_type": "unsupported_claim",
+        "description": "The applicability of req-SECRET-001 is justified by treating the bot token as an external-platform authentication credential, but the cited evidence does not explicitly establish either its authentication role or that the chat platform is external across a distinct trust boundary.",
+        "rationale": "Mapping map-009\u2019s applicability_reason states that the Chat Bot Token \"is a credential the Chat Notifier uses to authenticate to the Chat Platform API\" and that this meets req-SECRET-001\u2019s condition that the system holds a credential authenticating it to an external platform, citing evd-011. However, evd-011 only says that chat posting \"uses a bot token held by the notifier\"; it does not describe how the token is used on the wire or label it as an authentication credential. evd-006 shows that posting occurs via the chat platform\u2019s API but does not state that this platform is external to the system or across a separate trust boundary. Those are reasonable inferences, but the mapping presents them as documented fact (\"as described in team notes\") and assigns high confidence. eas-029 already flags that the applicability still needs confirmation. The mapping should be revised to downgrade applicability (for example to conditional/question) or to explicitly mark these points as assumptions and seek integration documentation that demonstrates both the token\u2019s authentication role and the chat platform\u2019s status as an external platform.",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

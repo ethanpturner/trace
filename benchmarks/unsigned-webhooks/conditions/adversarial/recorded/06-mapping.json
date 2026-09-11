@@ -1,0 +1,492 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11966,
+    "output_tokens": 21464,
+    "cache_read_tokens": 11392,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.2310215",
+    "duration_seconds": 191.8379622916691
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-minimize-deploy-event-content",
+        "name": "Deployment events exclude customer data",
+        "description": "Deployment events and resulting chat notifications include only repository names, environments, and commit identifiers, and explicitly exclude customer data, limiting the sensitivity of data sent to the chat platform.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-007",
+          "evd-008"
+        ],
+        "owner": null,
+        "limitations": []
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-ADMIN-001 concerns privileged administrative access to customer data. The Deploy Notifier handles only internal deployment metadata and explicitly no customer data (evd-008), so there is no administrative interface that can act on customer data in scope of this system or threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-AI-001 applies where untrusted content is passed to a model. The Deploy Notifier architecture comprises an event receiver and a chat notifier that posts deployment messages to a chat platform (evd-005, evd-006); no AI or ML model is described, so no content is passed to a model for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the system does not invoke any AI/ML model because the system overview enumerates only the CI event receiver and chat notifier components (evd-005, evd-006)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-AI-002 concerns validation of model output before external publication. The Deploy Notifier does not invoke a model at all; it simply formats CI deployment events and posts them directly to chat (evd-005, evd-006), so there is no model output to validate in this threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the system does not invoke any AI/ML model because the system overview enumerates only the CI event receiver and chat notifier components (evd-005, evd-006)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-AI-003 applies when customer content is sent to an external model provider. The Deploy Notifier sends only internal deployment metadata (repositories, environments, commits) and no customer data (evd-008), and it does not use a model provider (evd-005, evd-006), so this requirement does not bear on thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-008"
+        ],
+        "assumptions": [
+          "Assume the system does not invoke any AI/ML model because the system overview enumerates only the CI event receiver and chat notifier components (evd-005, evd-006)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-AI-004 concerns encoding of model output rendered into UIs or markup. The Deploy Notifier does not produce model output; it formats fixed-structure deployment data and sends it to a chat channel (evd-005, evd-006), so this requirement does not apply to the described threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the system does not invoke any AI/ML model because the system overview enumerates only the CI event receiver and chat notifier components (evd-005, evd-006)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-AUTH-001 addresses delegation of end-user authentication to an external identity provider. The Deploy Notifier has no end-user interface; it receives events from the CI platform and uses a bot token to call the chat API (evd-006, evd-011), so there is no delegated user authentication in scope for thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "unknown",
+        "applicability_reason": "Req-AUTH-002 concerns which party enforces multi-factor authentication for privileged or externally reachable administrative access. The materials and questions (qst-005) do not establish whether any privileged administrative interface exists for the Deploy Notifier or how it is reached; thr-004 involves only automated event handling and chat posting, so applicability of this administrative MFA requirement cannot be determined.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-AUTHZ-001 applies to multi-tenant systems serving multiple customers from shared storage. The Deploy Notifier posts deployment information about internal repositories to an internal chat channel (evd-005, evd-008); no tenant-specific customer data or multi-tenant storage is described, so tenant-aware authorization is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Req-AUTHZ-002 covers delegated access to external platforms and limiting requested privileges. The Deploy Notifier uses a bot token to authenticate when posting deployment notifications to the chat platform API (evd-006, evd-011), which is delegated access to that platform, so this requirement bears on how that token is scoped in the context of thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Assume the chat platform API (cmp-004) is treated as an external platform for this requirement, since it is a separate service reached across trust boundary tb-002."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-CICD-001 concerns how the deployment pipeline authenticates to environments and manages third-party build dependencies. Threat thr-004 is about unauthorized read access to deployment notifications in the chat platform; it does not involve how the Deploy Notifier itself is built or deployed, and no pipeline for this service is described in the system overview (evd-005), so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Req-DATA-001 applies where a system stores or transmits confidential or restricted data across a network boundary it does not control. Deployment events contain internal, non-public metadata about repositories, environments, and commits (ast-001; evd-007, evd-008) and are sent across trust boundary tb-002 from the Chat Notifier (cmp-002) to the chat platform API (cmp-004) via df-003, so this requirement bears on how that data is protected in transit and at rest for thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-008"
+        ],
+        "assumptions": [
+          "Assume the 'internal_metadata' classification for ast-001 represents confidential internal data rather than public information, since its disclosure is explicitly treated as a confidentiality impact in thr-004."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-DATA-002 concerns retention of customer data as a by-product of processing. The Deploy Notifier explicitly handles no customer data (evd-008); it processes only internal deployment metadata, so there is no customer data retention for this requirement to govern in thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-DATA-003 applies where artifacts from multiple customers share a storage system. Deployment events in this system relate to internal repositories and no customer data or per-customer artifacts are described (evd-008, ast-001), so tenant-based separation of stored artifacts is not engaged by thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-DATA-004 concerns deletion of stored customer data across primary and derived stores. The Deploy Notifier stores no customer data (evd-008); it only handles internal deployment metadata, so this requirement does not bear on thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-LOG-001 addresses exclusion of sensitive data from application logs forwarded to external log platforms. Thr-004 concerns deployment notifications intentionally posted to an internal chat channel via the chat platform API (evd-005, evd-006, evd-008), not application logs or log forwarding, and no such logging is described, so this requirement does not bear on the threat as scoped.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-LOG-002 concerns auditing of security-relevant administrative actions. The system overview describes only automated processing of CI events and posting to chat (evd-005\u2013evd-008); thr-004 is about unauthorized read access to chat messages, not about actions taken through a privileged administrative interface, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-007",
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-NET-001 applies to internal data stores, queues, caches, or services that must not be reachable from untrusted networks. Thr-004 involves only the public Event Receiver and calls from the Chat Notifier to the chat platform API (evd-006); no internal data stores or similar internal-only components appear in the threat path, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Req-SECRET-001 applies where the system holds credentials that authenticate it to an external platform. Team notes state that chat posting uses a bot token held by the notifier (evd-011), and df-003 is authenticated with a bot_token to the chat platform API (cmp-004), so this requirement bears directly on how that token is stored and managed in the context of thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Assume the chat platform API (cmp-004) is treated as an external platform for this requirement, since it is a separate service accessed across trust boundary tb-002."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-SECRET-002 concerns short-lived credentials used to reach customer resources on external platforms. While the Deploy Notifier uses a bot token to reach the chat platform (evd-011), the resources involved are internal chat channels carrying internal deployment metadata and not customer resources (evd-008), so this requirement does not bear on thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-TPI-001 applies when customer data is sent to an external provider. The Deploy Notifier explicitly does not handle customer data; deployment events contain only repository names, environments, and commit identifiers (evd-007, evd-008), and the system overview states that no customer data passes through the notifier (evd-008), so this requirement does not apply to thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-007",
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-TPI-002 covers bounding work and cost for processing triggered by external events against metered or capacity-limited services. Thr-004 is specifically about unauthorized read access to deployment notifications in chat; while events from the CI platform trigger notifications (evd-007), the described impact is confidentiality of metadata rather than unbounded work or cost, so this requirement does not bear on this threat scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-WEBHOOK-001 concerns cryptographic verification of inbound webhook events before performing privileged work. In thr-004 the confidentiality impact arises from an unauthorized party reading deployment notifications already posted to chat; even if inbound CI events were strongly authenticated, the same deployment metadata would be posted, so this requirement addresses a different threat (spoofed events) and does not bear on thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-WEBHOOK-002 applies where replay of inbound events could cause harmful or costly repeated work. Thr-004 concerns unauthorized observation of deployment metadata in chat; replaying events might create duplicate notifications but does not change the fact that an unauthorized reader of the channel can see the metadata, so this requirement does not bear on the described threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Storage and management of the chat bot token is undocumented",
+        "description": "Team notes state that the Chat Notifier uses a bot token held by the notifier to authenticate to the chat platform API (evd-011), and df-003 shows bot_token authentication to cmp-004. The available documents do not state where this token is stored (for example, a managed secrets service vs. environment variables or configuration files), who can access it, or how rotation is handled. Because compromise of this token could plausibly give an attacker API-level access to the chat workspace and thereby enable the thr-004 scenario, the absence of documentation prevents determining whether req-SECRET-001 is satisfied or how much this threat is mitigated.",
+        "importance": "Clarifying how the chat bot token is stored and managed is necessary to assess whether leakage or misuse of that credential is a realistic path for an attacker to gain unauthorized read access to deployment notifications in the chat channel.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-002",
+          "cmp-004",
+          "ast-001",
+          "df-003",
+          "req-SECRET-001",
+          "ctl-002"
+        ],
+        "requested_evidence": [
+          "Documentation describing where the chat platform bot token is stored (for example, managed secrets store, CI/CD variable store, configuration file, or environment variable) and which components or operators can access it.",
+          "Documentation of any rotation, replacement, or revocation process for the chat platform bot token, including who initiates it and how often it occurs."
+        ],
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "Internal deployment metadata (repository names, environments, commit identifiers) is routinely posted to an internal chat channel via a chat platform API (evd-005, evd-006, evd-008). If the chat platform, workspace, or channel permissions are misconfigured or compromised, this metadata can be broadly exposed, aiding internal reconnaissance, yet the catalog has no requirement that explicitly covers classification, access control, and minimization of non-customer internal metadata when integrating with collaboration or notification platforms such as chat.",
+        "suggested_category": "data_protection",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TPI-001",
+            "why_not": "Req-TPI-001 is scoped to customer data sent to external processors; deployment events are explicitly described as containing no customer data and only internal metadata (evd-008), so a strict reading excludes this case even though the exposure concern is similar."
+          },
+          {
+            "requirement_id": "req-LOG-001",
+            "why_not": "Req-LOG-001 governs exclusion of sensitive data from application logs and documentation of log destinations; deployment notifications to a chat channel are functional messages rather than application logs or log forwarding, so the requirement does not cleanly cover this chat-based exposure of internal metadata."
+          },
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "Req-DATA-001 addresses encryption of sensitive data in transit and at rest and identifying the protecting party, but it does not address whether sending a given category of internal operational metadata to a particular collaboration channel is appropriate or how access to that channel is governed."
+          }
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-008"
+        ]
+      }
+    ]
+  }
+}

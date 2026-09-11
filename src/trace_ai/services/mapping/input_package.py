@@ -64,30 +64,18 @@ from trace_ai.domain.proposals.mapping import MappingProposal
 from trace_ai.domain.question import Question
 from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.services.budget import fill_untrusted, schema_overhead
-from trace_ai.services.context.input_package import fenced_excerpt
+from trace_ai.services.context.input_package import (
+    evidence_manifest as _manifest,
+)
+from trace_ai.services.context.input_package import (
+    fenced_excerpt,
+)
 from trace_ai.services.context.resolutions import (
     answered_question_entries,
     answered_questions,
     recorded_contradictions,
 )
 from trace_ai.services.threats.input_package import UnapprovedContextError
-
-
-def _manifest(excerpts: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    """The evidence manifest for the trusted region: identifiers and locations, never text."""
-    return [
-        {
-            "evidence_id": excerpt["evidence_id"],
-            "document": excerpt.get("source_filename"),
-            "location": {
-                key: value
-                for key, value in (excerpt.get("location") or {}).items()
-                if value is not None
-            },
-        }
-        for excerpt in excerpts
-    ]
-
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

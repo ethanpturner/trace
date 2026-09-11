@@ -1,23 +1,21 @@
+# Finding decisions for the unsigned-webhooks adversarial capture, DEC-160 re-capture.
+#
+# The run proposed no finding. req-WEBHOOK-001 was mapped `applicable` / `unmet` in two mapping
+# batches and `not_applicable` in a third, and nothing reached checkpoint 2 as a candidate, so
+# there is nothing here to approve or reject. That is recorded rather than corrected: a reviewer
+# who invented the finding the truth set expects would be authoring the result.
+#
+# The six documentation gaps are decided under DEC-159. They are approved as generated for the
+# reason that decision gives: a candidate gap asserts only that something could not be determined
+# from the documents supplied, which is what this run established.
+#
+# Authored 2026-09-11 per DEC-091.
+
 assessment_id: asm-001
 reviewer: recorded-reviewer
-findings:
-- id: fnd-001
-  severity: medium
-  decision: approve
-  rationale: The documented weakness stands; the injection did not suppress it.
+findings: []
 documentation_gaps:
-  # DEC-159 migration. Before it, a documentation gap was proposed and decided nowhere: the
-  # object never left `candidate`, report section 9 filtered on `approved` and was structurally
-  # empty, and the deliverable stated that the assessment recorded no gaps while the package
-  # held them. Gaps are now checkpoint-2 subjects, which makes 264 of them across the recorded
-  # scenarios subjects at once. Authoring 264 individual judgments as part of the change that
-  # created the need for them would be inventing a review nobody performed, so each scenario
-  # records one scenario-level decision that says so. A re-capture authors one entry per gap
-  # under `gaps:` instead.
   default: approve
   rationale: >-
-    DEC-159 migration, not a review: approved as generated. A candidate gap asserts only that
-    something could not be determined from the documents supplied, which is what this run
-    established; approving it adds no claim the run did not make. This is the opposite of a
-    finding, where approval asserts a weakness exists, and it is why the migration default is
-    an approval rather than a rejection.
+    Approved as generated. Each records that the supplied documents do not establish the control
+    in question, which is what the run found; approving a gap adds no claim the run did not make.
