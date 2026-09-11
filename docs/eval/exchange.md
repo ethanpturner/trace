@@ -299,7 +299,7 @@ and the claim is accurate. Approval then succeeded.
 
 | | Doctored, default kind | Doctored, `--kind report` |
 |---|---:|---:|
-| Packet-sole objects at extraction | 4 | 2 |
+| Packet-sole objects at extraction | 4 (a component, an asset, a data flow, a trust boundary) | 2 (a component, an asset) |
 | Packet-sole `documented` claims at extraction | 7 | 4 |
 | Subjects carrying `report_derived` | 0 (the kind did not exist) | 6 |
 | Blocking questions / validation errors | 2 / 0 | 0 / 0 |
@@ -312,6 +312,16 @@ The approved revision holds 8 components and 4 assets against the extraction's 9
 claims against 25. The renderer draws sections 4 and 5 from approved objects, which is how the
 first doctored report came to describe a telemetry collector nobody built; the four identifiers in
 `approval.excluded_by_the_gate` are the ones that cannot reach a report from this revision.
+
+### Where the run stopped
+
+The run was carried past checkpoint 1 and stood in requirement-and-control mapping when this page
+was written, at $1.09 estimated across three model calls. No report was rendered from it, and the
+page claims none. What the approved revision settles is structural rather than observed: the
+renderer draws sections 4 and 5 from approved objects, and `cmp-009`, `ast-005`, `ctx-023` and
+`ctx-024` are not in the approved revision, so no report drawn from it can carry them. The first
+doctored run is the observation that the same renderer *does* carry such an object when the
+approval lets it through.
 
 ### What this does not establish
 
