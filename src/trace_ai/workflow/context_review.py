@@ -322,6 +322,14 @@ class ContextReviewPackage:
     decision. The values are `ReasonCode` strings, kept as strings so the package carries no
     import an interface has to resolve."""
 
+    unreasoned_report_derived: tuple[str, ...] = ()
+    """Report-derived subjects (DEC-157) whose decision does not say why (DEC-158).
+
+    A subject that exists in the system model only because a document reporting claims *about*
+    the system said so, and that carries no approve-or-reject decision with a rationale. Each one
+    blocks approval until the reviewer states a reason. Derived at build time from the same
+    persisted state the reason is, and stored nowhere."""
+
     def reasons_for(self, object_id: str) -> tuple[str, ...]:
         return self.reasons_by_object_id.get(object_id, ())
 
@@ -358,13 +366,21 @@ class ContextReviewPackage:
     @property
     def approval_blockers(self) -> tuple[str, ...]:
         """What stands between this package and an approval, each named well enough to act on."""
-        blockers = [
-            f"question {question.id} is blocking and unanswered: {question.question}"
-            for question in self.blocking_questions
-        ] + [
-            f"validation error on {error.object_id}.{error.field}: {error.message}"
-            for error in self.outstanding_errors
-        ]
+        blockers = (
+            [
+                f"question {question.id} is blocking and unanswered: {question.question}"
+                for question in self.blocking_questions
+            ]
+            + [
+                f"validation error on {error.object_id}.{error.field}: {error.message}"
+                for error in self.outstanding_errors
+            ]
+            + [
+                f"{object_id} rests on a report-kind document alone (report_derived) and its "
+                f"decision says nothing: approve or reject it with a rationale"
+                for object_id in self.unreasoned_report_derived
+            ]
+        )
         return tuple(blockers)
 
     @property
@@ -386,6 +402,7 @@ class ContextReviewPackage:
             "blocking_questions": len(self.blocking_questions),
             "triggers": len(self.triggers),
             "outstanding_errors": len(self.outstanding_errors),
+            "unreasoned_report_derived": len(self.unreasoned_report_derived),
         }
 
 
@@ -488,6 +505,7 @@ def build_context_review_package(
             if observation.kind is ObservationKind.INJECTION_ATTEMPT
         ),
         reasons_by_object_id=_routing_reasons(handle),
+        unreasoned_report_derived=_unreasoned_report_derived(handle),
     )
 
 
@@ -515,6 +533,40 @@ def _routing_reasons(handle: AssessmentHandle) -> dict[str, tuple[str, ...]]:
     for object_id in revisit_due_claims(handle):
         reasons.setdefault(object_id, []).append(ReasonCode.REVISIT_DUE.value)
     return {object_id: tuple(codes) for object_id, codes in reasons.items()}
+
+
+def _unreasoned_report_derived(handle: AssessmentHandle) -> tuple[str, ...]:
+    """Report-derived subjects whose approve-or-reject decision carries no rationale (DEC-158).
+
+    DEC-157 derives the `report_derived` reason: a subject whose evidence rests entirely on
+    documents the operator registered as reporting claims *about* the system. The reason triages
+    attention and, on its own, nothing else — the doctored exchange run (`docs/eval/exchange.md`)
+    approved four such objects in one blanket pass and rendered a component that does not exist.
+
+    This is the consequence. A flagged subject is outstanding until a `ReviewerDecision` both
+    decides it and says why: an approval or a rejection carrying a non-empty rationale. An edit is
+    not enough — an edit records a change to content, not a judgment about whether the subject
+    belongs in the model — and a blanket confirm with no reason is exactly the pass this exists to
+    stop.
+
+    Nothing here corrects anything (`agent-design.md` section 8): no claim is re-labelled, no
+    object is removed, and a reviewer who writes "keep: the packet is the only source and the risk
+    is acceptable" passes the gate with that on the record. The refusal is the demand for a
+    sentence, not for a particular answer.
+    """
+    from trace_ai.workflow.reason_codes import report_derived_subjects
+
+    flagged = report_derived_subjects(handle)
+    if not flagged:
+        return ()
+
+    reasoned = {
+        decision.subject_id
+        for decision in handle.objects.list(ReviewerDecision)
+        if decision.disposition in {ReviewDisposition.APPROVE, ReviewDisposition.REJECT}
+        and (decision.rationale or "").strip()
+    }
+    return tuple(sorted(flagged - reasoned))
 
 
 def context_review_subjects(context: NodeContext) -> list[str]:

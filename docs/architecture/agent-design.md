@@ -493,8 +493,13 @@ packet, a scanner's output. Whether such a claim is `documented` or `inferred` i
 judgment, and the node reports rather than corrects. What makes the case visible is the
 `report_derived` routing reason on the review package (DEC-157): every object or claim whose
 evidence rests entirely on documents the operator registered as `report` kind carries it, derived
-at package-build time from `SourceDocument.document_kind` and the evidence references, and it
-changes nothing but where the reviewer looks first.
+at package-build time from `SourceDocument.document_kind` and the evidence references.
+
+The reason's consequence is at the approval gate rather than in the node (DEC-158): a
+report-derived subject whose decision carries no rationale blocks approval and is named, so the
+blanket "approve every subject as extracted" is not expressible for the class. The node still
+reports and routes and corrects nothing; what the gate demands is a sentence, not a particular
+answer.
 
 ## Outputs
 

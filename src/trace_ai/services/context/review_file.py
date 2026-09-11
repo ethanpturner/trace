@@ -115,6 +115,11 @@ _HEADER = """\
 # question by writing under `answer:`, and set `confirm: true` on a claim you can vouch for. Leave
 # anything you have no view on exactly as it is: an unchanged entry applies nothing.
 #
+# `decision_rationale:` is optional for most subjects and required for one kind: a subject whose
+# evidence is entirely a document registered with `--kind report`, which the package marks
+# `report_derived`. It exists in the model only because a reviewer's packet or a scanner said so,
+# and approval is refused until its decision says why (DEC-158).
+#
 # List evidence identifiers under an entry's `attach_evidence:` to link existing references to it.
 # Settle a contradiction by filling both `resolution:` and `rationale:` under `contradictions:`.
 # Add an object the extractor missed under `additions:`, as
@@ -154,6 +159,7 @@ class _Entry(BaseModel):
 class _ObjectEntry(_Entry):
     id: str
     decision: str | None = None
+    decision_rationale: str | None = None
     attach_evidence: list[str] = Field(default_factory=list)
     editable: dict[str, Any] = Field(default_factory=dict)
 
@@ -163,6 +169,7 @@ class _ClaimEntry(_Entry):
     status: str | None = None
     confidence: str | None = None
     decision: str | None = None
+    decision_rationale: str | None = None
     confirm: bool = False
     attach_evidence: list[str] = Field(default_factory=list)
     evidence: list[str] = Field(default_factory=list)
@@ -230,6 +237,7 @@ def export_review_file(package: ContextReviewPackage) -> dict[str, Any]:
             {
                 "id": obj.id,
                 "decision": None,
+                "decision_rationale": None,
                 "attach_evidence": [],
                 "editable": {
                     field: obj.model_dump(mode="json")[field]
@@ -246,6 +254,7 @@ def export_review_file(package: ContextReviewPackage) -> dict[str, Any]:
             "status": presented.claim.status.value,
             "confidence": presented.claim.confidence.value,
             "decision": None,
+            "decision_rationale": None,
             "confirm": False,
             "attach_evidence": [],
             "evidence": [excerpt.evidence_id for excerpt in presented.excerpts],
@@ -525,6 +534,7 @@ def _apply_entry(
                 obj,
                 ReviewDisposition(disposition),
                 reviewer_id=reviewer_id,
+                rationale=(entry.get("decision_rationale") or "").strip() or None,
                 workflow_run_id=workflow_run_id,
             )
         except ReviewerActionError as refused:

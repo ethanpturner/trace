@@ -460,6 +460,14 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--approve", action="append", dest="approved", default=[], metavar="ID")
     review.add_argument("--reject", action="append", dest="rejected", default=[], metavar="ID")
     review.add_argument(
+        "--reason",
+        dest="decision_reason",
+        help=(
+            "why, recorded on every decision this invocation makes. Required for a "
+            "report_derived subject (DEC-158); optional for the rest"
+        ),
+    )
+    review.add_argument(
         "--confirm",
         action="append",
         dest="confirmed",
@@ -2686,6 +2694,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
             _require(lookup, identifier, "an object in this assessment"),
             disposition,
             reviewer_id=reviewer,
+            rationale=(getattr(args, "decision_reason", None) or "").strip() or None,
             workflow_run_id=run_id,
         )
         written.append(decision)
