@@ -53,9 +53,12 @@ PACKAGE_NAME = "trace-benchmark-corpus"
 # identity rule moves), MINOR when the change is additive or provenance-only (a scenario arrives, a
 # recording is re-captured under an unchanged truth set). A person decides it; the manifest below
 # is generated.
-PACKAGE_VERSION = "1.0"
+PACKAGE_VERSION = "1.1"
 
-_GROUPS = ("input", "expected", "recorded", "baselines", "conditions")
+# `code` is DEC-156's group: a scenario's running implementation, authored from its truth set and
+# never supplied to Trace. Absent for most scenarios, in which case the group digests an empty
+# inventory; present, it is what a code reviewer's snapshot identity pins.
+_GROUPS = ("input", "expected", "recorded", "baselines", "conditions", "code")
 
 
 def _sha256_file(path: Path) -> str:
@@ -69,6 +72,23 @@ def _files_under(root: Path) -> list[Path]:
     if not root.is_dir():
         return []
     return sorted(path for path in root.rglob("*") if path.is_file())
+
+
+_CODE_SCRATCH = frozenset({".venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"})
+
+
+def _code_files(root: Path) -> list[Path]:
+    """The committed files of a scenario's code layer (DEC-156).
+
+    A code directory is a standalone project that a reviewer runs, so a local `uv sync` or a test
+    run leaves a virtual environment and tool caches beside the source. Those are gitignored and
+    not part of the inventory; a digest that saw them would move on every local run.
+    """
+    return [
+        path
+        for path in _files_under(root)
+        if not any(part in _CODE_SCRATCH for part in path.relative_to(root).parts)
+    ]
 
 
 def _group_digest(paths: Sequence[Path], *, relative_to: Path) -> str:
@@ -148,6 +168,7 @@ def _scenario_entry(entry: Scenario) -> dict[str, Any]:
         "recorded": recorded_files,
         "baselines": baseline_files,
         "conditions": _files_under(entry.path / "conditions"),
+        "code": _code_files(entry.path / "code"),
     }
 
     conditions = [CLEAN_CONDITION, *entry.conditions]

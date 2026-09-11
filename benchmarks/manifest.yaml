@@ -9,11 +9,11 @@
 # catalog pin as an assessment resolves it, the models from the recorded envelopes (DEC-136).
 package:
   name: trace-benchmark-corpus
-  version: '1.0'
+  version: '1.1'
   registry_version: '1.0'
   generated_at: '2026-08-14T12:00:00+00:00'
   scenario_count: 15
-  corpus_digest: sha256:3a0b32a054efc8beee3078d57b33faf8549e56d5fb6cb12ab2b240fc2b2e9e1d
+  corpus_digest: sha256:762d257556d2b6e293b55773326d05f9c94d4e5bb33009df602b2cccc797fb5a
 scenarios:
 - slug: forgeflow
   name: ForgeFlow
@@ -43,7 +43,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:ab4879f5dc0c5c221c7c824a95545a972225c23d3871f6475633cc9511384fbf
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:cb2c7cf91f876964eb64dc77ec16eae064b5a3497925c6b2fab578bcc952ae30
 - slug: husky-ai
   name: Husky AI
   path: benchmarks/husky-ai
@@ -73,7 +76,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:b5f229c8923a81e44fc6172b7ab91de258e78abf54d7419d9ef9cdeaec558c9f
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:ad613461b067cb09d19a51c00d5718b6d7d9319a0e7b49a268af27f6b2b85ab1
 - slug: crypto-wallet
   name: Wallet and Exchange
   path: benchmarks/crypto-wallet
@@ -103,7 +109,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:b0c29e413a1b32f381bf08cb0b1623be1ea0fcaee728612f50eecf35d3e5da0a
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:2fc2f0ef38d62d3695378b33ea89061fc2e63fb5b8d3791db0d4075c9851bc32
 - slug: invoice-agent
   name: Invoice Agent
   path: benchmarks/invoice-agent
@@ -133,7 +142,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:8edd11f8a180e31088d2adfa37729a41e77fe7892ddff07fe6359e9bf800e96b
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:884459201da41ab4b385480de682d0bae30e4cfd72142146a401117243c97fee
 - slug: unsigned-webhooks
   name: Deploy Notifier
   path: benchmarks/unsigned-webhooks
@@ -154,8 +166,8 @@ scenarios:
       count: 1
       digest: sha256:7f49765674b9afb92ce28bc68ac60c81daf2c64028267b7c5a9aed5904f2c8f2
     expected:
-      count: 7
-      digest: sha256:609e34c5867e3fc72ac32baf29696a25963ee5776882338439864e9c313b3f6e
+      count: 9
+      digest: sha256:d66ad0e2797cbd0f5a2cdb137a80492bac97f2daa370110d0081dd003980a943
     recorded:
       count: 14
       digest: sha256:8e0d3d0cede0f2f382020972ad5b4d8244934c91736823da594203391f7519f7
@@ -165,7 +177,10 @@ scenarios:
     conditions:
       count: 16
       digest: sha256:fdb79f43299a77b9fc37c738e11937b5d1d7a8abcdd11b9c12d8eb2dbf2eea2c
-  digest: sha256:b56f6278c80a0f2eca02499ad73e3dba4c1d547ab3c2183ff1e3c24f629aa7b8
+    code:
+      count: 12
+      digest: sha256:57f220894800b78a6355cc22c1315e0a560ef9029d8dcf4744366cb96b880c8c
+  digest: sha256:4d9b065ebdebe9070280b8d400e84ffe31fc83b87b37a0b67be4a5a9637c759d
 - slug: contradictory-docs
   name: Export Service
   path: benchmarks/contradictory-docs
@@ -195,7 +210,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:757d32ed531e4a1da352cc8ec2b011a47c2660af150257224cf31c1461577b36
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:8bd0b45884af8a96770fb22940b124ea706b96b79884f02ea930d6fa3247f730
 - slug: oidc-portal
   name: Support Portal
   path: benchmarks/oidc-portal
@@ -225,7 +243,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:565c8686bd98d1aefcac653ca1b14de8d08ec493a859e0f61c584faddc3af3d5
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:fb484b2a7f31aaefd9325a1bf246378859cba459bc66f9cf6fc930efa82b804f
 - slug: managed-db-service
   name: Metrics Store
   path: benchmarks/managed-db-service
@@ -255,7 +276,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:0ad5985c08ed3720285af225b7e5aaf619d00591dfe7c47ea6f51f422fa8a8be
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:d755e8dab7e4f9f4d8a6ca9aada743e10c0c0c7abd169fba17c403837300aeea
 - slug: missing-docs
   name: Kiosk Sync Service
   path: benchmarks/missing-docs
@@ -285,7 +309,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:497802e009a92bb6cb74eccb970c6418169f7c1e6883f9c6c0a0645db71ba1ab
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:1a70b05b60e9ef8c629d87a52d8cb3b723139b47e4d9c3ba8dc9d0098bbc054f
 - slug: rag-support-bot
   name: Relay Answers
   path: benchmarks/rag-support-bot
@@ -306,8 +333,8 @@ scenarios:
       count: 3
       digest: sha256:f3258510ef62dabb113414dce36c6eb3b9e363de4b692e97821861940ee9d63d
     expected:
-      count: 7
-      digest: sha256:479ed3be556d2e1b7090672f4a267d7b84fb0a67994fb7f4266f4c83d5608333
+      count: 9
+      digest: sha256:9e61cf9f9d7383a7d1898f8e95cfc3d0ab6040c98253df2eee73bb67f3c89244
     recorded:
       count: 24
       digest: sha256:9a21191fc99fdf9d1509c82d540a41f99780b3210512321e6e6a7a8ce1a956fa
@@ -317,7 +344,10 @@ scenarios:
     conditions:
       count: 19
       digest: sha256:d2be3cb75a2b9445942c527ef789c2e087180a60e527894ed6fdfde3ddab011b
-  digest: sha256:20346ed105c62e5f5be469a334edf97b08be9f1d65e94f615024038b92472a18
+    code:
+      count: 16
+      digest: sha256:a032836a138ada4fe0de6696e135aa9191d19003aee369c90cdc0c20433e9f74
+  digest: sha256:f33c37ec5ca2794db4df580fa0bbc2efa128df81fcf48c73f431c56842a48d7c
 - slug: reply-tuner
   name: Reply Tuner
   path: benchmarks/reply-tuner
@@ -347,7 +377,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:a5f45e46d665f85407da4171b26f32c0c50e57b546e61cc05c0fbfa95bc67105
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:6d659c6ad3a82aecbbecf3f5c053e8120b3c45f00264f749ae6a407c340e4284
 - slug: order-notifier
   name: Order Notifier
   path: benchmarks/order-notifier
@@ -377,7 +410,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:90059aca3f49037c57171c7da1dfae26ea0e8be103af9a35c43504cb55d9d185
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:630d360144083124c7626f9a01f10ad6db065dc40864edbc57f0fd567ee3f8ba
 - slug: translation-gateway
   name: Helpdesk Translate
   path: benchmarks/translation-gateway
@@ -407,7 +443,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:56689dcfcc1d88d572f637e32beac55499adfecd282228b6f81933ca36d2c3fb
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:6b381bb474c29e40f46e96adf0080c33b7fd832a27525f11ea918f6a4a3cbf84
 - slug: parcel-platform
   name: Parcelworks
   path: benchmarks/parcel-platform
@@ -437,7 +476,10 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:d483f60f60df9c461bdfadfc207f0465243ff7ac432dcdc6104c4cdd2e03d890
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:fcdbe0b90416beea58ef2465e270c78be368f0a830c9660563f84b2bcf64e7c1
 - slug: nightly-reconciler
   name: Nightly Reconciler
   path: benchmarks/nightly-reconciler
@@ -467,4 +509,7 @@ scenarios:
     conditions:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:2e894b8fdd9eb64857b8466d2417e28bf4f6e5bcf3e73e3c50181171f32cf3bc
+    code:
+      count: 0
+      digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  digest: sha256:f86517d0e7da62c603c974cb1ddce510fa2b887ac0e5bd75188c316d49fc6577

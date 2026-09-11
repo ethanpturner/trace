@@ -1,6 +1,7 @@
 # The Trace benchmark package
 
-*Package `trace-benchmark-corpus`, version 1.0. Specification for DEC-146 (#574).*
+*Package `trace-benchmark-corpus`, version 1.1. Specification for DEC-146 (#574); the code layer
+is DEC-156.*
 
 ## What this is
 
@@ -118,6 +119,15 @@ prompt-injection payloads, with its own truth set and its own recording under
 `conditions/adversarial/`. The clean and adversarial recordings pin their workflow versions
 independently.
 
+Two scenarios carry a **code layer** (DEC-156): `unsigned-webhooks` and `rag-support-bot` each
+hold, under `code/`, a running implementation of the system their documents describe, authored
+from the truth set after it was written. It exists so a code reviewer and a documentation reviewer
+can be measured on one system. Trace never reads it. Its truth sits under `expected/` as
+`code-ground-truth.yaml`, in RealVuln's ground-truth shape with `is_vulnerable: false` traps as the
+code-level negative set, beside `code-notes.md`, the author's stated intent per module. The
+manifest digests `code/` as its own group, and that digest is what a code reviewer's snapshot
+identity pins.
+
 Per-scenario catalog pins, workflow pins, model attribution, file counts, and digests are in
 `benchmarks/manifest.yaml`. They are not restated here, because a second copy would drift.
 
@@ -204,6 +214,13 @@ reviewer rather than the model.
 employer-derived content (design-principles §19). That is what makes publication safe, and it also
 means the corpus establishes behaviour on documentation written for this purpose — not on the
 messier documentation real engagements produce.
+
+**The code layer was written by the person who wrote the truth it is scored against.** The two
+coded scenarios realise their documented weakness because the author put it there, and their
+traps are patterns the author expected a scanner to flag. `code-notes.md` records that intent
+before the code so the choice is inspectable, but it does not make the code independent of the
+truth set. A code reviewer's score against it is a score against one author's construction of one
+small system, not against code found in the field.
 
 ## Licensing and provenance
 

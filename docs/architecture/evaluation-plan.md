@@ -140,6 +140,10 @@ assessment.** A benchmark that hands the system under test its own answer key me
     reviewer-notes.md
     evaluation-contract.yaml
     README.md
+    code-ground-truth.yaml          the code layer's truth, where a code layer exists (DEC-156)
+    code-notes.md                   the author's intent per module, written before the code
+  code/                             the system as running code, where authored (DEC-156);
+                                    never supplied to Trace, supplied whole to a code reviewer
 ```
 
 **The expected file list is derived, not enumerated, and the rule has three classes** (the 0.1
@@ -159,6 +163,12 @@ and the 0.2 revision is that widening, decided):
    adjudication record, present once a second annotator's pass exists).
 3. **Scenario apparatus** — `evaluation-contract.yaml`, `reviewer-notes.md`, and `README.md`:
    the contract, the authoring rationale, and the directory's own guide. None is graded.
+4. **Code-layer truth** (DEC-156) — `code-ground-truth.yaml` and `code-notes.md`, present exactly
+   when the scenario carries `code/`. The first is the code layer's truth in RealVuln's
+   ground-truth shape, with `is_vulnerable: false` traps as the code-level negative set; the
+   second is the author's intent per module, written before the code. Neither grades a pipeline
+   object: they grade a code reviewer measured on the same system, and they sit under `expected/`
+   rather than under `code/` because a code reviewer receives `code/` whole.
 
 The listing above is what those rules produce under the current object model and instruments,
 not an independent specification; where the two disagree, the rules govern and the listing is

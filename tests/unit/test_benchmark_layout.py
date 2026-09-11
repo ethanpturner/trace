@@ -229,3 +229,212 @@ def test_forgeflow_is_registered_and_carries_its_narrative() -> None:
     assert Path(str(entry["path"])) == Path("demo/forgeflow")
     narrative = PROJECT_ROOT / str(entry["narrative"])
     assert narrative.is_file()
+
+
+# --- The code layer (DEC-156) ---------------------------------------------------------------
+#
+# A scenario may carry `code/`: a running implementation of the system its documents describe,
+# authored from the truth set so a code reviewer and a documentation reviewer can be measured on
+# one system. Trace never reads it; a code reviewer receives it alone. Its truth lives under
+# `expected/` beside the design-level truth, in RealVuln's ground-truth shape so the scores
+# compare with that leaderboard's (github.com/kolega-ai/Real-Vuln-Benchmark, arXiv 2604.13764).
+
+CODE_TRUTH = "code-ground-truth.yaml"
+CODE_NOTES = "code-notes.md"
+
+# RealVuln's `ground-truth/{repo}/ground-truth.json`, top level and per finding, read from its
+# README on 2026-09-10. Mirrored exactly: a consumer scoring against RealVuln's leaderboard reads
+# these field names and no others.
+REALVULN_TOP_LEVEL = frozenset(
+    {
+        "schema_version",
+        "benchmark_version",
+        "ground_truth_version",
+        "repo_id",
+        "repo_url",
+        "commit_sha",
+        "type",
+        "language",
+        "framework",
+        "authorship",
+        "authorship_model",
+        "authorship_confidence",
+        "authorship_evidence",
+        "findings",
+    }
+)
+REALVULN_FINDING_REQUIRED = frozenset(
+    {
+        "id",
+        "is_vulnerable",
+        "vulnerability_class",
+        "primary_cwe",
+        "acceptable_cwes",
+        "file",
+        "location",
+        "severity",
+        "evidence",
+    }
+)
+REALVULN_FINDING_OPTIONAL = frozenset({"scoring", "non_scoring_reason"})
+# Tokens that would hand a reviewer the answer key. None may appear anywhere under `code/`.
+ANSWER_KEY_TOKENS = ("FND-", "GAP-", "REJ-", "is_vulnerable", "ground-truth", "code-notes")
+CODE_SCRATCH = {".venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+
+
+def coded_scenarios() -> list[dict[str, Any]]:
+    return [s for s in scenarios() if (PROJECT_ROOT / str(s["path"]) / "code").is_dir()]
+
+
+def coded_scenario_ids() -> list[str]:
+    return [str(s["slug"]) for s in coded_scenarios()]
+
+
+def _code_files(code: Path) -> list[Path]:
+    return [
+        path
+        for path in sorted(code.rglob("*"))
+        if path.is_file() and not (set(path.relative_to(code).parts) & CODE_SCRATCH)
+    ]
+
+
+def _code_truth(slug: str) -> dict[str, Any]:
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    loaded: Any = yaml.safe_load(
+        (PROJECT_ROOT / str(entry["path"]) / "expected" / CODE_TRUTH).read_text()
+    )
+    assert isinstance(loaded, dict)
+    return loaded
+
+
+def test_at_least_one_scenario_carries_a_code_layer() -> None:
+    assert coded_scenario_ids(), "DEC-156 shipped two coded scenarios; none is registered"
+
+
+@pytest.mark.parametrize("slug", coded_scenario_ids())
+def test_a_code_layer_is_a_sibling_of_input_never_inside_it(slug: str) -> None:
+    """The harness supplies `input/` and nothing else. Code beside it is unreadable to Trace by
+    construction; code under it would be ingested as material under review."""
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    path = PROJECT_ROOT / str(entry["path"])
+    code = (path / "code").resolve()
+    source = (path / "input").resolve()
+    assert source not in code.parents
+    assert code not in source.parents
+
+
+@pytest.mark.parametrize("slug", coded_scenario_ids())
+def test_a_code_layer_carries_its_truth_under_expected(slug: str) -> None:
+    """The code-level truth and the author's intent note live under `expected/`, where the
+    existing rule already withholds them from Trace, and outside `code/`, which a code reviewer
+    receives whole."""
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    expected = PROJECT_ROOT / str(entry["path"]) / "expected"
+    assert (expected / CODE_TRUTH).is_file(), f"{slug}/code exists without expected/{CODE_TRUTH}"
+    assert (expected / CODE_NOTES).is_file(), f"{slug}/code exists without expected/{CODE_NOTES}"
+
+
+@pytest.mark.parametrize("slug", scenario_ids())
+def test_code_truth_never_appears_without_code(slug: str) -> None:
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    path = PROJECT_ROOT / str(entry["path"])
+    if not (path / "code").is_dir():
+        assert not (path / "expected" / CODE_TRUTH).exists(), (
+            f"{slug} carries a code-level truth file and no code/ for it to describe"
+        )
+
+
+@pytest.mark.parametrize("slug", coded_scenario_ids())
+def test_code_truth_mirrors_realvuln_fields_exactly(slug: str) -> None:
+    truth = _code_truth(slug)
+    assert set(truth) == REALVULN_TOP_LEVEL, (
+        f"{slug}/{CODE_TRUTH} top-level keys diverge from RealVuln's: "
+        f"{sorted(set(truth) ^ REALVULN_TOP_LEVEL)}"
+    )
+    findings = truth["findings"]
+    assert isinstance(findings, list) and findings
+    for finding in findings:
+        keys = set(finding)
+        missing = REALVULN_FINDING_REQUIRED - keys
+        extra = keys - REALVULN_FINDING_REQUIRED - REALVULN_FINDING_OPTIONAL
+        assert not missing, f"{slug} {finding.get('id')} lacks {sorted(missing)}"
+        assert not extra, f"{slug} {finding.get('id')} carries fields RealVuln has none of: {extra}"
+        assert isinstance(finding["is_vulnerable"], bool)
+        assert finding["primary_cwe"] in finding["acceptable_cwes"]
+        assert set(finding["location"]) <= {"start_line", "end_line", "function"}
+        assert set(finding["evidence"]) == {"source", "cve_id", "description"}
+        if finding.get("scoring") == "non_scoring":
+            assert finding.get("non_scoring_reason"), (
+                f"{finding['id']} is non-scoring with no reason"
+            )
+
+
+@pytest.mark.parametrize("slug", coded_scenario_ids())
+def test_code_truth_carries_a_negative_set(slug: str) -> None:
+    """At least one vulnerability and at least three false-positive traps, so the code layer can
+    be scored on precision and not only on recall (DEC-154's reasoning, applied to code)."""
+    findings = _code_truth(slug)["findings"]
+    scored = [f for f in findings if f.get("scoring", "scored") == "scored"]
+    assert any(f["is_vulnerable"] for f in scored), f"{slug} authors no code-level vulnerability"
+    traps = [f for f in scored if not f["is_vulnerable"]]
+    assert len(traps) >= 3, f"{slug} authors {len(traps)} trap(s); at least three are required"
+
+
+@pytest.mark.parametrize("slug", coded_scenario_ids())
+def test_every_code_truth_location_resolves(slug: str) -> None:
+    """A truth entry names a file under `code/` and a function defined in it. A location that
+    does not resolve cannot be matched, and it is also the class of error a reviewer is scored
+    against (DEC-151's resolvability rule, applied to the truth itself)."""
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    code = PROJECT_ROOT / str(entry["path"]) / "code"
+    for finding in _code_truth(slug)["findings"]:
+        target = code / str(finding["file"])
+        assert target.is_file(), f"{slug} {finding['id']} names {finding['file']}, which is absent"
+        text = target.read_text()
+        function = finding["location"].get("function")
+        if function:
+            *owners, name = str(function).split(".")
+            assert f"def {name}(" in text, (
+                f"{slug} {finding['id']}: no def {name} in {finding['file']}"
+            )
+            for owner in owners:
+                assert f"class {owner}" in text, f"{slug} {finding['id']}: no class {owner}"
+
+
+@pytest.mark.parametrize("slug", coded_scenario_ids())
+def test_the_code_layer_carries_no_answer_key(slug: str) -> None:
+    """A code reviewer receives `code/` whole. Nothing in it may name a truth-set key, the truth
+    file, or the intent note; the code states what the system does and nothing about what a
+    correct review of it concludes."""
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    code = PROJECT_ROOT / str(entry["path"]) / "code"
+    offenders = [
+        f"{path.relative_to(PROJECT_ROOT)}: {token}"
+        for path in _code_files(code)
+        if path.suffix in {".py", ".md", ".toml", ".yaml", ".txt"}
+        for token in ANSWER_KEY_TOKENS
+        if token in path.read_text(errors="replace")
+    ]
+    assert not offenders, offenders
+
+
+@pytest.mark.parametrize("slug", coded_scenario_ids())
+def test_the_code_layer_is_a_standalone_project(slug: str) -> None:
+    """A reviewer runs the target from its own directory with its own dependencies; the code
+    layer never joins Trace's dependency set."""
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    code = PROJECT_ROOT / str(entry["path"]) / "code"
+    assert (code / "pyproject.toml").is_file()
+    assert (code / "uv.lock").is_file(), f"{slug}/code pins no lock; the target is not reproducible"
+    assert (code / "README.md").is_file()
+
+
+def test_the_manifest_digests_the_code_group() -> None:
+    """DEC-146's manifest covers the code layer as its own group, so the digest a reviewer's
+    snapshot pins is the digest the manifest records."""
+    loaded: Any = yaml.safe_load((BENCHMARKS / "manifest.yaml").read_text())
+    by_slug = {entry["slug"]: entry for entry in loaded["scenarios"]}
+    for slug in scenario_ids():
+        assert "code" in by_slug[slug]["files"], f"{slug}'s manifest entry has no code group"
+    for slug in coded_scenario_ids():
+        assert by_slug[slug]["files"]["code"]["count"] > 0, f"{slug}'s code group is empty"

@@ -84,7 +84,9 @@ demo/forgeflow/expected/   the truth set; never supplied to Trace. Fully authore
 requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
 benchmarks/          scenarios two onward, same input/ + expected/ + recorded/ layout;
-                     all fifteen registered scenarios carry live-captured recordings and replay offline
+                     all fifteen registered scenarios carry live-captured recordings and replay offline.
+                     Two also carry code/: the documented system as a running service, a code
+                     reviewer's target that Trace never reads (DEC-156)
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
 prompts/             prompt files; shared/ holds the blocks composed into agent prompts
 templates/           report-v1.md, the report template; see Report shape below
