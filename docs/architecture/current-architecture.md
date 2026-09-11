@@ -962,8 +962,10 @@ The review package is derived from the persisted run rather than stored with it,
 does not presuppose which interface renders it.
 
 Each subject in the package may carry typed routing reasons — `low_confidence`, `contradicted`,
-`no_evidence`, `injection_flag`, `revisit_due` — derived at package-build time as deterministic
-functions of persisted state, never stored (DEC-062). Reasons triage the reviewer's attention and
+`no_evidence`, `injection_flag`, `revisit_due`, `report_derived` — derived at package-build time
+as deterministic functions of persisted state, never stored (DEC-062; `report_derived` is
+DEC-157's, and marks a subject whose evidence is entirely documents the operator registered as
+reports of claims about the system rather than descriptions of it). Reasons triage the reviewer's attention and
 never filter: a subject with no reasons is routine, not exempt, and every subject still requires
 a `ReviewerDecision` before the checkpoint advances.
 

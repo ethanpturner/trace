@@ -501,12 +501,15 @@ def _routing_reasons(handle: AssessmentHandle) -> dict[str, tuple[str, ...]]:
         ReasonCode,
         injection_flagged_subjects,
         low_confidence_subjects,
+        report_derived_subjects,
         revisit_due_claims,
     )
 
     reasons: dict[str, list[str]] = {}
     for object_id in injection_flagged_subjects(handle):
         reasons.setdefault(object_id, []).append(ReasonCode.INJECTION_FLAG.value)
+    for object_id in report_derived_subjects(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.REPORT_DERIVED.value)
     for object_id in low_confidence_subjects(handle):
         reasons.setdefault(object_id, []).append(ReasonCode.LOW_CONFIDENCE.value)
     for object_id in revisit_due_claims(handle):

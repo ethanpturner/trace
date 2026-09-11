@@ -13,8 +13,8 @@ remit is unchanged.
 
 The vocabulary is closed. This module derives `injection_flag` (issue #274); the other codes'
 derivations land with the features that produce their inputs — `revisit_due` with DEC-061,
-`contradicted` and `no_evidence` as their handling is built. An absent code never reads as a
-clean bill.
+`report_derived` with DEC-157, `contradicted` and `no_evidence` as their handling is built. An
+absent code never reads as a clean bill.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.reviewer_decision import ReviewerDecision
+from trace_ai.domain.source_document import DocumentKind, SourceDocument
 from trace_ai.domain.source_observation import ObservationKind, SourceObservation
 
 if TYPE_CHECKING:
@@ -38,6 +39,7 @@ __all__ = [
     "ReasonCode",
     "injection_flagged_subjects",
     "low_confidence_subjects",
+    "report_derived_subjects",
     "revisit_due_claims",
     "revisit_due_findings",
 ]
@@ -51,6 +53,7 @@ class ReasonCode(StrEnum):
     NO_EVIDENCE = "no_evidence"
     INJECTION_FLAG = "injection_flag"
     REVISIT_DUE = "revisit_due"
+    REPORT_DERIVED = "report_derived"
 
 
 def injection_flagged_subjects(handle: AssessmentHandle) -> set[str]:
@@ -151,3 +154,47 @@ def revisit_due_claims(handle: AssessmentHandle) -> set[str]:
         for claim in handle.objects.list(ContextClaim)
         if claim.status is ClaimStatus.ASSUMED and claim.id in decided
     }
+
+
+def report_derived_subjects(handle: AssessmentHandle) -> set[str]:
+    """Every context subject whose evidence rests entirely on report-kind documents (DEC-157).
+
+    The derivation is deterministic and reads only persisted state: the operator stated each
+    document's `document_kind` at registration; every evidence reference names its document; a
+    context object or claim that cites evidence, all of it from `report` documents, is flagged. A
+    subject citing one passage of a design document beside the report is not: the report then
+    corroborates rather than originates. A subject citing nothing is not flagged either — that is
+    `no_evidence`'s territory, and a `documented` claim with no evidence is already a validation
+    error.
+
+    The flag says "this exists in the system model because a reviewer's packet said so"; it does
+    not say the packet was wrong. DEC-062's guards hold: the reason triages attention, filters
+    nothing, and edits nothing. Every flagged subject still needs its `ReviewerDecision`.
+    """
+    report_documents = {
+        document.id
+        for document in handle.objects.list(SourceDocument)
+        if document.document_kind is DocumentKind.REPORT
+    }
+    if not report_documents:
+        return set()
+
+    document_of = {
+        reference.id: reference.source_document_id
+        for reference in handle.objects.list(EvidenceReference)
+    }
+
+    from trace_ai.services.context.pipeline import context_objects
+
+    flagged: set[str] = set()
+    for obj in context_objects(handle):
+        cited = [str(evidence_id) for evidence_id in (getattr(obj, "evidence_ids", ()) or ())]
+        if not cited:
+            continue
+        documents = {document_of.get(evidence_id) for evidence_id in cited}
+        if None in documents or not documents <= report_documents:
+            continue
+        object_id = getattr(obj, "id", None)
+        if object_id is not None:
+            flagged.add(str(object_id))
+    return flagged

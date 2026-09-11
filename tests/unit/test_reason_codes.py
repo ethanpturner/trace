@@ -198,6 +198,7 @@ def test_the_vocabulary_is_the_closed_dec_062_set() -> None:
         "no_evidence",
         "injection_flag",
         "revisit_due",
+        "report_derived",
     }
 
 

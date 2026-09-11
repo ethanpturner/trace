@@ -635,7 +635,20 @@ Represents an original source supplied to the assessment.
 | ingested_at | datetime | No | Successful ingestion timestamp |
 | ingestion_status | string | Yes | Current ingestion state |
 | trust_level | string | Yes | How the source should be treated |
+| document_kind | string | No | What the document is about, operator-stated at registration; defaults to `system` (DEC-157) |
 | metadata | map[string, any] | No | Format-specific metadata |
+
+## Document-kind values
+
+system
+
+report
+
+`system` is a document that describes the reviewed system. `report` is a document that reports
+claims made about the system by a third party or a tool: a code reviewer's packet, a scanner's
+output, an audit letter. The operator states the kind; nothing infers it from content. It is not a
+trust level and it unlocks nothing: its one effect is the `report_derived` routing reason at the
+context checkpoint on any subject whose evidence is entirely report-kind documents (DEC-157).
 
 ## Trust-level values
 
