@@ -212,3 +212,123 @@ under Mantis's own validation vocabulary it claimed nothing in any of ten runs.
 
 What is not claimed: anything about reproduction, chaining, or patching, which did not run; a cost
 figure from a bill; or a property of either tool beyond these fifteen runs.
+
+## The exchange into Mantis: Trace's approved outputs as inputs
+
+Two of the plan's exchange steps feed Trace's approved outputs into Mantis. Both ran on
+`unsigned-webhooks` at `c5b0590`, gpt-5.6-sol via `api.openai.com`, medium effort, the ADK reference
+harness with `workflow.pilot.json`, on 2026-09-11. The five unseeded Mantis runs above are the
+baseline. Every run here is attested (manifests `unsigned-webhooks-mantis-seeded-run-{1..5}.json` and
+`unsigned-webhooks-mantis-sast-run-{1,2}.json` in the session's `exchange-b/manifests/`; all
+`verified`).
+
+### Seeded knowledge base: Trace's approved context before the architecture stage
+
+Mantis's threat-model stage reads only `workspace/kb/`, which its architecture stage writes from
+code. The harness stores that workspace in `knowledge.db`, keyed by a run identifier the harness
+mints at start and reads back strictly, so seeding means pinning the identifier and writing the
+files under it before launch. A wrapper did that (it pins the harness's own `uuid` reference, seeds
+six files, then hands over to the unchanged launcher). The seed was Trace's approved system context
+for this scenario, written in the knowledge base's own shape: `architecture.md`, `index.md`, and
+four entity files for the Event Receiver, Chat Notifier, CI Platform, and Chat Platform. It carried
+the approved components, actors, assets, three data flows, the one approved trust boundary, the
+documented statement that the receiver checks no signature, and the approved documentation-gap
+wording for replay: not described, recorded as a gap, no conclusion drawn from silence. It carried no
+truth-set material: no finding, no rejection, no gap as an answer, and a test bans those tokens from
+the seed. Five runs.
+
+**What the pipeline did with the seed.** In every run the architecture stage read all six seeded
+files (twelve `read_file` calls) and then rebuilt all six from code, as its skill instructs when no
+snapshot is pinned. None of the seed's provenance or gap language survived into the rebuilt
+`architecture.md` (0 of 5 runs mention a documentation gap, "not described", or the seed's
+provenance line). What did survive is structure: all five rebuilt knowledge bases kept the CI Platform
+and Chat Platform as entity files, which 0 of 5 unseeded runs had, and the rebuilt threat models
+name the Chat Platform 3 to 6 times where the unseeded ones named it 0 to 1 times. The threat-model,
+planner, and researcher stages read the rebuilt files, not the seed. So the experiment measures a
+seed filtered through the architect, which is the only path this harness offers.
+
+| Run | Emitted (distinct) | FND-UW-01 | Spurious | Named no requirement | Breached REJ-UW-01 (replay) | Breached REJ-UW-02 | Locators resolve | Cost (list) | Wall |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| seeded run 1 | 5 | matched | 4 | 2 | yes | no | 3 of 3 | $2.86 | 945 s |
+| seeded run 2 | 3 | matched | 2 | 1 | yes | no | 2 of 2 | $2.45 | 868 s |
+| seeded run 3 | 3 | matched | 2 | 1 | yes | no | 2 of 2 | $2.63 | 766 s |
+| seeded run 4 | 3 | matched | 2 | 1 | yes | no | 2 of 2 | $2.65 | 748 s |
+| seeded run 5 | 7 | matched | 6 | 2 | yes | no | 5 of 5 | $2.83 | 878 s |
+
+| | Unseeded (5 runs) | Seeded knowledge base (5 runs) |
+| --- | --- | --- |
+| FND-UW-01 matched | 5 of 5 | 5 of 5 |
+| Distinct claims | 19 | 21 |
+| Spurious | 14 (5 naming no requirement) | 16 (7 naming no requirement) |
+| REJ-UW-01 replay breached | 3 of 5 | 5 of 5 |
+| REJ-UW-02 false-positive class breached | 0 of 5 | 0 of 5 |
+| Locators resolve | 12 of 14 | 14 of 14 |
+| Within-run duplicate rows collapsed | 13 of 32 | 9 of 30 |
+| Code layer: true positives / trap hits | 4 of 5 runs, 0 traps | 5 of 5 runs, 0 traps |
+| Cost, mean ± sd (list) | $2.62 ± 0.38 | $2.68 ± 0.17 |
+
+**Reading.** Seeding Trace's approved context into the knowledge base did not reduce Mantis's
+assertion of the replay documentation gap as a finding. Unseeded, it asserted an inadequate replay
+ledger in 3 of 5 runs; seeded with the approved wording that replay is undetermined and recorded as
+a gap, it asserted it in 5 of 5. The mechanism is visible in the transcripts: the architect
+rebuilt the knowledge base from code and the sentence about the gap did not survive the rebuild, so
+the threat-model and research stages never saw it. The seed changed what the knowledge base was
+about (two external platforms became entities, the threat models say more about the outbound
+boundary) and not what the reviewer concluded. The spurious count moved from 14 to 16 over five
+runs, with the record-before-send reliability claim present in every seeded run as in the unseeded
+ones, and the resource-exhaustion family (unbounded body buffering, unbounded outbox), which
+appeared in 3 of 5 unseeded runs, appearing in 5I of 5 seeded runs. With five runs a side, none of
+these differences is a claim about the tool; they are the counts observed.
+
+What this does not test: seeding in skills mode, where a human runs the architecture skill against
+an existing knowledge base and can tell it to preserve entries; a seed placed after the architecture
+stage, which would require a workflow that skips it; or Codex Security's `--knowledge-base` flag,
+which its documentation describes for policy generation.
+
+### SAST seed: Trace's approved finding and gap as Mantis candidates
+
+Mantis documents an intake for external findings, the SAST-seed JSONL intermediate representation
+(`mantis-pipeline-adapter/references/mantis-sast-seed.md`): candidates enter as `PROVISIONALLY_VALID`
+and "must earn their verdict through unchanged downstream gates". The ADK reference harness does not
+consume that file. Nothing under `reference/` reads `workspace/sast_findings.jsonl`; the only trace
+is a `sast_provenance` field on the finding schema. So the two candidates were converted to the IR
+(three fields per candidate: `rule_id`, `severity`, `code_paths`, plus `message`, `rule_name`, `cwe`, under a provenance header; the file is in the session's `exchange-b/sast-seed/`), then written into the harness's finding
+store under the run's identifier with status `PROVISIONALLY_VALID`, and a review-only workflow ran:
+reviewer, its classifier, critic, its classifier, calibrator, reporter. The threat model those stages
+read was the one unseeded run 1 produced. Two runs, gpt-5.6-sol via api.openai.com, medium effort.
+
+The two candidates were Trace's approved finding FND-UW-01 (inbound deliveries processed without
+verifying authenticity, `req-WEBHOOK-001`, severity guidance medium, CWE-345) and the approved
+documentation gap GAP-UW-01 (replay handling not described, `req-WEBHOOK-002`), the latter seeded as
+a LOW candidate whose message says it is a gap, not a finding, and should not be confirmed unless the
+code shows replay unhandled. Both carried `code_paths: deploy_notifier/main.py`, mapped from the
+component the documentation names to the module that implements it.
+
+| Run | Reviewer route | Critic route | FND-UW-01 candidate | GAP-UW-01 candidate | Cost (list) | Wall |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | `confirmed` | `viable` | `PROVISIONALLY_VALID`, priority LOW, risk 2.0 of 10 (impact 4, likelihood 3) | `PROVISIONALLY_VALID`, priority LOW, risk 1.4 of 10 (impact 1, likelihood 1) | $0.64 | 169 s |
+| 2 | `confirmed` | `viable` | `PROVISIONALLY_VALID`, priority LOW, risk 2.0 of 10 (impact 4, likelihood 3) | `PROVISIONALLY_VALID`, priority LOW, risk 2.0 of 10 (impact 2, likelihood 1) | $0.66 | 162 s |
+
+What the gates did with each candidate, in both runs:
+
+- **The authenticity finding.** The reviewer read `main.py`, `replay.py`, `events.py`, `config.py`
+  and routed `confirmed`; its one-sentence reason names the unused `CI_SIGNING_SECRET` and the
+  unauthenticated `POST /events` handler. The critic read `signing.py` as well and routed `viable`.
+  The calibrator then scored it 2.0 of 10, priority LOW, because no reproduction was attempted, and
+  the report lists it under "calibration-only records, not verified", with "if confirmed dynamically"
+  in its impact sentence. Trace's approved severity guidance for the same finding is medium.
+- **The replay gap.** Neither the reviewer's nor the critic's reason mentions it as a weakness. Run 1's
+  calibration note reads the ledger as blocking reuse of a captured identifier and folds the record
+  into the authenticity finding "rather than a distinct replay weakness"; run 2's says the record "is
+  an unproven documentation/code-review candidate" that "must not be confirmed" without evidence of
+  a missing timestamp or nonce check. Both kept it at LOW and neither promoted it. That is the
+  disposition the seed asked for, and it is also the disposition Mantis's own unseeded runs did not
+  reach: three of five unseeded runs asserted inadequate replay protection as a finding.
+
+What did not happen: no candidate reached `VALID`. The harness has no tool by which the reviewer or
+critic writes a per-finding status; their verdicts are one route per run, and the status column
+stays whatever the finding entered with. "Which candidates survive `VALID`" therefore has no answer
+in this harness, and the per-finding signal is the calibration record and the prose that names it.
+The two review-only runs are attested (manifests `unsigned-webhooks-mantis-sast-run-{1,2}.json`
+in the session's `exchange-b/manifests/`; both `verified`). They are not committed as a DEC-155 arm:
+scoring Trace's own findings against Trace's truth set would measure nothing.
