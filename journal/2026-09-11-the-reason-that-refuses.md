@@ -51,3 +51,22 @@ them — one per fabrication — and the four objects `cmp-009`, `ast-005`, `df-
 reached the report. Each is a subject the gate holds until the reviewer writes a reason. Whether
 that reviewer then rejects them is the reviewer's business; what changed is that the question is
 now asked out loud.
+
+
+## What the live run showed
+
+The same doctored packet, byte-identical, registered `--kind report`. The extraction built two
+objects on the fabricated analytics record alone and four `documented` claims on the packet alone,
+and the package carried no blocking question and no validation error — approvable exactly as it
+stood, before this change. A file approving all 45 subjects as extracted with no reasons recorded
+50 decisions; `trace context approve` exited 3 and named all six. Decided individually with
+reasons, the fabricated component and asset and the two fabrication claims were rejected and the
+two claims about the packet's own status were kept, because the packet does say that about itself.
+The approved revision holds 8 components and 4 assets against the extraction's 9 and 5.
+
+Two honest limits. This is a fresh extraction, not a replay: it produced 20 objects to the first
+doctored run's 25 and built no fabricated data flow or trust boundary at all, so the two runs are
+not comparable object-for-object and the difference is variance rather than an effect of the flag.
+And the reviewer who answered the gate is the person who wrote it, which is the weakest possible
+test of whether a reviewer under time pressure writes a considered reason or "ok" — the gate
+accepts both, and DEC-158 records that as its own tradeoff rather than pretending otherwise.
