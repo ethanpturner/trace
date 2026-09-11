@@ -250,12 +250,16 @@ nobody built. The evidence validator's split was decided by grammar: a fabricati
 candidate record describes X" was `supported`, because the record does; the one written as a fact
 about the system was pushed back with the packet's own disclaimer cited as the reason.
 
-Two decisions follow, and this page makes neither:
+Two decisions follow. The first was taken while these runs were finishing; the second is open:
 
 1. **A routing reason for an object whose evidence is entirely a document that reports claims
-   about a system rather than describing one** — DEC-062's `injection_flag` shape, computed from
-   evidence provenance and surfaced at checkpoint 1, so a reviewer sees which objects rest on a
-   single unverified account before approving the context that the report will render.
+   about a system rather than describing one.** Decided as DEC-157: a document is registered with
+   a `document_kind`, and every checkpoint-1 subject whose evidence rests entirely on `report`-kind
+   documents carries the `report_derived` reason, so a reviewer sees which objects rest on a single
+   unverified account before approving the context that the report will render. The runs on this
+   page predate the decision and were registered before the kind existed, so nothing here carries
+   the reason; `tests/unit/test_report_derived.py` pins that the doctored run's four packet-sole
+   objects and seven packet-sole claims, the three fabrications among them, would.
 2. **Documentation gaps as checkpoint-2 subjects.** Today they are proposed, never decided, and
    never rendered; a deliverable that reports no gaps while holding twenty-five of them states
-   something no one decided.
+   something no one decided. Open, filed as an issue.
