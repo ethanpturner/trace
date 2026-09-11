@@ -71,6 +71,7 @@ nav:
   - Evaluation:
       - eval/comparison.md
       - eval/ablation.md
+      - eval/reviewer-arms.md
   - Presentation:
       - presentation/README.md
       - presentation/deck.md

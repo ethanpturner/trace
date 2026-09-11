@@ -88,6 +88,8 @@ benchmarks/          scenarios two onward, same input/ + expected/ + recorded/ l
                      Two also carry code/: the documented system as a running service, a code
                      reviewer's target that Trace never reads (DEC-156)
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
+results/             hand-mapped external-reviewer feeds (DEC-155), results/<arm>/<slug>-run-<N>.yaml;
+                     scored by the sweep as non-authoritative rows, never supplied to Trace
 prompts/             prompt files; shared/ holds the blocks composed into agent prompts
 templates/           report-v1.md, the report template; see Report shape below
 scripts/             repository utilities

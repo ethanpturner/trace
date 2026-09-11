@@ -1,0 +1,41 @@
+# DEC-155 external feed: hand-mapped; identifiers and locators only, no tool prose.
+feed_version: '1'
+arm: mantis
+scenario: unsigned-webhooks
+run: 5
+tool:
+  name: google/mantis
+  version: d13c93fb8e9779801711daea0d65fffa133c3b2d
+models:
+- gpt-5.6-sol
+snapshot_sha: c5b0590320fc0c3d54523ec290b3fa47c69862e8
+provenance: captured
+mapped_by: 'hand-mapped under the DEC-056 rule (requirement + component name), reasoning per row; mapper:
+  the session coordinator''s scoring fork; date: 2026-09-11. Every Mantis row carried status PROVISIONALLY_VALID:
+  the tool''s own review and critic stages confirmed none, so these rows are the as-emitted view; under
+  the tool-validated view the feed would be empty.'
+findings:
+- raw_signature: 6ac1b38f6e15c791
+  requirement_id: req-WEBHOOK-001
+  component: Event Receiver
+  evidence_locator: deploy_notifier/main.py:31
+  mapper_reasoning: the receiver dispatches without verifying delivery authenticity (req-WEBHOOK-001);
+    realises FND-UW-01
+- raw_signature: 5b831042307d5e80
+  requirement_id: req-WEBHOOK-002
+  component: Event Receiver
+  evidence_locator: deploy_notifier/replay.py:14
+  mapper_reasoning: asserts the in-memory delivery ledger is inadequate replay protection (req-WEBHOOK-002);
+    the truth set records replay as undetermined (REJ-UW-01)
+- raw_signature: b7436a0a057bdf0f
+  requirement_id: req-TPI-002
+  component: Chat Notifier
+  evidence_locator: deploy_notifier/notifier.py:13
+  mapper_reasoning: 'bounded work triggered by an external event (req-TPI-002): unbounded buffering or
+    retention reachable from the public endpoint (missing chat credential silently selects an unbounded
+    outbox)'
+unverified: []
+spurious:
+- raw_signature: bfef0ca0527af5d7
+  reason: 'names no catalogue requirement: a lost-notification reliability defect (record-before-send
+    suppresses retries), not a security requirement in catalog 0.1'

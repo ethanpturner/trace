@@ -14,9 +14,10 @@ import json
 from typing import TYPE_CHECKING
 
 from trace_ai.services.evaluation.baselines import BASELINES, run_baseline
-from trace_ai.services.evaluation.external_feed import discover_feeds, score_feed
+from trace_ai.services.evaluation.external_feed import discover_feeds, load_feed, score_feed
 from trace_ai.services.evaluation.harness import run_scenario
 from trace_ai.services.evaluation.registry import load_registry
+from trace_ai.services.evaluation.registry import scenario as load_scenario
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -76,11 +77,28 @@ def collect_feeds(
                 feeds.append(json.loads(baseline.feed_path.read_text(encoding="utf-8")))
 
     for path in discover_feeds(external_root):
-        external = score_feed(path, results_root=results_root / "feeds")
+        external = score_feed(
+            path,
+            results_root=results_root / "feeds",
+            worktree=_reviewed_code(path),
+        )
         if external.feed_path is not None:
             feeds.append(json.loads(external.feed_path.read_text(encoding="utf-8")))
 
     return feeds
+
+
+def _reviewed_code(feed_path: Path) -> Path | None:
+    """The scenario's committed `code/` tree (DEC-156), if it exists, as the locator worktree.
+
+    An external tool reviews a scenario's code at a snapshot the feed names. That code is committed
+    beside the scenario, so the sweep can check each cited `path:line` for resolvability (DEC-151
+    on code) without a checkout of its own. The check is against the tree as committed; the feed's
+    `snapshot_sha` is the reviewer's pin, and the manifest digest (DEC-146) is what holds the two
+    together. A scenario with no `code/` leaves the metric unemitted (DEC-150).
+    """
+    code = load_scenario(load_feed(feed_path).scenario).path / "code"
+    return code if code.is_dir() else None
 
 
 def dump_feeds(feeds: list[dict[str, object]], path: Path) -> None:
