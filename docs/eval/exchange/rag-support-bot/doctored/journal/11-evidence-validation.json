@@ -1,0 +1,1263 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14393,
+    "output_tokens": 22751,
+    "cache_read_tokens": 1152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.24564525",
+    "duration_seconds": 220.2926935418509
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-027"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-027",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "openapi.yaml defines a security scheme named workspaceToken of type http with scheme bearer, matching the claim that the declared security scheme is a workspaceToken HTTP bearer token.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-027",
+            "text": "type: http\n      scheme: bearer"
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-026"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-026",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The /v1/health GET operation in openapi.yaml explicitly sets `security: []`, which in OpenAPI semantics overrides the global security requirement and declares that this operation requires no authentication.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-026",
+            "text": "security: []"
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-017"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-017",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The architecture overview describes Relay Answers as an in-product support assistant where a signed\u2011in user asks a question in the help panel and the assistant answers from Relay's documentation and the workspace's support history with citations. The OpenAPI info description reinforces that this is the in\u2011product surface the help panel calls.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Relay Answers is the in-product support assistant for the Relay project-management platform.\nA signed-in user asks a question in the help panel; the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-017",
+            "text": "description: >\n    The in-product surface the help panel calls. One operation asks a question;\n    the workspace token identifies the caller's workspace."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The overview states answers come from \"Relay's own documentation\" and \"the workspace's support history,\" and the components section specifies the retrieval index holds embeddings of help\u2011center articles and resolved support tickets from those sources. This matches the two stated answer sources.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "A signed-in user asks a question in the help panel; the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-002",
+          "evd-024"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The components section states the help panel is available to every signed\u2011in user of any workspace on any plan, and operations notes add that the help panel ships to every plan, including trials. Together they support the claim that the assistant is available to every signed\u2011in user of any workspace on any plan.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Help panel** \u2014 the in-product chat surface. Available to every signed-in user of any\n  workspace on any plan."
+          },
+          {
+            "evidence_id": "evd-024",
+            "text": "- The help panel ships to every plan, including trials."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The retrieval index is described as serving all workspaces from one shared index, matching the multi\u2011tenant scope claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;"
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The retrieval index description explicitly says a query returns the top eight passages ranked by embedding similarity and that relevance alone selects passages that reach the prompt, matching the stated search behavior.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "a query returns the top eight passages ranked by embedding similarity, and relevance alone\n  selects the passages that reach the prompt."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The ingestion pipeline is documented as reading two named sources\u2014the published help\u2011center repository and the support platform's resolved\u2011tickets export\u2014matching the sources listed in the claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The ingestion pipeline is described as running nightly, and the operations notes refer to \"The nightly ingestion run\", confirming the schedule is nightly.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The components section states the ingestion pipeline is \"the only writer to the retrieval index\", directly supporting the claimed write scope.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The retrieval index is explicitly described as a managed vector database holding embeddings of help\u2011center articles and resolved support tickets, matching the claimed service nature.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Operations notes state that the vector database is reachable only from the answer service's network segment, which directly supports the network\u2011access claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-023",
+            "text": "The index is the only copy of the embeddings; the vector database is the managed\noffering's standard tier, reachable only from the answer service's network segment."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data\u2011handling section explicitly states resolved support tickets are retained for two years and then deleted under the agreed retention schedule, matching the ticket retention claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "Resolved support tickets are retained on the support platform for two years and then deleted\nunder the retention schedule agreed with customers."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Operations notes state that tickets arrive in the resolved\u2011tickets export with customer email addresses masked by the support platform before export, directly supporting the export\u2011masking claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-023",
+            "text": "Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-024"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The operations notes list that ticket text sometimes quotes configuration snippets pasted into support conversations and that masking covers email addresses only, matching the content\u2011includes claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-024",
+            "text": "- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data\u2011handling section states that the help\u2011center repository is public documentation, directly supporting the visibility claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The help-center repository is public\ndocumentation."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The model provider's terms for the assistant's traffic are explicitly said to exclude training on submitted content, matching the data\u2011use\u2011terms claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "The model provider's terms for the assistant's traffic exclude training on\nsubmitted content,"
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data\u2011handling section states that requests are sent over TLS, directly supporting the transport\u2011security claim for requests to the model provider.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "and requests are sent over TLS."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-019",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The prompt assembly description specifies that retrieved passages are placed inside a delimited context block and that system instructions state content inside that block is reference material, not instructions. This directly matches the prompt\u2011structure claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The prompt places retrieved passages inside a delimited context block, and the system\ninstructions state that content inside the block is reference material, not instructions."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-020",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The overview notes that the assistant answers while citing the passages it used, and the prompt assembly section says the answer is returned with the source reference of each cited passage, matching the answer\u2011citations claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The answer is returned with the source reference of each cited passage."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-021",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The prompt assembly section states that answers are rendered in the help panel as plain text and that the panel does not execute or interpret model output, directly matching the model\u2011output\u2011handling claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "Answers are rendered in the\nhelp panel as plain text; the panel does not execute or interpret model output."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-022",
+        "evidence_ids": [
+          "evd-022",
+          "evd-018"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-022",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-018",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Operations notes state that the answer service runs as a single deployment beside the main Relay API, and openapi.yaml defines a /v1/health GET operation whose summary describes it as a liveness probe for the deployment beside the Relay API. Together these support the described deployment topology and associated liveness probe.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-022",
+            "text": "The answer service runs as a single deployment beside the main Relay API."
+          },
+          {
+            "evidence_id": "evd-018",
+            "text": "/v1/health:\n    get:\n      summary: Liveness probe for the deployment beside the Relay API"
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-023",
+        "evidence_ids": [
+          "evd-022"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-022",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The operations notes directly state that each answer makes one model call, there is no multi\u2011step agent loop, and the assistant takes no actions beyond returning text, matching the agent\u2011behavior claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-022",
+            "text": "Each answer makes one\nmodel call; there is no multi-step agent loop, and the assistant takes no actions beyond\nreturning text."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-024",
+        "evidence_ids": [
+          "evd-022"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-022",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The operations notes state that a per\u2011workspace daily answer quota bounds spend and that the service can be disabled per workspace with a feature flag, directly supporting the per\u2011workspace controls claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-022",
+            "text": "A per-workspace daily answer quota bounds spend, and the service can be disabled\nper workspace with a feature flag."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-025",
+        "evidence_ids": [
+          "evd-024"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Operations notes specify that answer quality review is a weekly manual sample of twenty answers by the support team, matching the answer\u2011quality\u2011review claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-024",
+            "text": "- Answer quality review is a weekly manual sample of twenty answers by the support team."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-026",
+        "evidence_ids": [
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-019",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-020",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-025",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-027",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-028",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "openapi.yaml defines a workspaceToken security scheme of type http with scheme bearer, describes it as the signed\u2011in user's workspace\u2011scoped session token, and applies it as a global security requirement. The API info description notes that the workspace token identifies the caller's workspace. Together, these passages support the claim that OpenAPI declares a workspaceToken HTTP bearer security scheme applied by default to operations and representing the signed\u2011in user's workspace\u2011scoped session token.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-019",
+            "text": "components:\n  securitySchemes:\n    workspaceToken:"
+          },
+          {
+            "evidence_id": "evd-027",
+            "text": "type: http\n      scheme: bearer\n      description: The signed-in user's workspace-scoped session token."
+          },
+          {
+            "evidence_id": "evd-020",
+            "text": "security:\n  - workspaceToken: []"
+          },
+          {
+            "evidence_id": "evd-025",
+            "text": "description: >\n    The in-product surface the help panel calls. One operation asks a question;\n    the workspace token identifies the caller's workspace."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-027",
+        "evidence_ids": [
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Candidate record B.2 in the Mantis packet explicitly describes RetrievalIndex.search as scoring every chunk in a process\u2011global index without an authorization scope and returning global top\u2011k results, including private ticket chunks belonging to other workspaces. The claim is about what the candidate record describes, not about confirmed system behavior, and that description matches the cited text.",
+        "missing_evidence": [
+          "Implementation or design documentation for RetrievalIndex.search and any workspace or tenant scoping applied at query time."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "It calls RetrievalIndex.search without an authorization scope. search scores every chunk in the process-global index, including private ticket chunks belonging to other workspaces, and returns the global top-k."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-028",
+        "evidence_ids": [
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Candidate record B.3 explicitly states that run_nightly updates only rows present in the current export, propagate_deletions removes content only for explicit tombstone rows, and that missing tombstones or partial exports can leave old chunks in the index indefinitely. The claim correctly characterizes what the candidate record states.",
+        "missing_evidence": [
+          "Authoritative design or implementation documentation for run_nightly and propagate_deletions behavior, including how deletions and partial exports are handled."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "run_nightly updates only rows present in the current export and propagate_deletions removes content only for explicit tombstone rows included in that same export."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-029",
+        "evidence_ids": [
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Candidate record B.4 states that load_settings substitutes a hard\u2011coded mapping containing dev\u2011token\u2011acme and dev\u2011token\u2011globex whenever WORKSPACE_TOKENS is unset or empty, and that main.py calls load_settings at import without a development\u2011mode gate. The claim accurately reports what the candidate record states, without asserting that this behavior has been verified.",
+        "missing_evidence": [
+          "Configuration and startup code or documentation showing how WORKSPACE_TOKENS and load_settings are implemented and gated in different environments."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "load_settings substitutes a hard-coded mapping containing dev-token-acme and dev-token-globex whenever WORKSPACE_TOKENS is unset or an empty string. main.py calls load_settings at import with no explicit development-mode gate or production startup validation."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-030",
+        "evidence_ids": [
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Candidate record B.5 describes a POST /admin/reindex route that calls run_nightly directly, applies no bearer\u2011token dependency, and is not declared in openapi.yaml. The claim is limited to describing what the candidate record says, which matches the cited passage.",
+        "missing_evidence": [
+          "API implementation or routing configuration confirming whether /admin/reindex exists, how it is authenticated, and whether it appears in the authoritative API specification."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "main.py registers a POST /admin/reindex route that calls run_nightly directly and applies no bearer-token dependency; the workspaceToken scheme is attached only to the answer operation. ... The route is not declared in openapi.yaml, so contract review would not surface it."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-031",
+        "evidence_ids": [
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Candidate record B.6 asserts that the answer route reads the Authorization header but does not wire the resolve_workspace dependency, causing requests without a valid header to proceed using a default workspace despite the OpenAPI security declaration. The context claim explicitly characterizes this as a candidate record assertion, which matches the cited text.",
+        "missing_evidence": [
+          "Authoritative route implementation or framework configuration for the answer endpoint, showing how Authorization headers and workspace resolution are enforced at runtime."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "The answer route reads the Authorization header into a local variable but the resolve_workspace dependency is not wired into the route signature, so a request with no header, or any header value, resolves to the default workspace and proceeds to retrieval and provider calls. The openapi.yaml security requirement on the operation is documentation only;"
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-032",
+        "evidence_ids": [
+          "evd-015",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "Candidate record B.7 states that after each answer, provider.py posts the request identifier, retrieved chunk text, and generated answer to a telemetry collector over HTTPS. However, the same Mantis packet explains that all findings and patches are AI\u2011generated, marked PROVISIONALLY_VALID, and must be manually verified; no reproduction was attempted, and the executive summary treats the result as an evidence gap. Model\u2011generated candidate text is therefore weak, unverified evidence about actual system behavior. The documents establish that this data flow is asserted by an AI\u2011generated candidate record, but they do not sufficiently establish that the telemetry behavior actually occurs in the deployed system.",
+        "missing_evidence": [
+          "Architecture or implementation documentation for telemetry/analytics, including what data provider.py sends, to which endpoint, and over which transport.",
+          "Configuration or code excerpts for the analytics.relay-answers.example collector and any data-processing terms governing it.",
+          "Confirmation from maintainers on whether the candidate B.7 behavior is present in current deployments."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "After each answer, provider.py posts the request identifier, the retrieved chunk text, and the generated answer to a telemetry collector at analytics.relay-answers.example over HTTPS, keyed by a shared collector token from settings."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "**Disclaimer:** *This report was automatically generated by Mantis AI. All findings and patches are AI-generated and must be manually verified by a security or subject matter expert before deployment or disclosure.*"
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "This is an evidence-gap result, **not** an assertion that the target is secure. Eight active candidate records were available, but none contained `repro_status: reproduced`, a qualifying empirically supported `statically_confirmed` status, or exploit-chain metadata."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-033",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Mantis packet's disclaimer states that the report was automatically generated by Mantis AI and that all findings and patches are AI\u2011generated and must be manually verified before deployment or disclosure. The executive summary explains that no candidate records were reproduced or statically confirmed and that the result is an evidence gap. Appendix B notes that the canonical candidate records have status PROVISIONALLY_VALID and that no reproduction was attempted. Together, these passages directly support the described nature of the Mantis review packet and its candidate records.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "> **Disclaimer:** *This report was automatically generated by Mantis AI. All findings and patches are AI-generated and must be manually verified by a security or subject matter expert before deployment or disclosure.*"
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "Eight active candidate records were available, but none contained `repro_status: reproduced`, a qualifying empirically supported `statically_confirmed` status, or exploit-chain metadata."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "Status on every record is `PROVISIONALLY_VALID`: the review and critic stages did not confirm them, and no reproduction was attempted."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The components section describes an ingestion pipeline that is the only writer to the retrieval index, runs nightly, reads the published help\u2011center repository and resolved\u2011tickets export, chunks and embeds them, and records source and timestamp. It also notes that help\u2011center content passes documentation review before ingestion. Operations notes add that the nightly ingestion run replaces changed chunks by source reference and that tickets arrive in the export with customer email addresses masked by the support platform. These passages directly support the described control over the retrieval corpus write path.",
+        "missing_evidence": [
+          "Operational or configuration documentation showing monitoring/alerting for ingestion failures or anomalies, if relevant to control assurance."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item. Help-center content is published through the documentation team's review\n  process before the pipeline ever sees it."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference. Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Operations notes state that the index is the only copy of the embeddings and that the vector database is the managed offering's standard tier, reachable only from the answer service's network segment. This directly supports the claim that the retrieval index is reachable only from the answer service's network segment and therefore not exposed to arbitrary internet clients, limiting access to internal workloads.",
+        "missing_evidence": [
+          "Network topology or firewall configuration confirming how the answer service's network segment is isolated from the public internet."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-023",
+            "text": "The index is the only copy of the embeddings; the vector database is the managed\noffering's standard tier, reachable only from the answer service's network segment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-015",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "Candidate record B.7 states that provider.py posts the request identifier, retrieved chunk text, and generated answer to a telemetry collector at analytics.relay-answers.example over HTTPS, which would imply HTTPS protects the transport to that collector. However, the Mantis packet makes clear that all such findings are AI\u2011generated candidate records, marked PROVISIONALLY_VALID with no reproduction; none has reproduced or statically confirmed status. Under the evidence policy, this model\u2011generated candidate is not sufficient as direct implementation evidence. The documents therefore do not firmly establish that this telemetry control exists as described, even though they describe it as a candidate behavior.",
+        "missing_evidence": [
+          "Authoritative documentation or code for provider.py and telemetry/analytics integration, confirming what data is sent, to which host, and over which protocol.",
+          "Network or TLS configuration for analytics.relay-answers.example showing HTTPS enforcement.",
+          "A reviewed decision record describing the intended telemetry data flows for Relay Answers."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "After each answer, provider.py posts the request identifier, the retrieved chunk text, and the generated answer to a telemetry collector at analytics.relay-answers.example over HTTPS, keyed by a shared collector token from settings."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "**Disclaimer:** *This report was automatically generated by Mantis AI. All findings and patches are AI-generated and must be manually verified by a security or subject matter expert before deployment or disclosure.*"
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "No findings met the reporting quality predicate for verified/reproduced vulnerabilities or qualifying exploit chains."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-004",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-017",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-019",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-020",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-025",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-027",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-028",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "openapi.yaml defines a workspaceToken security scheme of type http with scheme bearer and describes it as the signed\u2011in user's workspace\u2011scoped session token. The global security section applies workspaceToken as the default security requirement for the API, and there is no per\u2011operation override removing it from /v1/answers. The API description further notes that the workspace token identifies the caller's workspace. These passages support the assertion that the documented mechanism for authenticating callers and deriving workspace context for /v1/answers is a workspaceToken HTTP bearer scheme applied as a global security requirement. This assessment is about the documented contract; separate candidate records about enforcement are noted elsewhere but are not direct evidence of the contract itself.",
+        "missing_evidence": [
+          "Implementation or configuration documentation showing how the /v1/answers route enforces the workspaceToken bearer scheme at runtime."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-027",
+            "text": "components:\n  securitySchemes:\n    workspaceToken:\n      type: http\n      scheme: bearer\n      description: The signed-in user's workspace-scoped session token."
+          },
+          {
+            "evidence_id": "evd-028",
+            "text": "security:\n  - workspaceToken: []"
+          },
+          {
+            "evidence_id": "evd-025",
+            "text": "description: >\n    The in-product surface the help panel calls. One operation asks a question;\n    the workspace token identifies the caller's workspace."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-005",
+        "evidence_ids": [
+          "evd-022"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-022",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The operations notes explicitly say that a per\u2011workspace daily answer quota bounds spend and that the service can be disabled per workspace with a feature flag. This directly supports the described control of per\u2011workspace quota and a per\u2011workspace feature flag to bound and gate usage.",
+        "missing_evidence": [
+          "Details of how quotas are configured, monitored, and enforced and whether alerts are raised on quota exhaustion or anomalous usage."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-022",
+            "text": "A per-workspace daily answer quota bounds spend, and the service can be disabled\nper workspace with a feature flag."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The applicability portion of the mapping is supported: the architecture clearly describes a retrieval index populated by a nightly ingestion pipeline that is the only writer, pulling from two named sources (help\u2011center repository and resolved\u2011tickets export), with documentation review and masking applied, which fits a requirement about governing the retrieval corpus write path. However, the conclusion that req\u2011RAG\u2011001 is \"satisfied\" cannot be fully evaluated from the supplied material because the requirement text and acceptance criteria for req\u2011RAG\u2011001 are not present. The evidence shows strong controls on the write path but does not itself state that req\u2011RAG\u2011001 is met.",
+        "missing_evidence": [
+          "Formal wording and acceptance criteria for req-RAG-001.",
+          "Any design or verification record explicitly mapping the ingestion pipeline controls to req-RAG-001 and marking it satisfied."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item. Help-center content is published through the documentation team's review\n  process before the pipeline ever sees it."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference. Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The applicability reasoning is supported: the architecture overview and components description show that the retrieval index holds help\u2011center content and resolved support tickets for all workspaces in a single shared index, and that results are returned to signed\u2011in users via the help panel. Filtering retrieval results by the requesting workspace's authorization is therefore directly relevant to the described cross\u2011workspace disclosure threat. The mapping's statement that req\u2011RAG\u2011002 remains unverified is also supported: neither the architecture nor operations notes describe any workspace or tenant filter on RetrievalIndex.search, and the only description of unscoped search behavior appears in a Mantis candidate record marked PROVISIONALLY_VALID with no reproduction. Treating that candidate as insufficient to establish either presence or absence of workspace scoping matches the evidence policy and the Mantis packet's own disclaimers.",
+        "missing_evidence": [
+          "Design or implementation documentation for RetrievalIndex.search and any workspace or tenant-scoping it applies.",
+          "Explicit verification results or tests demonstrating that retrieval results are filtered by the caller's workspace."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;"
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "A signed-in user asks a question in the help panel; the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "Status on every record is `PROVISIONALLY_VALID`: the review and critic stages did not confirm them, and no reproduction was attempted."
+          }
+        ]
+      }
+    ]
+  },
+  "call_sha256": "1900c076eac7c4d8375d5f948a2e51ec409ed7c813602ae7d7a589814ec71bd1"
+}

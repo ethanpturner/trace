@@ -1,0 +1,444 @@
+{
+ "label": "doctored",
+ "packet_source_id": "src-002",
+ "claims": {
+  "documented_claims": {
+   "count": 33,
+   "cite_packet": 7,
+   "packet_sole_evidence": 7,
+   "rows": [
+    {
+     "id": "ctx-001",
+     "status": "documented",
+     "predicate": "declared_security_schemes",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-002",
+     "status": "documented",
+     "predicate": "operation_authentication",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-003",
+     "status": "documented",
+     "predicate": "purpose",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-004",
+     "status": "documented",
+     "predicate": "answer_sources",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-005",
+     "status": "documented",
+     "predicate": "availability",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-006",
+     "status": "documented",
+     "predicate": "multi_tenant_scope",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-007",
+     "status": "documented",
+     "predicate": "search_behavior",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-008",
+     "status": "documented",
+     "predicate": "sources",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-009",
+     "status": "documented",
+     "predicate": "schedule",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-010",
+     "status": "documented",
+     "predicate": "write_scope",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-011",
+     "status": "documented",
+     "predicate": "service_nature",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-012",
+     "status": "documented",
+     "predicate": "network_access",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-013",
+     "status": "documented",
+     "predicate": "ticket_retention",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-014",
+     "status": "documented",
+     "predicate": "export_masking",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-015",
+     "status": "documented",
+     "predicate": "content_includes",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-016",
+     "status": "documented",
+     "predicate": "visibility",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-017",
+     "status": "documented",
+     "predicate": "data_use_terms",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-018",
+     "status": "documented",
+     "predicate": "transport_security",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-019",
+     "status": "documented",
+     "predicate": "prompt_structure",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-020",
+     "status": "documented",
+     "predicate": "answer_citations",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-021",
+     "status": "documented",
+     "predicate": "model_output_handling",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-022",
+     "status": "documented",
+     "predicate": "deployment_topology",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-023",
+     "status": "documented",
+     "predicate": "agent_behavior",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-024",
+     "status": "documented",
+     "predicate": "per_workspace_controls",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-025",
+     "status": "documented",
+     "predicate": "answer_quality_review",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-026",
+     "status": "documented",
+     "predicate": "api_authentication_scheme",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-027",
+     "status": "documented",
+     "predicate": "search_scope_candidate_behavior",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-028",
+     "status": "documented",
+     "predicate": "partial_export_effects_candidate",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-029",
+     "status": "documented",
+     "predicate": "workspace_token_configuration_candidate",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-030",
+     "status": "documented",
+     "predicate": "admin_reindex_endpoint_candidate",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-031",
+     "status": "documented",
+     "predicate": "authentication_enforcement_candidate",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-032",
+     "status": "documented",
+     "predicate": "received_payload",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-033",
+     "status": "documented",
+     "predicate": "mantis_report_nature",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    }
+   ]
+  },
+  "interpreted_claims": {
+   "count": 0,
+   "cite_packet": 0,
+   "packet_sole_evidence": 0,
+   "rows": []
+  }
+ },
+ "objects": {
+  "components": {
+   "count": 9,
+   "packet_sole_evidence": 1,
+   "cite_packet": 2,
+   "rows": [
+    {
+     "id": "cmp-001",
+     "name": "Relay Answers API",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-002",
+     "name": "Help panel",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-003",
+     "name": "Ingestion pipeline",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-004",
+     "name": "Retrieval index",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-005",
+     "name": "Help-center repository",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-006",
+     "name": "Support platform",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-007",
+     "name": "Provider wrapper (provider.py)",
+     "packet_sole_evidence": false,
+     "cites_packet": true
+    },
+    {
+     "id": "cmp-008",
+     "name": "Hosted model provider API",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-009",
+     "name": "Analytics collector",
+     "packet_sole_evidence": true,
+     "cites_packet": true
+    }
+   ]
+  },
+  "actors": {
+   "count": 2,
+   "packet_sole_evidence": 0,
+   "cite_packet": 0,
+   "rows": [
+    {
+     "id": "act-001",
+     "name": "Signed-in Relay user",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "act-002",
+     "name": "Support team reviewer",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    }
+   ]
+  },
+  "assets": {
+   "count": 5,
+   "packet_sole_evidence": 1,
+   "cite_packet": 5,
+   "rows": [
+    {
+     "id": "ast-001",
+     "name": "Support ticket text",
+     "packet_sole_evidence": false,
+     "cites_packet": true
+    },
+    {
+     "id": "ast-002",
+     "name": "Help-center content",
+     "packet_sole_evidence": false,
+     "cites_packet": true
+    },
+    {
+     "id": "ast-003",
+     "name": "Embeddings index",
+     "packet_sole_evidence": false,
+     "cites_packet": true
+    },
+    {
+     "id": "ast-004",
+     "name": "Workspace tokens",
+     "packet_sole_evidence": false,
+     "cites_packet": true
+    },
+    {
+     "id": "ast-005",
+     "name": "Answer analytics telemetry",
+     "packet_sole_evidence": true,
+     "cites_packet": true
+    }
+   ]
+  },
+  "data_flows": {
+   "count": 5,
+   "packet_sole_evidence": 1,
+   "cite_packet": 1,
+   "rows": [
+    {
+     "id": "df-001",
+     "name": "Help-center repository to ingestion pipeline",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "df-002",
+     "name": "Support platform export to ingestion pipeline",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "df-003",
+     "name": "Ingestion pipeline to retrieval index",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "df-004",
+     "name": "Provider wrapper to hosted model provider",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "df-005",
+     "name": "Provider wrapper to analytics collector",
+     "packet_sole_evidence": true,
+     "cites_packet": true
+    }
+   ]
+  },
+  "trust_boundaries": {
+   "count": 4,
+   "packet_sole_evidence": 1,
+   "cite_packet": 1,
+   "rows": [
+    {
+     "id": "tb-001",
+     "name": "Support platform export boundary",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "tb-002",
+     "name": "Managed vector database boundary",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "tb-003",
+     "name": "Model provider boundary",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "tb-004",
+     "name": "Analytics collector boundary",
+     "packet_sole_evidence": true,
+     "cites_packet": true
+    }
+   ]
+  }
+ },
+ "questions": {
+  "count": 6,
+  "blocking": 2
+ },
+ "observations": {
+  "count": 0
+ }
+}

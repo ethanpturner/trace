@@ -1,0 +1,130 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 16835,
+    "output_tokens": 13263,
+    "cache_read_tokens": 17152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.15581775",
+    "duration_seconds": 143.52834600023925
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers retrieves content from a governed corpus populated by a nightly ingestion pipeline that is the only writer to the shared retrieval index (evd-002, evd-023). Because this threat arises specifically from how that ingestion pipeline updates the shared index, the requirement that the retrieval corpus's write path be governed applies directly.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index holds resolved support tickets for all workspaces in a single shared index (evd-002), and the assistant answers per-workspace questions from each workspace's own support history (evd-001). Because the corpus spans tenants with differing read entitlements, and this threat involves one workspace's ticket text potentially being surfaced to another, the requirement that retrieval be filtered by the requester's authorization applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Embeddings for help-center articles and resolved support tickets from all workspaces are stored together in a single managed vector database (evd-002, evd-023), so artifacts belonging to different customers share a storage system. This threat concerns cross-workspace overwriting and deletion of those embeddings, so the requirement that stored artifacts be separated by tenant and that separation be enforced on access applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "assumptions": [
+          "Assume each workspace\u2019s support tickets and their derived embeddings are intended to be readable only within that workspace and therefore represent distinct tenant-scoped artifacts rather than globally shared content."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Tenant separation and keying in the retrieval index are not described",
+        "description": "The documentation states that a single managed vector database stores embeddings for help-center content and resolved support tickets for all workspaces (evd-002, evd-023), and that the nightly ingestion run \"replaces changed chunks by source reference\" (evd-023). It does not describe how source_ref or chunk identifiers are constructed, whether they incorporate workspace ownership, or how artifacts for different workspaces are separated and prevented from colliding or overwriting each other in the shared index. Candidate record B.1 (evd-015) and the threat under evaluation assume a particular unscoped design, but the approved architecture and operations documents neither confirm nor refute it. Without documentation of the index keying and tenant-separation scheme, it is not possible to determine whether cross-workspace replacement or deletion of embeddings is prevented.",
+        "importance": "Clarifying how embeddings for different workspaces are keyed and separated in the shared retrieval index is necessary to assess whether tenant boundaries are enforced at the storage layer and whether the cross-workspace overwrite/deletion scenario in this threat is actually possible.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-003",
+          "cmp-004",
+          "ast-001",
+          "ast-003",
+          "df-003"
+        ],
+        "requested_evidence": [
+          "Schema or design documentation specifying the structure of source_ref and chunk identifiers, including whether workspace identifiers or source type are included.",
+          "Architecture or configuration documentation describing how the retrieval index separates artifacts by workspace (for example, per-tenant namespaces, prefixes, or separate collections) and how that separation is enforced on writes and updates.",
+          "Any storage access policy or index configuration that constrains which tenants can read or modify which artifacts in the vector database."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Retrieval-layer scoping of search results by workspace is undocumented",
+        "description": "The architecture overview describes a shared retrieval index serving all workspaces (evd-002) and states that the assistant answers from \"the workspace's support history\" (evd-001), while the OpenAPI description notes that a workspace token identifies the caller's workspace (evd-017, evd-025). However, there is no description of how the retrieval layer uses workspace identity or other entitlements to scope searches so that queries for one workspace cannot retrieve chunks originating from another. Candidate record B.2 and reviewer question qst-001 highlight this as an open point, and the answer to that question notes that the supplied documentation does not describe any such scoping. Without documentation of retrieval-time authorization or filtering, it is not possible to determine whether cross-workspace retrieval of ticket-derived chunks is prevented.",
+        "importance": "Understanding whether and where retrieval results are filtered by the requesting workspace or principal is necessary to assess compliance with retrieval-authorization requirements and to evaluate the risk that corrupted or mis-keyed embeddings could surface one workspace's ticket content to another, as described in this threat.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-004",
+          "cmp-003",
+          "ast-001",
+          "ast-003",
+          "df-003"
+        ],
+        "requested_evidence": [
+          "Documentation of the retrieval layer's authorization model, including how workspace_id or other entitlements are applied to searches against the shared index.",
+          "Any configuration or code-level description showing per-tenant indexes, namespaces, or retrieval filters used to restrict results to the requesting workspace.",
+          "Tests or specifications that demonstrate how the system prevents a workspace\u2019s queries from returning chunks belonging to other workspaces."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-015",
+          "evd-017",
+          "evd-025"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "a481b9c446bbf1b799822885bcc6316244786b4f0ae5edaacf58da309a5fe678"
+}

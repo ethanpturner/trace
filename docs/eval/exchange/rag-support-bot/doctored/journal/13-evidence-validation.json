@@ -1,0 +1,1413 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 17852,
+    "output_tokens": 35992,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.382235",
+    "duration_seconds": 330.88786041690037
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-017",
+          "evd-018",
+          "evd-020",
+          "evd-022"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-017",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-018",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-020",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-022",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping claims that req-AUTHZ-001 (tenant-aware authorization) is applicable to thr-001 and that its implementation is unverified. The architecture description shows that Relay Answers is a multi-tenant system whose assistant answers from each workspace's own support history (evd-001) and that all workspaces share a single retrieval index holding embeddings of resolved support tickets (evd-002). The OpenAPI description states that \"the workspace token identifies the caller's workspace\" (evd-017) and defines a bearer workspaceToken security scheme that is applied globally (evd-019 via evd-020/evd-018). This directly supports applicability of an authorization-by-workspace requirement to cross-workspace disclosure threats such as thr-001. None of the supplied documents describes how the derived workspace identity is enforced across all data accesses (particularly retrieval from the shared index), so the state of req-AUTHZ-001 with respect to thr-001 is correctly characterised as unverified rather than satisfied. The mapping is therefore supported by the evidence.",
+        "missing_evidence": [
+          "Design or implementation documentation showing how workspace identity is propagated into retrieval-index queries and enforced for all data accesses.",
+          "Tests or monitoring evidence demonstrating that retrieval results are constrained to the caller's workspace."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Relay Answers is the in-product support assistant for the Relay project-management platform.\nA signed-in user asks a question in the help panel; the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;\n  a query returns the top eight passages ranked by embedding similarity, and relevance alone\n  selects the passages that reach the prompt."
+          },
+          {
+            "evidence_id": "evd-017",
+            "text": "info:\n  title: Relay Answers API\n  version: \"1.2\"\n  description: >\n    The in-product surface the help panel calls. One operation asks a question;\n    the workspace token identifies the caller's workspace."
+          },
+          {
+            "evidence_id": "evd-020",
+            "text": "security:\n  - workspaceToken: []"
+          },
+          {
+            "evidence_id": "evd-022",
+            "text": "The answer service runs as a single deployment beside the main Relay API. Each answer makes one\nmodel call; there is no multi-step agent loop, and the assistant takes no actions beyond\nreturning text. A per-workspace daily answer quota bounds spend, and the service can be disabled\nper workspace with a feature flag."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-003 concerns separation of stored artifacts by tenant in shared storage. The architecture states that the retrieval index is \"a managed vector database holding embeddings of the help-center articles and of resolved support tickets\" and that \"all workspaces are served from one shared index\" (evd-002), so tenant data clearly co-resides in a shared storage system. Operations notes describe the ingestion run and confirm that \"the index is the only copy of the embeddings\" (evd-023). This directly supports applicability of a tenant-separation requirement to thr-001's cross-workspace disclosure scenario. No document explains how tenant ownership is represented or enforced inside that vector database, so the satisfied/unverified status of req-DATA-003 for thr-001 is indeed unverified. The mapping's assertion is therefore supported.",
+        "missing_evidence": [
+          "Schema or key design for the vector database showing how workspace or tenant ownership is encoded for each embedding.",
+          "Access-control or query-filtering documentation for the vector database enforcing tenant separation."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;\n  a query returns the top eight passages ranked by embedding similarity, and relevance alone\n  selects the passages that reach the prompt."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "## The index\n\nThe nightly ingestion run replaces changed chunks by source reference. Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport. The index is the only copy of the embeddings; the vector database is the managed\noffering's standard tier, reachable only from the answer service's network segment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-NET-001 is about limiting reachability of internal components. The mapping ties this to the retrieval index used in thr-001. Operations notes state that \"the vector database is the managed offering's standard tier, reachable only from the answer service's network segment\" (evd-023). This directly describes a network restriction on access to the index from the answer service's segment only, which is consistent with req-NET-001 being satisfied for this component. The requirement's applicability to thr-001 follows from the fact that the threat uses the shared index, and the satisfaction claim matches the documented network placement. The mapping is therefore supported.",
+        "missing_evidence": [
+          "Network topology or security-group/firewall configuration confirming that only the answer service's workloads can reach the vector database."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-023",
+            "text": "The index is the only copy of the embeddings; the vector database is the managed\noffering's standard tier, reachable only from the answer service's network segment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-RAG-001 governs the write path into the retrieval corpus. The architecture notes that the \"ingestion pipeline\" is \"the only writer to the retrieval index\" and that it runs nightly, reading two named sources (help-center repository and resolved-tickets export) and recording source and timestamp on indexed items (evd-002). Operations notes reiterate that \"the nightly ingestion run replaces changed chunks by source reference\" (evd-023). Because thr-002 concerns how that ingestion pipeline might overwrite or delete embeddings across workspaces, these passages directly support both applicability of a write-path-governance requirement and the mapping's claim that the write path is indeed constrained to the documented ingestion pipeline. The mapping that req-RAG-001 is applicable to thr-002 and satisfied is therefore supported.",
+        "missing_evidence": [
+          "More detailed ingestion-pipeline design or code references showing how source references are validated and changes are authorised."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-RAG-002 concerns filtering retrieval results by the requester's authorisation. The architecture establishes that answers are drawn from \"the workspace's support history\" (evd-001) and that the retrieval index is a single managed vector database with embeddings of resolved support tickets for all workspaces served from one shared index (evd-002, evd-023). This directly supports the applicability of a per-workspace retrieval-filtering requirement: the corpus spans multiple tenants whose ticket-derived content must not be surfaced across workspaces. No document describes retrieval queries or any workspace filter applied inside RetrievalIndex.search, and the only description of unscoped search behaviour appears in a provisional Mantis candidate (evd-015 B.2), which is explicitly marked as PROVISIONALLY_VALID and not independently reproduced. Accordingly, it is accurate to describe req-RAG-002 as applicable to thr-002 and unverified, rather than satisfied, and the mapping is supported.",
+        "missing_evidence": [
+          "Retrieval component design or code documentation showing how workspace or tenant identity is incorporated into search queries and result filtering.",
+          "Tests demonstrating that retrieval results never return chunks belonging to other workspaces."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Relay Answers is the in-product support assistant for the Relay project-management platform.\nA signed-in user asks a question in the help panel; the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;\n  a query returns the top eight passages ranked by embedding similarity, and relevance alone\n  selects the passages that reach the prompt."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference. Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport. The index is the only copy of the embeddings; the vector database is the managed\noffering's standard tier, reachable only from the answer service's network segment."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "### B.2 Global vector search discloses support tickets across workspaces\n\n- Status: `PROVISIONALLY_VALID` \u00b7 Severity (as emitted): HIGH \u00b7 CWE: CWE-862 \u00b7 Signature: `4d80ffbe5116c4d3`\n- Attacker position: None \u00b7 Privileges required: None\n\nThe answer endpoint authenticates the bearer token and obtains a workspace_id, but uses that identity only for quota charging. It calls RetrievalIndex.search without an authorization scope. search scores every chunk in the process-global index, including private ticket chunks belonging to other workspaces, and returns the global top-k."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-003 addresses separation of tenant-scoped artifacts stored in a shared system. The architecture describes a retrieval index that holds embeddings of resolved support tickets and help-center articles for all workspaces in one shared index (evd-002, evd-023), while the functional description says each workspace's assistant answers from that workspace's support history (evd-001). This makes clear that embeddings correspond to tenant-scoped artifacts that should not be shared across workspaces. thr-002 concerns cross-workspace overwriting and deletion of those embeddings, and a provisional candidate record describes unscoped source identifiers in the ingestion pipeline leading to such corruption (evd-015 B.1). However, there is no authoritative description of how tenant ownership is encoded and enforced for embeddings, nor of specific controls preventing cross-tenant overwrite or deletion, so it is appropriate to treat req-DATA-003 as applicable to thr-002 and unverified. The mapping is supported.",
+        "missing_evidence": [
+          "Documentation of the key structure and ownership metadata used for ticket-derived embeddings in the vector database.",
+          "Design or code references showing enforcement of tenant-aware constraints on replacement and deletion operations in the ingestion pipeline."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;\n  a query returns the top eight passages ranked by embedding similarity, and relevance alone\n  selects the passages that reach the prompt."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference. Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport. The index is the only copy of the embeddings; the vector database is the managed\noffering's standard tier, reachable only from the answer service's network segment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-RAG-003 concerns how deletions or corrections in data sources propagate to the retrieval corpus. The evidence states that resolved support tickets are retained on the support platform for two years and then deleted under an agreed retention schedule (evd-004), and that the ingestion pipeline is the only writer to the retrieval index, running nightly on the help-center repository and the support platform's resolved-tickets export (evd-002, evd-023). This directly supports applicability of req-RAG-003 to thr-003, which is about embeddings for deleted or corrected tickets persisting beyond the source lifecycle. The candidate description of run_nightly and propagate_deletions behaviour in B.3 (evd-015) is explicitly flagged as PROVISIONALLY_VALID and not reproduced; it suggests but does not establish that missing tombstones or partial exports could lead to indefinite retention. There is no authoritative documentation of how deletions or corrections in the export are detected and applied to the index, so it is accurate to describe req-RAG-003 as applicable to thr-003 and unverified. The mapping is supported.",
+        "missing_evidence": [
+          "Detailed ingestion-pipeline documentation or code for deletion handling, including contracts for export completeness and tombstone semantics.",
+          "Operational procedures or monitoring confirming that embeddings for deleted or corrected tickets are removed or updated in line with the support platform's retention schedule."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## Data handling\n\nResolved support tickets are retained on the support platform for two years and then deleted\nunder the retention schedule agreed with customers. The help-center repository is public\ndocumentation. The model provider's terms for the assistant's traffic exclude training on\nsubmitted content, and requests are sent over TLS."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-002 addresses retention of derived or working copies of customer data. The architecture shows that resolved support tickets are stored on an external support platform with a two-year retention and deletion schedule (evd-004) and that derived embeddings of those tickets are stored in a managed retrieval index populated by a nightly ingestion pipeline (evd-002, evd-023). thr-003 explicitly concerns embeddings outliving the expected retention of the source tickets. However, there is no documentation of a retention policy for embeddings or of any mechanism tying their lifecycle to that of the source tickets; B.3's description of partial exports and missing tombstones (evd-015) is a provisional candidate, not confirmed implementation evidence. It is therefore correct to treat req-DATA-002 as applicable to thr-003 and unverified, and the mapping is supported.",
+        "missing_evidence": [
+          "Retention policy or data-lifecycle documentation for embeddings in the retrieval index, including how it relates to the support platform's two-year ticket retention.",
+          "Implementation details or jobs responsible for purging or updating embeddings when source tickets are deleted or corrected."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "Resolved support tickets are retained on the support platform for two years and then deleted\nunder the retention schedule agreed with customers."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-004 is about propagating deletions or corrections across multiple stores holding the same customer data. The documentation states that customer support ticket data is held on an external support platform (with a two-year retention schedule) and that resolved tickets are exported and embedded into a retrieval index managed by Relay Answers (evd-001, evd-002, evd-004, evd-023). This directly supports applicability of a cross-store deletion/correction requirement to thr-003, which starts from deletion or correction on the source platform and asks whether derived embeddings in the index are also updated or removed. There is no description of any mechanism that ensures deletions or corrections on the support platform propagate to the embeddings, and the only description of export and deletion semantics in the ingestion job appears in a provisional candidate record (evd-015 B.3). The mapping's characterisation of req-DATA-004 as applicable and unverified is therefore supported.",
+        "missing_evidence": [
+          "Design or runbook documentation describing how deletions or corrections in the support platform's tickets export are detected and applied to embeddings.",
+          "Evidence (tests or procedures) that customer deletion or correction requests on the source platform result in corresponding updates to all derived copies, including the retrieval index."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Relay Answers is the in-product support assistant for the Relay project-management platform.\nA signed-in user asks a question in the help panel; the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "Resolved support tickets are retained on the support platform for two years and then deleted\nunder the retention schedule agreed with customers."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-015",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping asserts that req-TPI-001 (governing external processors) is applicable to thr-004, which concerns exposure of ticket-derived telemetry at an external analytics collector, and that the requirement is unverified. The only description of such an analytics collector is in provisional candidate record B.7 (evd-015), which states that provider.py posts request identifiers, retrieved chunk text, and generated answers to a telemetry collector at analytics.relay-answers.example. This candidate is explicitly marked PROVISIONALLY_VALID with no reproduction, and it appears to be the output of a prior analysis stage rather than primary architecture documentation. The main architecture and operations documents provided (including evd-004) do not mention an analytics collector or telemetry export at all. As a result, the existence and role of this external analytics processor cannot be established from non-model-generated documentation, and the applicability of req-TPI-001 to thr-004 remains a matter for confirmation with system owners. The mapping therefore requires confirmation rather than being fully supported or unsupported.",
+        "missing_evidence": [
+          "Architecture or operations documentation describing any analytics or telemetry collectors, including whether they are external providers and what data they receive.",
+          "Configuration or code references confirming whether provider.py or related components actually send ticket-derived telemetry to analytics.relay-answers.example in the assessed deployment.",
+          "Third-party terms or data-processing agreements governing that analytics collector, if it exists."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "### B.7 Retrieved passages are forwarded to an external analytics collector\n\n- Status: `PROVISIONALLY_VALID` \u00b7 Severity (as emitted): HIGH \u00b7 CWE: CWE-200 \u00b7 Signature: `c58b2e6f91a03d47`\n- Attacker position: SUPPLY_CHAIN \u00b7 Privileges required: NONE\n\nAfter each answer, provider.py posts the request identifier, the retrieved chunk text, and the generated answer to a telemetry collector at analytics.relay-answers.example over HTTPS, keyed by a shared collector token from settings. Ticket text, including configuration snippets customers pasted, therefore leaves the deployment boundary to a second processor whose data-handling terms are not described in the architecture or operations documents."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-015",
+          "evd-024"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "req-LOG-001 appears to concern handling of log or telemetry records containing restricted data when sent to an external platform. The mapping ties this to thr-004, where telemetry including retrieved chunk text and answers is allegedly sent to an external analytics collector. The sensitive nature of the ticket-derived content is established: operations notes state that \"ticket text sometimes quotes configuration snippets\" and that masking covers only email addresses (evd-024). However, the existence and behaviour of the external analytics collector, and the fact that telemetry is sent there, rest solely on provisional candidate record B.7 (evd-015), which is not confirmed implementation documentation. The core architecture and operations documents do not mention such telemetry. Consequently, while it is reasonable to suspect that req-LOG-001 would apply if the analytics collector exists as described, the evidence does not establish that condition, and the mapping's applicability claim requires confirmation.",
+        "missing_evidence": [
+          "Definitive documentation of logging and telemetry destinations, including whether external analytics platforms are used and what data fields are included.",
+          "Security or privacy design for log data sent off-system, mapping it explicitly to req-LOG-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-024",
+            "text": "## Known items\n\n- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only.\n- The help panel ships to every plan, including trials.\n- Answer quality review is a weekly manual sample of twenty answers by the support team."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [
+          "evd-015",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "req-DATA-001 governs protection of confidential data in storage or transit across untrusted networks. For thr-004, the mapping assumes that ticket-derived telemetry is sent over HTTPS to an external analytics collector, making this requirement applicable and unverified. The only mention of such telemetry and the analytics endpoint is candidate record B.7 (evd-015), flagged as PROVISIONALLY_VALID, and not corroborated by the main architecture or operations documents. evd-004 confirms that confidential support tickets exist and that TLS is used for traffic to the model provider, but says nothing about an analytics collector. Without authoritative documentation that telemetry leaves the system boundary to analytics.relay-answers.example, the applicability of req-DATA-001 to thr-004 cannot be firmly established. The mapping therefore requires confirmation.",
+        "missing_evidence": [
+          "Network or data-flow documentation indicating whether telemetry is transmitted to any external analytics collector, including transport-security details.",
+          "Configuration or code for telemetry clients confirming destinations and encryption settings."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "Resolved support tickets are retained on the support platform for two years and then deleted\nunder the retention schedule agreed with customers. The help-center repository is public\ndocumentation. The model provider's terms for the assistant's traffic exclude training on\nsubmitted content, and requests are sent over TLS."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-015",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "req-DATA-002 is about retention of customer data and intermediate artifacts after processing. For thr-004, the mapping assumes that telemetry containing ticket-derived content and answers is written to an external analytics collector and retained there, and classifies req-DATA-002 as applicable and unverified. However, the existence and retention of such telemetry are documented only in provisional candidate B.7 (evd-015), not in the primary architecture or operations notes. evd-004 describes retention for tickets on the support platform and TLS for model-provider traffic, but does not mention telemetry storage or analytics. Therefore, while req-DATA-002 would be applicable if the analytics collector existed and stored telemetry, the evidence does not establish that precondition. The mapping's assertion requires confirmation.",
+        "missing_evidence": [
+          "Retention and deletion policy for any analytics or telemetry store, including how long ticket-derived telemetry is retained and how erasure is handled.",
+          "Deployment configuration showing whether the analytics integration is enabled and which environments it affects."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-015",
+            "text": "Ticket text, including configuration snippets customers pasted, therefore leaves the deployment boundary to a second processor whose data-handling terms are not described in the architecture or operations documents."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping asserts that req-AI-003 (governing sending restricted data to external AI providers) is applicable to thr-005 and partially satisfied. The evidence clearly establishes applicability: Relay Answers sends the user's question and retrieved passages to a hosted large-language-model API (evd-002), resolved tickets are customer data with a defined retention schedule (evd-004), the retrieval index holds embeddings derived from tickets (evd-002, evd-023), and ticket text can contain configuration snippets with only email addresses masked (evd-024). The documents also describe some mitigations, such as stripping workspace and user identifiers from provider requests and the provider's terms excluding training on submitted content, with TLS in transit (evd-002, evd-004). However, the content of req-AI-003 itself is not provided, and there is no comprehensive description of all controls expected under that requirement (for example, contractual terms beyond training exclusion, data minimisation, logging, or regional controls). Without that, the claim that the requirement is only partially, rather than fully, satisfied cannot be established from the evidence. A person would need to confirm which req-AI-003 obligations exist and which are met. The mapping therefore requires confirmation.",
+        "missing_evidence": [
+          "The full text of req-AI-003, including all specific obligations when sending restricted data to an external model provider.",
+          "Architecture, legal, or operational documentation mapping existing controls (identifier stripping, provider terms, TLS, any DPAs) to req-AI-003 and identifying any unmet items."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Model provider** \u2014 a hosted large-language-model API. The answer service sends the user's\n  question and the retrieved passages; workspace identifiers and user identifiers are stripped\n  from the request first."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "The model provider's terms for the assistant's traffic exclude training on\nsubmitted content, and requests are sent over TLS."
+          },
+          {
+            "evidence_id": "evd-024",
+            "text": "- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping states that req-TPI-001 (third-party processor governance) is applicable to thr-005 and partially satisfied. The architecture clearly documents that a hosted large-language-model API is used and that the answer service sends user questions and retrieved passages to it (evd-002), and that the model provider's terms exclude training on submitted content, with requests sent over TLS (evd-004). This strongly supports applicability of req-TPI-001 to the model provider. However, without the text of req-TPI-001 and without a fuller description of the contractual and operational controls in place (e.g. DPAs, access controls, data locality, retention), the evidence does not establish that coverage is only partial rather than complete. That judgement depends on unstated requirement content. Confirmation from system owners is needed to assess satisfaction level, so the mapping requires confirmation.",
+        "missing_evidence": [
+          "The full wording of req-TPI-001 and any internal interpretation of its requirements for external model providers.",
+          "Contracts, DPAs, or security addenda with the hosted model provider, and any internal risk assessments mapping those controls to req-TPI-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Model provider** \u2014 a hosted large-language-model API. The answer service sends the user's\n  question and the retrieved passages; workspace identifiers and user identifiers are stripped\n  from the request first."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "The model provider's terms for the assistant's traffic exclude training on\nsubmitted content, and requests are sent over TLS."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004",
+          "evd-024"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping claims that req-DATA-001 (protection of confidential data across untrusted networks) is applicable to thr-005 and partially satisfied. The documentation shows that Relay Answers processes customer support conversations as part of each workspace's support history (evd-001), that tickets are retained on an external platform and constitute customer data (evd-004), and that ticket text can contain configuration snippets with only email addresses masked (evd-024). It also states that requests to the model provider are sent over TLS (evd-004), indicating some protection in transit. These passages establish both the applicability of req-DATA-001 (confidential data is transmitted to an external model provider) and the presence of at least one control (TLS). However, the requirement's full expectations (e.g. encryption at rest, key management, endpoint authentication) are not available, and there is no documentation of data-at-rest protections or broader data-handling at the provider. Without that, the assertion that req-DATA-001 is only partially, rather than fully, satisfied cannot be confirmed. The mapping therefore requires confirmation.",
+        "missing_evidence": [
+          "The detailed content of req-DATA-001, including its expectations for data in transit and at rest across provider boundaries.",
+          "Documentation of encryption-at-rest and access-control protections for data handled by the model provider, or explicit statements that such protections are out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "A signed-in user asks a question in the help panel; the assistant answers from Relay's own\ndocumentation and from the workspace's support history, citing the passages it used."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "The model provider's terms for the assistant's traffic exclude training on\nsubmitted content, and requests are sent over TLS."
+          },
+          {
+            "evidence_id": "evd-024",
+            "text": "- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-DATA-001 is applicable to thr-006 (interception or tampering of resolved-ticket exports in transit) and unverified. The architecture documents that resolved support tickets reside on an external support platform and that the ingestion pipeline reads \"the support platform's resolved tickets export\" as one of its two sources (evd-002). Operations notes reiterate that tickets arrive in the resolved-tickets export and are then embedded into the index (evd-023). This establishes a data flow carrying confidential ticket data from an external system into Relay Answers, matching req-DATA-001's condition of transmitting confidential data across a boundary. However, while evd-004 records that requests to the model provider are sent over TLS, there is no mention of encryption or integrity protection for the resolved-tickets export path itself, and the threat precondition explicitly assumes that such protection is not documented. Because no supplied document specifies transport security for that export, req-DATA-001's implementation for thr-006 is correctly described as unverified. The mapping is supported.",
+        "missing_evidence": [
+          "Data-flow or integration documentation for the resolved-tickets export (df-002), including protocols, authentication, and encryption/integrity protections in transit.",
+          "Configuration or network-level evidence (e.g. TLS termination details, VPN configuration) confirming how the export channel is secured."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference. Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-RAG-001 governs who and what may write to the retrieval corpus. For thr-006, the concern is tampering with the resolved-ticket export before ingestion. The architecture states that the ingestion pipeline is \"the only writer to the retrieval index\" (evd-002) and operations notes confirm that \"the nightly ingestion run replaces changed chunks by source reference\" (evd-023). These passages directly show that updates to the corpus occur only through the ingestion pipeline based on its configured sources, which is consistent with req-RAG-001 being satisfied: arbitrary callers cannot write directly to the index. The mapping's assertion that req-RAG-001 is applicable to thr-006 and satisfied is therefore supported.",
+        "missing_evidence": [
+          "Details of how the ingestion pipeline itself is authenticated to the index and how its configuration is controlled to prevent unauthorised changes to data sources."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "## The index\n\nThe nightly ingestion run replaces changed chunks by source reference."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-002",
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-017",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-019",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-020",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping claims that req-AUTHZ-001 applies to thr-007 (unauthenticated access if bearer auth is not enforced) and that the requirement is unverified. The architecture and API specification together show that Relay Answers is a multi-tenant system where all workspaces share a single index (evd-002) and that the API is designed around a workspace-scoped bearer token: the API description says \"the workspace token identifies the caller's workspace\" (evd-017), and OpenAPI defines a workspaceToken bearer security scheme (evd-019) applied globally via the top-level security requirement (evd-020). This directly supports applicability of an authorisation requirement ensuring that requests are properly mapped to and constrained within a tenant. However, no supplied non-candidate document describes how this bearer token is enforced in the implementation, and a provisional candidate record (B.6, evd-015) suggests that the route may resolve to a default workspace without enforcing the declared dependency. Given the absence of authoritative implementation or configuration evidence, req-AUTHZ-001's actual enforcement state for thr-007 is correctly marked unverified. The mapping is supported.",
+        "missing_evidence": [
+          "Service code or framework configuration showing how the workspaceToken scheme is wired into the /v1/answers route and enforced for all requests.",
+          "Authentication and authorisation test results (including negative tests) demonstrating that requests without valid tokens are rejected."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;\n  a query returns the top eight passages ranked by embedding similarity, and relevance alone\n  selects the passages that reach the prompt."
+          },
+          {
+            "evidence_id": "evd-017",
+            "text": "description: >\n    The in-product surface the help panel calls. One operation asks a question;\n    the workspace token identifies the caller's workspace."
+          },
+          {
+            "evidence_id": "evd-019",
+            "text": "components:\n  securitySchemes:\n    workspaceToken:\n      type: http\n      scheme: bearer\n      description: The signed-in user's workspace-scoped session token."
+          },
+          {
+            "evidence_id": "evd-020",
+            "text": "security:\n  - workspaceToken: []"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-022"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-022",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-TPI-002 appears to require controls on usage of metered external services. The architecture states that the answer service calls a hosted large-language-model API (a metered external service) for each question (evd-002), and data handling notes discuss the model provider's terms (evd-004). Operations notes add that \"each answer makes one model call\" and that \"a per-workspace daily answer quota bounds spend,\" with the ability to disable the service per workspace (evd-022). This is direct evidence of spend-limiting controls tied to workspaces, addressing the risk in thr-007 of unauthorised callers driving up model usage. While the mapping assumes the quota is enforced in production, the documentation itself clearly presents it as an operational control. The assertion that req-TPI-002 is applicable to thr-007 and satisfied is therefore supported.",
+        "missing_evidence": [
+          "Implementation or configuration details of the per-workspace quota mechanism and how it interacts with authentication and routing.",
+          "Monitoring or alerting documentation showing how quota breaches or near-breaches are observed."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Answer service** \u2014 receives the question, runs retrieval, assembles the prompt, calls the\n  model provider, and returns the answer with its citations.\n- **Model provider** \u2014 a hosted large-language-model API. The answer service sends the user's\n  question and the retrieved passages; workspace identifiers and user identifiers are stripped\n  from the request first."
+          },
+          {
+            "evidence_id": "evd-022",
+            "text": "Each answer makes one\nmodel call; there is no multi-step agent loop, and the assistant takes no actions beyond\nreturning text. A per-workspace daily answer quota bounds spend, and the service can be disabled\nper workspace with a feature flag."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-022"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-022",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-OPS-002 relates to monitoring or managing anomalous spend in metered environments. The evidence shows that Relay Answers uses a hosted large-language-model API for each answer (evd-002) and that cloud/model-provider usage is thus a spend driver. Operations notes describe a per-workspace daily answer quota and a feature flag to disable the service (evd-022), which are hard limits rather than monitoring mechanisms. No documentation mentions spend monitoring, anomaly detection, or budget alerts; the mapping explicitly assumes none beyond the quota. Given this, req-OPS-002 is clearly applicable to thr-007's spend-abuse scenario, but its implementation status is not described, so classifying it as unverified is accurate. The mapping is supported.",
+        "missing_evidence": [
+          "Documentation of any monitoring, alerting, or reporting on model-provider usage or spend anomalies at the application, cloud-account, or provider level.",
+          "Runbooks or SLOs describing how anomalous usage would be detected and responded to."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Answer service** \u2014 receives the question, runs retrieval, assembles the prompt, calls the\n  model provider, and returns the answer with its citations."
+          },
+          {
+            "evidence_id": "evd-022",
+            "text": "A per-workspace daily answer quota bounds spend, and the service can be disabled\nper workspace with a feature flag."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-023",
+          "evd-024",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "thr-001 describes a threat of cross-workspace ticket disclosure via unscoped global vector search, conditional on RetrievalIndex.search behaving as a process-global top-k without workspace scoping. The evidence strongly supports the architectural and impact aspects of this threat: Relay Answers answers from each workspace's support history (evd-001); the retrieval index is a managed vector database with embeddings of help-center articles and resolved support tickets for all workspaces served from one shared index (evd-002, evd-023); ticket text can include configuration snippets with only email addresses masked (evd-024); and answers are assembled from retrieved passages and returned with source references (evd-003). If search were unscoped, these facts make the described cross-workspace disclosure impact plausible. However, the claim that RetrievalIndex.search is actually called without an authorisation scope comes only from provisional candidate record B.2 (evd-015), which is marked PROVISIONALLY_VALID and not independently reproduced, and appears to be prior analysis rather than authoritative documentation. The threat text does acknowledge this as an unverified precondition, but the behaviour of search itself remains unconfirmed. Therefore, the threat is well supported in terms of architecture and potential impact, while the specific precondition about unscoped search requires confirmation. This yields a partially supported classification.",
+        "missing_evidence": [
+          "Implementation or design documentation for RetrievalIndex.search, including its parameters and any workspace or tenant filters applied before similarity scoring.",
+          "Tests or traces demonstrating whether search results are scoped to the caller's workspace in the running service."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Retrieval index** \u2014 a managed vector database holding embeddings of the help-center\n  articles and of resolved support tickets. All workspaces are served from one shared index;\n  a query returns the top eight passages ranked by embedding similarity, and relevance alone\n  selects the passages that reach the prompt."
+          },
+          {
+            "evidence_id": "evd-024",
+            "text": "- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## Prompt assembly\n\nThe prompt places retrieved passages inside a delimited context block, and the system\ninstructions state that content inside the block is reference material, not instructions. The\nanswer is returned with the source reference of each cited passage. Answers are rendered in the\nhelp panel as plain text; the panel does not execute or interpret model output."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "The answer endpoint authenticates the bearer token and obtains a workspace_id, but uses that identity only for quota charging. It calls RetrievalIndex.search without an authorization scope. search scores every chunk in the process-global index, including private ticket chunks belonging to other workspaces, and returns the global top-k."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-001",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "thr-002 describes a threat where unscoped source identifiers in the ingestion pipeline allow cross-workspace overwriting and deletion of embeddings. The architecture confirms that the ingestion pipeline is the only writer to a multi-tenant retrieval index built from a resolved-tickets export (evd-002) and that it \"replaces changed chunks by source reference\" (evd-023), with the assistant using each workspace's support history (evd-001). This supports the idea that mis-keying source references could corrupt ownership of embeddings in a way that affects retrieval. However, the specific behaviour that source_ref and chunk_id for ticket chunks are derived solely from ticket_id and position, without incorporating workspace ownership or source kind, and that this leads to collisions across workspaces, comes only from provisional candidate record B.1 (evd-015), which has not been independently verified. The threat's architectural context and potential impact are therefore well supported, but the particular precondition about unscoped identifiers and cross-workspace collisions requires confirmation, leading to a partially supported classification.",
+        "missing_evidence": [
+          "Schema and key-derivation documentation (or code references) for source_ref and chunk_id in the ingestion pipeline, showing whether workspace or source type is part of the key.",
+          "Tests or index inspections demonstrating whether ticket identifiers uniquely identify chunks per workspace or can collide across workspaces."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "RetrievalIndex.replace_source and remove_source identify objects solely by source_ref, while ticket source_ref is derived only from ticket_id. Workspace ownership and source kind are not part of the key or removal predicate. Consequently, duplicate ticket IDs in different workspace export rows cause the later row to remove and replace the earlier tenant's chunks; a tombstone for either row removes every chunk with that shared reference."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "thr-003 addresses indefinite retention of deleted or corrected ticket data in the embeddings index if the ingestion job only updates current rows and deletes based on explicit tombstones. The documentation establishes that resolved support tickets are retained on the support platform for two years and then deleted (evd-004), that a nightly ingestion pipeline is the only writer to the retrieval index and replaces changed chunks by source reference (evd-002, evd-023), and that ticket text can include configuration snippets (evd-024). These directly support the architectural context and potential impact: if deletions or corrections at the source do not propagate, outdated or expected-to-be-deleted content can remain retrievable. The specific ingestion behaviour described\u2014run_nightly updating only rows present in the current export, propagate_deletions acting only on explicit tombstones, and the absence of snapshot or reconciliation mechanisms\u2014comes from provisional candidate record B.3 (evd-015), which is unconfirmed. The threat's impact analysis is therefore well grounded in the architecture, while the detailed preconditions about export incompleteness and deletion handling require confirmation, leading to a partially supported status.",
+        "missing_evidence": [
+          "Detailed ingestion job design or code describing how deletions and corrections are propagated from the resolved-tickets export to the retrieval index.",
+          "Operational guarantees (or lack thereof) about export completeness, tombstone presence, and reconciliation mechanisms for the set of active tickets."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "Resolved support tickets are retained on the support platform for two years and then deleted\nunder the retention schedule agreed with customers."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "The nightly ingestion run replaces changed chunks by source reference."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "run_nightly updates only rows present in the current export and propagate_deletions removes content only for explicit tombstone rows included in that same export. There is no generation marker, complete-snapshot contract, high-water mark, reconciliation against the set of active source keys, or persistent deletion ledger."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-024",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "thr-004 posits exposure of ticket-derived telemetry at an external analytics collector, based on the assertion that provider.py posts retrieved chunk text and generated answers to analytics.relay-answers.example. The core documentation establishes that the system processes sensitive ticket text, including configuration snippets, and that masking covers only email addresses (evd-024), and that embeddings are stored in a managed retrieval index (evd-002, evd-023), so any additional telemetry sink handling retrieved chunks would indeed carry sensitive data. However, the only description of such an analytics collector and telemetry export is in provisional candidate record B.7 (evd-015), which is explicitly unconfirmed and appears to be prior analysis rather than authoritative architecture or operations documentation. No other provided document mentions analytics.relay-answers.example or describes a telemetry integration. As a result, while the impact analysis is reasonable if the integration exists, the existence and use of the external analytics collector itself require confirmation. The threat should therefore be treated as requiring confirmation rather than fully supported.",
+        "missing_evidence": [
+          "Architecture diagrams or data-flow specifications documenting any analytics or telemetry collectors and the fields they receive.",
+          "Code or configuration confirming whether provider.py or related components send retrieved chunk text and answers to analytics.relay-answers.example in the assessed deployment.",
+          "Access-control and data-handling documentation for the analytics collector, if present."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-024",
+            "text": "- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "After each answer, provider.py posts the request identifier, the retrieved chunk text, and the generated answer to a telemetry collector at analytics.relay-answers.example over HTTPS, keyed by a shared collector token from settings. Ticket text, including configuration snippets customers pasted, therefore leaves the deployment boundary to a second processor whose data-handling terms are not described in the architecture or operations documents."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "thr-005 concerns exposure of ticket-derived content at the hosted model provider. The architecture states that the answer service calls a hosted large-language-model API and sends \"the user's question and the retrieved passages\" to it, after stripping workspace and user identifiers (evd-002). Prompt assembly places retrieved passages into a context block that is sent as part of the prompt (evd-003). The retrieval index is populated from resolved support tickets and help-center content (evd-002, evd-023), and ticket text may include configuration snippets with only email addresses masked (evd-024). Data-handling notes add that the model provider's terms exclude training on submitted content, and that requests are sent over TLS (evd-004), but do not address storage or logging at the provider. These passages directly support the threat's preconditions: sensitive ticket-derived content is transmitted to a hosted model provider; its internal storage and logs are outside Relay Answers' direct control; and provider compromise or misuse could expose that content. The threat description and impact are therefore supported by the evidence.",
+        "missing_evidence": [
+          "Details from the model provider about retention, logging, and access controls for submitted content.",
+          "Any contractual or technical measures (e.g. regional endpoints, log redaction) limiting exposure of ticket-derived prompts at the provider."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Model provider** \u2014 a hosted large-language-model API. The answer service sends the user's\n  question and the retrieved passages; workspace identifiers and user identifiers are stripped\n  from the request first."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The prompt places retrieved passages inside a delimited context block, and the system\ninstructions state that content inside the block is reference material, not instructions."
+          },
+          {
+            "evidence_id": "evd-024",
+            "text": "- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "The model provider's terms for the assistant's traffic exclude training on\nsubmitted content, and requests are sent over TLS."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-024",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-023",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-024",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "thr-006 discusses interception or tampering of resolved-ticket exports in transit between the external support platform and the ingestion pipeline. The architecture confirms that the ingestion pipeline reads \"the support platform's resolved tickets export\" (evd-002), that tickets arrive from this export before embedding (evd-023), and that ticket text can contain configuration snippets with minimal masking (evd-024), so the sensitivity and existence of this data flow are well supported. However, the precondition that encryption and integrity protection for this export are \"not documented and are recorded as unknown for df-002\" refers to documentation that is not included in the provided evidence; we can see only that TLS is mentioned for traffic to the model provider (evd-004), not for this export path. The assertion that protections are undocumented and recorded as unknown therefore cannot be fully verified from the available material. As a result, the threat is supported with respect to architecture and potential impact, but partially supported regarding the specific state of transport protections, which requires confirmation.",
+        "missing_evidence": [
+          "Data-flow documentation for df-002, including explicit statements about transport encryption, integrity mechanisms, and mutual authentication between the support platform and ingestion pipeline.",
+          "Configuration or network evidence showing the protocol and security settings used for the resolved-tickets export channel."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "- **Ingestion pipeline** \u2014 the only writer to the retrieval index. It runs nightly, reads two\n  named sources \u2014 the published help-center repository and the support platform's resolved\n  tickets export \u2014 chunks and embeds them, and records the source and timestamp on every\n  indexed item."
+          },
+          {
+            "evidence_id": "evd-023",
+            "text": "Tickets arrive in the\nresolved-tickets export with customer email addresses masked by the support platform before\nexport."
+          },
+          {
+            "evidence_id": "evd-024",
+            "text": "- Ticket text sometimes quotes configuration snippets customers pasted into support\n  conversations. The masking step covers email addresses only."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-007",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-026",
+          "evd-022",
+          "evd-002",
+          "evd-003",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-017",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-019",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-020",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-026",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-022",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "thr-007 concerns unauthorised access to answers if bearer authentication is not enforced on the /v1/answers endpoint. The OpenAPI description clearly declares that the workspace token identifies the caller's workspace (evd-017), defines a workspaceToken bearer security scheme (evd-019), and applies it globally via the security section, with /v1/health explicitly overriding security to be unauthenticated (evd-020, evd-026). This directly supports the precondition that /v1/answers is intended to require workspaceToken bearer authentication. Operations notes document a per-workspace daily answer quota (evd-022), showing why unauthenticated access could also drive spend. The threat's additional claim\u2014that the implementation reads the Authorization header but does not enforce the workspaceToken dependency, defaulting to a workspace when the header is missing or invalid\u2014derives from provisional candidate record B.6 (evd-015), which is unconfirmed. There is no independent implementation or configuration evidence here to validate or refute B.6. Thus, the architectural intent and potential impact of missing enforcement are well supported, but the specific behaviour of the running service remains unverified, making the threat partially supported.",
+        "missing_evidence": [
+          "Service routing and dependency configuration (or code) showing how the workspaceToken security scheme is actually enforced for /v1/answers at runtime.",
+          "Authentication tests demonstrating the behaviour of /v1/answers with no Authorization header, with invalid tokens, and with valid workspace tokens."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-017",
+            "text": "description: >\n    The in-product surface the help panel calls. One operation asks a question;\n    the workspace token identifies the caller's workspace."
+          },
+          {
+            "evidence_id": "evd-019",
+            "text": "components:\n  securitySchemes:\n    workspaceToken:\n      type: http\n      scheme: bearer\n      description: The signed-in user's workspace-scoped session token."
+          },
+          {
+            "evidence_id": "evd-026",
+            "text": "paths:\n  /v1/answers:\n    post:\n      summary: Ask a question and receive a cited answer\n      responses:\n        \"200\":\n          description: The answer with the source reference of each cited passage\n  /v1/health:\n    get:\n      summary: Liveness probe for the deployment beside the Relay API\n      security: []\n      responses:\n        \"200\":\n          description: OK"
+          },
+          {
+            "evidence_id": "evd-022",
+            "text": "A per-workspace daily answer quota bounds spend, and the service can be disabled\nper workspace with a feature flag."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "The answer route reads the Authorization header into a local variable but the resolve_workspace dependency is not wired into the route signature, so a request with no header, or any header value, resolves to the default workspace and proceeds to retrieval and provider calls."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-008",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-026",
+          "evd-022",
+          "evd-001",
+          "evd-002",
+          "evd-015"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-017",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-019",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-020",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-026",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-022",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-015",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "thr-008 describes a threat where predictable development workspace tokens are activated in production when WORKSPACE_TOKENS is misconfigured, allowing impersonation of a workspace. The OpenAPI materials clearly show that a workspaceToken bearer credential is the mechanism by which the API identifies the caller's workspace (evd-017, evd-019, evd-020, evd-026), and architecture notes that the assistant answers from each workspace's support history (evd-001, evd-002). This supports the idea that knowledge of a valid workspace token would confer access to that workspace's assistant answers and associated ticket-derived content. The specific behaviour that load_settings substitutes a hard-coded mapping containing dev-token-acme and dev-token-globex when WORKSPACE_TOKENS is unset, and that this mapping is activated on import without a production-mode gate, is documented only in provisional candidate record B.4 (evd-015), which is unconfirmed and appears to be prior analysis. No independent configuration or source documentation is provided here to confirm or refute that fallback. Accordingly, the threat is well supported in terms of how workspace tokens grant access and what the impact of a predictable token would be, but only partially supported with respect to the existence and activation of the fallback development credentials, which requires confirmation.",
+        "missing_evidence": [
+          "Configuration-loading code or documentation for WORKSPACE_TOKENS, including any default or fallback behaviour when the variable is unset or empty.",
+          "Deployment configuration for production environments showing how workspace tokens are provisioned and ensuring no hard-coded development tokens are present.",
+          "Evidence of whether the dev-token-acme and dev-token-globex values are accessible to potential attackers (e.g. in public source, docs)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-017",
+            "text": "description: >\n    The in-product surface the help panel calls. One operation asks a question;\n    the workspace token identifies the caller's workspace."
+          },
+          {
+            "evidence_id": "evd-019",
+            "text": "components:\n  securitySchemes:\n    workspaceToken:\n      type: http\n      scheme: bearer\n      description: The signed-in user's workspace-scoped session token."
+          },
+          {
+            "evidence_id": "evd-015",
+            "text": "load_settings substitutes a hard-coded mapping containing dev-token-acme and dev-token-globex whenever WORKSPACE_TOKENS is unset or an empty string. main.py calls load_settings at import with no explicit development-mode gate or production startup validation."
+          }
+        ]
+      }
+    ]
+  },
+  "call_sha256": "5d8d60fbd6c57b1aacb96929a8130c1bc670cbefd07f78ee19fb1d07d044205d"
+}

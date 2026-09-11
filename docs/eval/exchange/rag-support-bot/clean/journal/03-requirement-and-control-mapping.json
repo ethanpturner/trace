@@ -1,0 +1,137 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 33641,
+    "output_tokens": 10223,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.14428125",
+    "duration_seconds": 141.0465020001866
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "answers_workspace_token_auth",
+        "name": "Answers API workspace-token authentication",
+        "description": "The Relay Answers API requires a bearer workspaceToken representing the signed-in user's workspace-scoped session to call /v1/answers, and this token identifies the caller's workspace.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not state how the derived workspace identity is used to constrain access to workspace-specific content in the shared retrieval index."
+        ]
+      },
+      {
+        "key": "retrieval_index_network_isolation",
+        "name": "Retrieval index reachable only from answer service network segment",
+        "description": "The managed vector database holding embeddings for help-center articles and resolved support tickets is configured on the provider's standard tier and is reachable only from the answer service's network segment.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "owner": null,
+        "limitations": [
+          "This control restricts network access to the retrieval index but does not by itself enforce workspace-level separation of retrieved content."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [
+          "answers_workspace_token_auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers serves multiple workspaces and uses workspace-specific support history: the help panel is available to every signed-in user of any workspace (evd-002), and resolved support tickets for all workspaces are embedded into a single shared retrieval index (evd-002, evd-023). This meets the conditions that the system serves more than one customer and holds tenant-scoped data in shared storage, and the threat concerns cross-workspace disclosure via that shared index. While documentation states that a workspaceToken identifies the caller's workspace and is a workspace-scoped session token (evd-017, evd-019, evd-025, evd-027), it does not describe how every request is constrained to that workspace across the retrieval path, so whether tenant-aware authorization is fully enforced for retrieval remains undocumented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-017",
+          "evd-019",
+          "evd-023",
+          "evd-025",
+          "evd-027"
+        ],
+        "assumptions": [
+          "Assume the workspaceToken is a server-issued, validated session token rather than an arbitrary client-supplied workspace identifier string."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval corpus contains workspace-specific resolved support tickets alongside public help-center documentation (evd-001, evd-002, evd-004, evd-023), so not every requester is entitled to all content. All workspaces share a single managed retrieval index from which queries return the top passages by embedding similarity (evd-002, evd-023), and retrieved passages are placed into the model prompt to answer user questions in each workspace (evd-001, evd-003). The threat explicitly concerns the risk that retrieval returns passages from other workspaces, so the requirement that retrieval be filtered by the requesting principal's authorization is directly engaged. However, the documentation only states that \"relevance alone\" selects passages from the shared index (evd-002) and does not describe any workspace-level filter inside the index before similarity scoring and top-k selection, and reviewer question qst-001 records that such filtering is not established by the supplied documents; thus whether retrieval is authorization-scoped remains undocumented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Workspace-level scoping of retrieval index is undocumented",
+        "description": "Architecture and operations documentation describe a single shared retrieval index serving all workspaces and state that a query returns the top passages ranked by embedding similarity, with \"relevance alone\" selecting the passages that reach the prompt (evd-001, evd-002, evd-023). They do not state whether, or how, retrieval results are filtered to the caller's workspace or other entitlements inside the index before similarity scoring and top-k selection. Reviewer answer qst-001 explicitly notes that no workspace-level filter on retrieval is described in the supplied documents. Because the threat thr-001 turns on whether such scoping exists, the absence of this description prevents assessing tenant isolation for retrieval.",
+        "importance": "Determining whether and where retrieval enforces workspace-level authorization is necessary to assess cross-workspace exposure risk and to evaluate requirements req-AUTHZ-001 and req-RAG-002 for this threat; without it, reviewers cannot tell whether tenant isolation is enforced in the retrieval layer or left implicit.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-001",
+          "cmp-003",
+          "ast-002",
+          "ast-003",
+          "qst-001"
+        ],
+        "requested_evidence": [
+          "Architecture or code-level documentation describing how RetrievalIndex.search or equivalent limits results to content the requesting workspace is entitled to, including whether filtering by workspace or other entitlements occurs before similarity scoring and top-k selection."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "69b5952f7dd87ea4c422b8a041e90cda09ae824b14144217d40c58e9970594d6"
+}

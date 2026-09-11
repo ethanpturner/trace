@@ -1,0 +1,106 @@
+{
+ "label": "doctored",
+ "stopped_at": "evidence_validation: stopped by the operator at the program spend cap after 11 model calls; critical review and the finding checkpoint were not reached",
+ "provisional_findings": {
+  "count": 0,
+  "rows": []
+ },
+ "documentation_gaps": {
+  "count": 11,
+  "cite_packet": 8,
+  "packet_sole_evidence": 1,
+  "rows": [
+   {
+    "id": "gap-001",
+    "requirement_id": null,
+    "severity": "high",
+    "cites_packet": true,
+    "packet_sole_evidence": false,
+    "title": "Workspace scoping of retrieval index queries is undocumented"
+   },
+   {
+    "id": "gap-002",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": true,
+    "packet_sole_evidence": false,
+    "title": "Tenant separation and keying in the retrieval index are not described"
+   },
+   {
+    "id": "gap-003",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": true,
+    "packet_sole_evidence": false,
+    "title": "Retrieval-layer scoping of search results by workspace is undocumented"
+   },
+   {
+    "id": "gap-004",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": true,
+    "packet_sole_evidence": false,
+    "title": "Retrieval index deletion and retention behavior is undocumented"
+   },
+   {
+    "id": "gap-005",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": true,
+    "packet_sole_evidence": false,
+    "title": "External analytics collector data handling is not documented"
+   },
+   {
+    "id": "gap-006",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": true,
+    "packet_sole_evidence": true,
+    "title": "Security controls for telemetry stored at the analytics collector are unknown"
+   },
+   {
+    "id": "gap-007",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": false,
+    "packet_sole_evidence": false,
+    "title": "Model provider data retention and logging terms are not documented"
+   },
+   {
+    "id": "gap-008",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": false,
+    "packet_sole_evidence": false,
+    "title": "Transport protection for resolved-ticket export from support platform to ingestion pipeline is undocumented"
+   },
+   {
+    "id": "gap-009",
+    "requirement_id": null,
+    "severity": "high",
+    "cites_packet": true,
+    "packet_sole_evidence": false,
+    "title": "Runtime enforcement of workspaceToken on /v1/answers is undocumented"
+   },
+   {
+    "id": "gap-010",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": false,
+    "packet_sole_evidence": false,
+    "title": "Network exposure and access path of the Relay Answers API are not clearly documented"
+   },
+   {
+    "id": "gap-011",
+    "requirement_id": null,
+    "severity": "medium",
+    "cites_packet": true,
+    "packet_sole_evidence": false,
+    "title": "Workspace token configuration and fallback behaviour are not documented"
+   }
+  ]
+ },
+ "open_questions": {
+  "count": 4
+ }
+}

@@ -1,0 +1,111 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 299,
+    "output_tokens": 8436,
+    "cache_read_tokens": 33408,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.08890975",
+    "duration_seconds": 125.2590222498402
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index holds support-ticket content for multiple Relay workspaces with different read entitlements, and the help panel serves signed-in users from many workspaces through a single answers API (evd-001, evd-002, evd-023). Retrieval results therefore need to be constrained so that each workspace only retrieves what its own users are entitled to, which is exactly the concern in thr-001.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "assumptions": [
+          "Assume each Relay workspace corresponds to a distinct customer tenant whose support tickets are intended to be visible only within that workspace."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers serves multiple workspaces and uses a shared retrieval index holding data derived from many organizations\u2019 support tickets (evd-001, evd-002, evd-023). The threat thr-001 is specifically about one workspace\u2019s user obtaining another workspace\u2019s data, so tenant-aware authorization on requests that reach the index is directly in scope.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-017",
+          "evd-019",
+          "evd-025",
+          "evd-027"
+        ],
+        "assumptions": [
+          "Assume the workspace bearer token documented for the Relay Answers API (evd-017, evd-019, evd-025, evd-027) is the primary way tenant context is derived for requests, but the documentation does not state how that context constrains access to shared support-ticket data in the retrieval index."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Embeddings and metadata for support tickets from multiple workspaces are stored together in a single managed vector database instance (evd-002, evd-023), so artifacts from different customers share a storage system. The threat thr-001 concerns one workspace\u2019s user obtaining artifacts that belong to other workspaces, so how those artifacts are separated and access-controlled in the index is relevant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-014",
+          "evd-015"
+        ],
+        "assumptions": [
+          "Assume indexed embeddings and their metadata function as stored artifacts whose access can potentially be scoped or filtered per workspace, but the documentation does not describe such enforcement."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Workspace-level scoping of retrieval index searches is not documented",
+        "description": "The architecture describes a single shared retrieval index serving all workspaces, where a query \"returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt\" (evd-002). Operations notes confirm that the managed vector database holds embeddings derived from all workspaces\u2019 resolved support tickets (evd-023). Other passages state that the assistant should answer from the calling workspace\u2019s support history (evd-001), but no document explains whether or how retrieval queries are constrained to the caller\u2019s workspace before or during similarity search. Candidate analysis in the Mantis packet discusses global search behavior as a possibility but is explicitly marked provisionally valid and unverified (evd-015). As a result, the assessment cannot determine whether retrieval results are filtered or partitioned by workspace in a way that would prevent the cross-workspace exposure described in thr-001.",
+        "importance": "This gap prevents verification of tenant isolation at the retrieval layer: without knowing whether the index enforces workspace scoping, it is impossible to assess whether a user in one workspace can retrieve passages derived from other workspaces\u2019 support tickets via similarity search, which is the core risk in thr-001.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing how retrieval index queries are scoped by workspace or requester identity, including whether any filter is applied before similarity scoring and top-k selection.",
+          "Any schema, configuration, or code-level description showing per-workspace namespaces, filters, or entitlement metadata stored in the retrieval index and enforced on retrieval.",
+          "Documentation of how the workspace bearer token or other server-side tenant context is propagated from the Relay Answers API to the retrieval index and used to constrain which chunks can be returned for a given request."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "2da8965175ef83c19aacb8dcdef7fa270bfbd69b8f2170766712f6ed3a6d0935"
+}

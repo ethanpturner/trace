@@ -1,0 +1,8 @@
+run run-001  status: failed  model calls: 14
+  node                         calls     input  cache-read  cache-write   output  seconds  cost
+  context-extraction               1     14646        2944            -    19187    203.2  0.2105455
+  threat-analysis                  1     18283           -            -    18096    184.9  0.20381375
+  requirement-and-control-mapping     5     99820      103552            -    55980    725.3  0.69751900
+  evidence-validation              2     30728       29696            -    92974    873.5  0.97186200
+  critical-review                  5     52749           -            -    44568    473.0  0.51161625
+  total                           14    216226      136192            -   230805   2459.9  2.59535650

@@ -1,0 +1,229 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 17044,
+    "output_tokens": 13444,
+    "cache_read_tokens": 17408,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.157921",
+    "duration_seconds": 177.5860892077908
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "workspace_token_auth",
+        "name": "Workspace token bearer authentication for answers endpoint",
+        "description": "OpenAPI declares a workspaceToken HTTP bearer security scheme and applies it as a global security requirement so that the workspace token identifies the caller's workspace for the Relay Answers API, including the /v1/answers operation (evd-017, evd-019, evd-020, evd-025, evd-027, evd-028). This is the documented mechanism by which callers are expected to authenticate and by which the service derives workspace context.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-003",
+          "ast-004"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028",
+          "evd-015"
+        ],
+        "owner": "relay",
+        "limitations": [
+          "The OpenAPI contract documents the intended bearer authentication, but no architecture or operations document describes how /v1/answers enforces the workspaceToken at runtime.",
+          "The Mantis candidate record B.6 describes an implementation variant where the answer route reads the Authorization header but does not wire the resolve_workspace dependency, falling back to a default workspace even when the header is missing or arbitrary (evd-015). That record is explicitly marked PROVISIONALLY_VALID and unverified, so effective enforcement remains uncertain from the supplied material."
+        ]
+      },
+      {
+        "key": "per_workspace_quota",
+        "name": "Per-workspace daily answer quota and feature flag",
+        "description": "Operations notes state that each answer makes one model call and that a per-workspace daily answer quota bounds spend; the assistant can also be disabled per workspace with a feature flag (evd-022). Together, these controls bound model-provider consumption per workspace and allow operators to turn the assistant off for specific workspaces.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-003",
+          "ast-004"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-022"
+        ],
+        "owner": "relay",
+        "limitations": [
+          "The quota and feature flag bound and gate total assistant usage per workspace but do not themselves distinguish between authorized and unauthorized callers within a workspace.",
+          "The documentation does not describe any alerting or monitoring tied to quota exhaustion or abnormal usage patterns."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [
+          "workspace_token_auth"
+        ],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers serves many workspaces and holds support tickets for those workspaces in a single shared retrieval index, so it is a multi-tenant system with tenant data in shared storage (\"Available to every signed-in user of any workspace on any plan\" and \"All workspaces are served from one shared index\"; evd-002). Threat thr-007 describes unauthenticated access to answers drawn from a specific workspace, so it bears directly on how requests are mapped to and constrained within a tenant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028",
+          "evd-015"
+        ],
+        "assumptions": [
+          "The OpenAPI description that \"the workspace token identifies the caller's workspace\" (evd-017, evd-025) reflects the intended authorization model, but the supplied material does not establish that this model is correctly enforced for all requests in the running service.",
+          "The Mantis candidate record B.6 (evd-015) may reflect an actual implementation defect in how /v1/answers derives workspace context, but its PROVISIONALLY_VALID status and the review packet's explicit warning that candidates are unverified mean it cannot be treated as conclusive evidence of absence of control."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [
+          "per_workspace_quota"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The answer service calls a hosted large-language-model API for each question (\"Model provider \u2014 a hosted large-language-model API\"; evd-002; data flow df-004), so processing consumes a metered external service. Threat thr-007 describes an attacker sending many /v1/answers requests to drive up model-provider usage and exhaust quotas, which is exactly the kind of repeated or malicious trigger this requirement addresses.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-022"
+        ],
+        "assumptions": [
+          "The per-workspace daily answer quota described in operations-notes.md (evd-022) is enforced by the production deployment of the answer service, not only in development or test environments."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-OPS-002",
+        "control_keys": [
+          "per_workspace_quota"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers runs on cloud infrastructure and makes calls to a hosted model provider (evd-002, evd-004, df-004), so its resource consumption, including model usage, is metered. End users \u2014 and in thr-007, potentially unauthenticated callers if the threat holds \u2014 can cause the system to issue model calls, so anomalous spend from abuse is a concern.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-022"
+        ],
+        "assumptions": [
+          "No additional monitoring or alerting for anomalous spend is implemented beyond what is written in the supplied documentation. The only documented spend-related control is the per-workspace daily answer quota (evd-022), which bounds consumption but does not describe alerting.",
+          "Cloud- or provider-level budget alerts, if any exist, are not described in the current architecture or operations documents."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Runtime enforcement of workspaceToken on /v1/answers is undocumented",
+        "description": "OpenAPI declares a workspaceToken bearer security scheme and applies it globally so that the workspace token identifies the caller's workspace (evd-017, evd-019, evd-020, evd-025, evd-027, evd-028), but no architecture or operations document describes how the Relay Answers API actually enforces this dependency at runtime on the /v1/answers route. The only additional material about enforcement is a Mantis candidate record stating that the route reads the Authorization header but does not wire the resolve_workspace dependency and therefore falls back to a default workspace (evd-015); that record is explicitly marked PROVISIONALLY_VALID and unverified. From the supplied documentation, it is therefore not possible to determine whether bearer authentication is in fact required, how invalid or missing tokens are handled, or whether unauthenticated requests can ever reach retrieval and the model provider.",
+        "importance": "Authentication and workspace binding on the /v1/answers endpoint are the primary controls separating authorized help-panel usage from unauthenticated access described in thr-007; without clear documentation of how workspaceToken enforcement works at runtime, the assessment cannot determine whether the threat scenario is actually possible or already mitigated.",
+        "related_object_ids": [
+          "thr-007",
+          "cmp-001"
+        ],
+        "requested_evidence": [
+          "Design or implementation documentation describing the authentication and workspace resolution flow for /v1/answers, including how the workspaceToken is validated and how the workspace_id is derived.",
+          "A description of the behavior when the Authorization header is missing, malformed, expired, or otherwise invalid, including any defaulting behavior.",
+          "If available, a code reference or configuration snippet showing the dependency wiring for resolve_workspace (or equivalent) into the /v1/answers route."
+        ],
+        "evidence_ids": [
+          "evd-017",
+          "evd-018",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-026",
+          "evd-027",
+          "evd-028",
+          "evd-015"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Network exposure and access path of the Relay Answers API are not clearly documented",
+        "description": "The operations notes state that \"The answer service runs as a single deployment beside the main Relay API\" (evd-022), and the architecture overview describes the answer service in terms of its role in handling help-panel questions (evd-002), but none of the supplied documents state whether the Relay Answers API is directly reachable from the public internet, exposed only behind the main Relay API or an internal gateway, or restricted to an internal network. Component cmp-001 has no recorded deployment_zone or internet_accessible flag. Because thr-007 assumes remote unauthenticated attackers can send POST /v1/answers requests directly to the Answers API, the lack of a documented network exposure model prevents assessing whether this precondition holds.",
+        "importance": "Whether /v1/answers is directly internet-accessible or only reachable through trusted intermediaries substantially affects the likelihood of unauthorized access and cost-exhaustion scenarios like thr-007, and also influences which other controls (such as WAFs or API gateways) might mitigate them.",
+        "related_object_ids": [
+          "thr-007",
+          "cmp-001"
+        ],
+        "requested_evidence": [
+          "An architecture or deployment diagram that shows how clients reach /v1/answers in production, including any API gateways, load balancers, or service meshes in front of it.",
+          "A statement of whether the Relay Answers API is reachable directly from the public internet, from only the main Relay application backend, or from a restricted internal network segment.",
+          "Any network or firewall rules that govern inbound access to /v1/answers."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-022"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The OpenAPI contract for the Relay Answers API declares a workspaceToken bearer security scheme and applies it to operations (evd-017, evd-018, evd-019, evd-020, evd-025, evd-026, evd-027, evd-028), while a separate review artifact describes an implementation variant where the /v1/answers route reads the Authorization header but does not enforce the workspaceToken dependency and instead falls back to a default workspace (evd-015). The catalog contains requirements for delegated authentication, tenant-aware authorization, and webhook authenticity, but no requirement that specifically addresses alignment between declared API authentication in interface contracts (such as OpenAPI security requirements) and actual runtime enforcement on general API endpoints.",
+        "suggested_category": "authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "req-AUTH-001 concerns systems that delegate user authentication to an external identity provider and requires documentation of that delegation, the named provider, and its boundary. In the Relay Answers materials, the workspaceToken is a workspace-scoped bearer token described in the API contract itself (evd-017, evd-019, evd-025, evd-027), not a federated identity or external IdP delegation, and the concern is the mismatch between the contract and enforcement on an ordinary API endpoint, which this requirement does not cover."
+          },
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 addresses tenant-aware authorization in multi-tenant systems, requiring that each request be constrained to the tenant it belongs to and that the tenant context be derived from server-side state. While incorrect enforcement of workspaceToken on /v1/answers would affect tenant scoping in practice, the requirement does not speak to contract-level declarations (such as OpenAPI security requirements) or to the specific issue of an API implementation ignoring its documented security scheme."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "req-WEBHOOK-001 focuses on verifying the authenticity of inbound events from an external platform using cryptographic mechanisms before processing them. It applies to webhook-style receivers, not to general client-facing API endpoints, and it does not cover the consistency between an OpenAPI-declared authentication scheme and the actual enforcement behavior of those endpoints."
+          }
+        ],
+        "evidence_ids": [
+          "evd-017",
+          "evd-018",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-026",
+          "evd-027",
+          "evd-028",
+          "evd-015"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "3fdf067109ccbd7c30384cf29fe5a3482e66439fcda55c9ec234c64c5fdc4c5f"
+}

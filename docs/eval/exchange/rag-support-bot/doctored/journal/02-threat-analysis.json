@@ -1,0 +1,412 @@
+{
+  "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 19904,
+    "output_tokens": 20851,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.23339",
+    "duration_seconds": 235.01637208275497
+  },
+  "response": {
+    "threats": [
+      {
+        "title": "Cross-workspace ticket disclosure through unscoped global vector search",
+        "description": "If the retrieval index search implementation behaves as a process-global top-k over all tenants without enforcing a workspace scope (as described in provisional Mantis candidate record B.2), a user in one workspace could cause the assistant to surface support-ticket content from other workspaces. Because all workspaces share a single retrieval index and embedded ticket text can include configuration snippets, semantically crafted questions could retrieve and expose another customer's support history via the answer text and its citations.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "multi_tenancy",
+          "authorization"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-004",
+          "cmp-007",
+          "cmp-008"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-003",
+          "df-004"
+        ],
+        "preconditions": [
+          "RetrievalIndex.search operates as a process-global top-k over all chunks without enforcing a workspace or tenant scope, as described (but not independently verified) in Mantis candidate record B.2 (evd-015, ctx-027).",
+          "All workspaces share a single retrieval index populated with embeddings of both public help-center content and resolved support tickets (evd-002, evd-023, ctx-006, ctx-011).",
+          "Signed-in users in any workspace can freely ask support questions through the help panel (evd-001, evd-002, ctx-005)."
+        ],
+        "attack_path": [
+          "A signed-in user in Workspace A opens the help panel (cmp-002) and sends a carefully crafted question to the Relay Answers API (cmp-001) seeking information similar to issues other customers might have encountered (evd-001, evd-002).",
+          "The answer service identifies the caller's workspace but, under the candidate behavior, uses that identity only for quota accounting and calls RetrievalIndex.search on the shared retrieval index (cmp-004) without a workspace filter, performing a global similarity search (evd-002, evd-015 B.2).",
+          "Because the index holds embeddings of resolved tickets for all workspaces (ast-001, ast-003), the global top-k results include private ticket chunks belonging to other workspaces whose content is semantically close to the query (evd-002, evd-023, evd-024, evd-015 B.2).",
+          "The provider wrapper (cmp-007) forwards the user question and these retrieved passages to the hosted model provider over TLS (cmp-008, df-004) for answer generation (evd-002, evd-003, evd-004).",
+          "The generated answer, potentially summarizing or quoting other customers' ticket text and configuration snippets, is returned and rendered as plain text in the help panel for the Workspace A user, with citations that identify the underlying chunks (cmp-002, evd-003, evd-024, evd-015 B.2)."
+        ],
+        "impact": "Unauthorized disclosure of other workspaces' support ticket text and configuration details to ordinary users in a different workspace, violating tenant isolation expectations and potentially exposing sensitive operational information and customer-specific data across tenants.",
+        "likelihood": "unknown; depends on whether the unscoped global-search implementation from candidate record B.2 is present in the deployed service and on how the index is actually scoped at query time.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-023",
+          "evd-024",
+          "evd-015"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Cross-workspace replacement and deletion of embeddings via unscoped source identifiers",
+        "description": "If the ingestion pipeline identifies ticket-derived chunks solely by an unscoped source reference derived from ticket_id, as described in provisional Mantis candidate record B.1, duplicate or reused ticket identifiers across workspaces could cause one workspace's tickets to overwrite or delete another's embeddings in the shared retrieval index. This would silently corrupt which tenant owns which chunks and could lead to cross-workspace data exposure or loss.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "multi_tenancy",
+          "integrity"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-003",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The ingestion pipeline is the only writer to the multi-tenant retrieval index and replaces changed chunks \"by source reference\" (evd-002, evd-023, ctx-010).",
+          "source_ref and chunk_id for ticket chunks are derived only from ticket_id and position, without incorporating workspace ownership or source kind, as described (but not independently verified) in Mantis candidate record B.1 (evd-015, ctx-028).",
+          "Ticket identifiers may collide or be reused across workspaces or over time within the external support platform (cmp-006); the documentation does not state whether ticket IDs are globally unique per workspace."
+        ],
+        "attack_path": [
+          "Due to ID reuse, data migration, or a support-platform quirk, Workspace B receives a ticket whose ticket_id matches an older ticket previously exported for Workspace A (cmp-006, df-002).",
+          "During the nightly ingestion run, the pipeline (cmp-003) reads the resolved-tickets export and computes source_ref values using only ticket_id, then calls replace_source or remove_source on the retrieval index (cmp-004), treating all chunks with that source_ref as the same logical object (evd-023, evd-015 B.1).",
+          "Because the key is not scoped by workspace, Workspace B's ticket chunks overwrite or delete Workspace A's existing chunks with the same ticket_id in the shared embeddings index (ast-003) (evd-002, evd-015 B.1).",
+          "Subsequent searches originating from Workspace A retrieve either Workspace B's ticket text or no content where A's ticket should appear, altering A's effective support history within the assistant and potentially surfacing B's ticket text to A's users when queries hit those chunks (ast-001, evd-001, evd-002)."
+        ],
+        "impact": "Integrity of the multi-tenant embeddings index is compromised, with one workspace's ticket embeddings being overwritten or removed by another's data. This can misrepresent a customer's support history, hinder troubleshooting, and potentially leak another workspace's ticket content when corrupted chunks are retrieved and surfaced in answers.",
+        "likelihood": "unknown; it depends on whether the unscoped source_ref design from candidate record B.1 is present and whether ticket identifiers can collide across workspaces or over time.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-001",
+          "evd-015"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Indefinite retention of deleted or corrected ticket data in the embeddings index",
+        "description": "If the nightly ingestion job only updates rows present in the current export and only deletes content when explicit tombstone rows are present, as provisional Mantis candidate B.3 describes, then partial or interrupted exports and missing tombstones could leave embeddings for deleted or corrected tickets in the retrieval index indefinitely. Users could continue to retrieve and see ticket-derived content that customers expected to be deleted or updated under the support platform's retention schedule.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "data_retention",
+          "integrity"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-007",
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-003",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003",
+          "df-004"
+        ],
+        "preconditions": [
+          "Resolved support tickets are retained on the support platform for two years and then deleted under the agreed retention schedule (evd-004, ctx-013).",
+          "The ingestion pipeline runs nightly and is the only writer to the retrieval index, replacing changed chunks by source reference (evd-002, evd-023, ctx-009, ctx-010).",
+          "run_nightly updates only rows present in the current export and propagate_deletions removes content only for explicit tombstone rows, with no complete-snapshot contract or reconciliation against the set of active keys, as described (but not independently verified) in provisional candidate B.3 (evd-015, ctx-028).",
+          "Exports may occasionally be partial, interrupted, or omit deletion tombstones due to operational issues; the supplied documentation does not guarantee that every export is a complete, consistent snapshot."
+        ],
+        "attack_path": [
+          "A customer requests deletion or correction of a resolved ticket in the external support platform, or the retention window expires so that a ticket falls out of the two-year retention on that system (cmp-006, evd-004).",
+          "Because of an incomplete export or missing tombstone rows, the nightly resolved-tickets export no longer includes the ticket but also does not include a deletion marker for it (df-002, evd-023, evd-015 B.3).",
+          "The ingestion pipeline (cmp-003) processes only the rows present in the export; since neither an updated row nor a tombstone appears, it leaves the existing embeddings and metadata for that ticket unchanged in the retrieval index (cmp-004, ast-003) (evd-023, evd-015 B.3).",
+          "Later, when users ask questions whose semantics are close to the stale ticket content, retrieval still returns those chunks and the provider wrapper (cmp-007) forwards them to the model provider as context for answer generation (df-004, evd-002, evd-003).",
+          "The assistant surfaces information from tickets that were expected to be deleted or corrected, continuing to expose obsolete or unwanted customer data beyond the support platform's documented retention window (ast-001, evd-004, evd-024)."
+        ],
+        "impact": "Ticket-derived content that customers expect to have been deleted or corrected can remain retrievable via the assistant, potentially violating retention or deletion expectations and continuing to expose sensitive configuration details or conversation snippets. It also risks answer accuracy by surfacing outdated or superseded information.",
+        "likelihood": "unknown; it depends on the actual ingestion implementation and export guarantees relative to the behavior described in candidate record B.3.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-023",
+          "evd-024",
+          "evd-015"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Exposure of ticket-derived telemetry at an external analytics collector",
+        "description": "If provider.py posts retrieved chunk text and generated answers to an external analytics collector, as described in provisional Mantis candidate B.7 and reflected in the component model, then ticket-derived content and answer text leave the primary deployment boundary and reside with a second processor. Compromise of or over-broad access to this analytics service could expose sensitive ticket conversations and configuration snippets aggregated across many workspaces.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "supply_chain",
+          "privacy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-007",
+          "cmp-009"
+        ],
+        "affected_asset_ids": [
+          "ast-005",
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-005"
+        ],
+        "preconditions": [
+          "The provider wrapper posts telemetry including request identifiers, retrieved chunk text, and generated answers to an external analytics collector at analytics.relay-answers.example, keyed by a shared collector token, as described (but not independently verified) in Mantis candidate record B.7 (evd-015, ctx-032).",
+          "Telemetry includes text originating from resolved support tickets as those chunks are retrieved to answer questions (ast-001, ast-005, evd-002, evd-023, evd-024).",
+          "The analytics collector (cmp-009) is operated as a separate third-party or separate service boundary with its own access controls and data-handling practices, which are not described in the architecture or operations documents (evd-015, ctx-032)."
+        ],
+        "attack_path": [
+          "A user asks a question through the assistant; the answer service retrieves chunks from the embeddings index and generates an answer via the model provider (cmp-003, cmp-004, cmp-007, cmp-008) (evd-001, evd-002, evd-003, evd-023, evd-024).",
+          "After responding, provider.py sends telemetry containing the request identifier, the retrieved chunk text (including ticket-derived snippets), and the generated answer over HTTPS to the external analytics collector (cmp-009) via df-005 (evd-015 B.7, ctx-032).",
+          "The analytics collector stores this telemetry over time, aggregating ticket-derived content and answers for many workspaces (ast-005, ast-001).",
+          "A malicious insider at the analytics provider, an external attacker who compromises that service, or an external request for this data gains access to stored telemetry, obtaining sensitive ticket text and configuration snippets outside the core system's protection boundary (tb-004, evd-015)."
+        ],
+        "impact": "Customer support conversations and configuration snippets that appear in retrieved chunks can be exposed through the analytics collector rather than the primary service. This broadens the attack surface and may create additional privacy, compliance, and contractual obligations around the handling and retention of support-derived telemetry.",
+        "likelihood": "unknown; it depends on whether the analytics integration described in candidate record B.7 is enabled in production and on the collector's own security and contractual controls.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-024",
+          "evd-015"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Exposure of ticket-derived content at the hosted model provider",
+        "description": "The answer service sends user questions along with retrieved passages, including support-ticket-derived text, to a hosted model provider over TLS. If the provider stores or logs requests and is later compromised or accessed by unauthorized parties, those parties could gain access to sensitive support conversations and configuration snippets for many workspaces.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "supply_chain",
+          "privacy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-007",
+          "cmp-008"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-003",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-004"
+        ],
+        "preconditions": [
+          "The answer service sends the user's question and retrieved passages to a hosted large-language-model API as part of prompt assembly (cmp-007 to cmp-008) (evd-002, evd-003, evd-004, ctx-018).",
+          "The model provider's terms state that submitted content is not used for training, but they do not preclude storage or logging for operational purposes (evd-004, ctx-017).",
+          "An attacker compromises the model provider's environment or an insider or external request obtains access to stored request data; the internal controls of that provider are outside the system's direct control."
+        ],
+        "attack_path": [
+          "A user asks a question; the answer service retrieves top-k passages from the embeddings index, which can include support ticket text containing configuration snippets (cmp-003, cmp-004, ast-001, ast-003) (evd-002, evd-023, evd-024).",
+          "The provider wrapper (cmp-007) assembles a prompt that includes the user's question and the retrieved passages inside a delimited context block and sends it to the hosted model provider over TLS (cmp-008, df-004) (evd-002, evd-003, evd-004, ctx-018).",
+          "The model provider logs or otherwise stores the request payloads for operational reasons; those logs now contain ticket-derived and documentation-derived content associated with many workspaces.",
+          "A malicious insider, external attacker, or external request targeting the provider's stored data gains access to these logs, reading customer support conversations and configuration snippets that originated in the assistant's context (ast-001, evd-004)."
+        ],
+        "impact": "Sensitive support-ticket text and configuration details may be exposed at the hosted model provider rather than within the primary service boundary. This creates a supply-chain exposure where confidentiality depends on the provider's security posture and legal/regulatory environment.",
+        "likelihood": "unknown; compromise or misuse at the provider is outside the architecture's direct control but is a plausible scenario given that all prompts and context are sent to this third-party service.",
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-023",
+          "evd-024",
+          "evd-018"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception or tampering of resolved-ticket exports in transit",
+        "description": "The ingestion pipeline pulls resolved-ticket exports from the external support platform and uses them as the basis for embedding customer support conversations into the shared retrieval index. If this export transfer is not strongly protected in transit, a network attacker could eavesdrop on or tamper with ticket data before it is embedded, leading to confidentiality loss and corrupted assistant behavior.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-003",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The resolved support tickets export flows from the external support platform to the ingestion pipeline as described in the architecture (df-002, tb-001) (evd-002, evd-023).",
+          "Encryption and integrity protection for this export in transit are not documented and are recorded as unknown for df-002; strong mutual authentication between source and consumer is likewise not described.",
+          "An attacker can observe or modify traffic on the network path between the support platform and the ingestion pipeline (for example, through network positioning or compromise of an intermediate system)."
+        ],
+        "attack_path": [
+          "The support platform (cmp-006) generates the resolved-tickets export and transmits it to the ingestion pipeline (cmp-003) according to the nightly schedule (df-002, evd-002, evd-023).",
+          "A network attacker on the path intercepts the export, copying its contents; this yields free-form support ticket conversations and configuration snippets (ast-001) despite email masking (evd-023, evd-024).",
+          "Alternatively or additionally, the attacker alters rows in the export, injecting malicious or misleading text or entirely fabricated tickets into the stream.",
+          "The ingestion pipeline treats the modified export as authoritative, chunks and embeds its contents, and writes them into the shared retrieval index (cmp-004, df-003) (evd-002, evd-023).",
+          "Subsequent assistant queries retrieve the attacker-injected or corrupted content, which is then passed to the model provider and surfaced to users as part of answers, affecting both confidentiality (if sensitive data was injected or exfiltrated) and integrity of responses (evd-003, evd-024)."
+        ],
+        "impact": "Without strong protection on the export channel, a network attacker could read sensitive support conversations during transfer and/or insert falsified text that becomes part of the assistant's knowledge base, leading to disclosure of customer data and untrustworthy answers derived from tampered ticket content.",
+        "likelihood": "unknown; it depends on the actual transport security and authentication mechanisms on the export path, which are not specified in the provided documentation.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-024",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Unauthorized access to answers if bearer authentication is not enforced on the answer endpoint",
+        "description": "OpenAPI documentation declares a workspaceToken bearer scheme for the answer operation, but provisional Mantis candidate B.6 asserts that the implementation does not enforce this dependency and instead resolves requests without a valid Authorization header to a default workspace. If this behavior exists in the deployed service and the API is reachable from untrusted networks, unauthenticated callers could consume the assistant, access default-workspace support-derived answers, and exhaust quotas.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "information_disclosure",
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-007",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-004",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-004"
+        ],
+        "preconditions": [
+          "The /v1/answers operation is intended to require workspaceToken bearer authentication as declared in OpenAPI (evd-017, evd-019, evd-020, evd-025, evd-026, evd-027, evd-028, ctx-026).",
+          "Provisional Mantis candidate B.6 correctly describes the implementation behavior: the route reads the Authorization header but does not enforce the workspaceToken dependency, allowing requests without a valid header to proceed using a default workspace (evd-015, ctx-031).",
+          "The Relay Answers API deployment is reachable from clients beyond the trusted application tier (for example, from the public internet or a broad internal network); its effective exposure is not specified (cmp-001, ctx-022)."
+        ],
+        "attack_path": [
+          "A remote attacker discovers the /v1/answers endpoint (for example, through API exploration or observing the help panel's traffic).",
+          "The attacker sends POST /v1/answers requests directly to the Relay Answers API (cmp-001) with no Authorization header or arbitrary header values.",
+          "Under the candidate behavior, the route resolves to a default workspace instead of rejecting the request, performs retrieval against the shared embeddings index (cmp-004), and calls the model provider through the provider wrapper (cmp-007) (evd-015 B.6, evd-002, evd-003).",
+          "The attacker receives full answers based on that workspace's help-center and support-ticket content and can repeat requests to learn more about that workspace's operational details and incidents (ast-001, ast-003).",
+          "By issuing many such requests, the attacker can also consume the default workspace's daily answer quota and drive up model-provider usage, denying legitimate users access and increasing operational cost (evd-022, ctx-024, evd-015 B.6)."
+        ],
+        "impact": "If the documented bearer authentication is not enforced at runtime, unauthenticated callers could access default-workspace support-derived answers and use the assistant at will, undermining both access control and quota-based spend controls for that workspace.",
+        "likelihood": "unknown; it depends on whether the implementation behavior described in candidate record B.6 exists in the deployed system and on the API's effective network exposure.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-026",
+          "evd-027",
+          "evd-028",
+          "evd-022",
+          "evd-002",
+          "evd-003",
+          "evd-015"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Predictable development workspace tokens used in production configuration",
+        "description": "Provisional Mantis candidate B.4 asserts that when the WORKSPACE_TOKENS configuration is unset or empty, the service substitutes a hard-coded mapping with known development tokens (for example, dev-token-acme and dev-token-globex) at import time. If such a fallback is active in a reachable deployment and the token values are discoverable from source or documentation, an external caller could use these predictable tokens to impersonate a workspace and access its assistant answers.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-004",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-004",
+          "ast-001",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "The API relies on a workspaceToken bearer credential to identify the caller's workspace, as declared in the OpenAPI description (evd-017, evd-019, evd-020, evd-025, evd-026, evd-027, evd-028, ctx-026).",
+          "As described (but not independently verified) in provisional Mantis candidate B.4, when WORKSPACE_TOKENS is unset or empty, load_settings substitutes a hard-coded mapping containing dev-token-acme and dev-token-globex, and main.py calls load_settings at import without a production-mode gate (evd-015, ctx-029).",
+          "These development tokens are present in source or documentation accessible to an attacker, allowing them to learn the token values (evd-015 B.4).",
+          "A production or otherwise sensitive deployment is running with WORKSPACE_TOKENS misconfigured such that the fallback development mapping is in effect."
+        ],
+        "attack_path": [
+          "An attacker obtains the development workspace token values from source code, tests, or documentation (dev tokens mentioned in candidate B.4) (evd-015).",
+          "The attacker sends POST /v1/answers requests directly to the Relay Answers API (cmp-001) with the Authorization header set to one of the development tokens.",
+          "Because the configuration fallback is active, the service accepts the token and treats the request as belonging to the associated workspace, performing retrieval against that workspace's ticket and help-center embeddings in the shared index (cmp-004, ast-001, ast-003).",
+          "The attacker can now issue arbitrary questions whose answers reveal that workspace's support history and configuration snippets, and can do so repeatedly until quotas or other controls intervene (evd-001, evd-002, evd-022, ctx-024)."
+        ],
+        "impact": "If hard-coded development tokens are silently activated in a misconfigured deployment, an external party who learns these values could impersonate a production workspace and read assistant answers derived from its support tickets, violating workspace isolation and token confidentiality expectations.",
+        "likelihood": "unknown; it depends on whether the fallback token behavior from candidate record B.4 exists in the deployed code and whether production configuration ever omits WORKSPACE_TOKENS.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-026",
+          "evd-027",
+          "evd-028",
+          "evd-022",
+          "evd-001",
+          "evd-002",
+          "evd-015"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "0c7b7d0a00741e144023ab11bb169131a38f85ec0f91a8374a1f448750017365"
+}
