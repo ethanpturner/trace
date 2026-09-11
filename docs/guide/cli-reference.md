@@ -436,6 +436,7 @@ trace evaluate [scenario] [--all] [--condition CONDITION]
                [--ablate NAME] [--label LABEL] [--work-root WORK_ROOT]
                [--diff-against LABEL] [--live-workflow-version VERSION]
                [--replay-journal PATH] [--results-root RESULTS_ROOT]
+               [--external PATH] [--worktree PATH]
                [--report {scorecard,comparison,ablation}] [--out OUT] [--json]
 ```
 
@@ -463,6 +464,15 @@ refused by name.
   harness run journals every response it consumes into the work root's `traces/journal/` area,
   so the flag has something to name after a kill, and a re-drive carries what it replays into
   that same area (DEC-144) — a second kill re-drives from the same directory unchanged.
+- `--external PATH` scores a hand-authored external-tool feed (DEC-155) — one
+  `results/<arm>/<scenario>-run-<N>.yaml`, or a directory of them — by the same structural
+  matcher as the baselines. The row is non-authoritative and keyed `external-<arm>`; findings the
+  tool left unproven are carried as unverified and enter no metric. Where an arm has several
+  runs on one scenario, the per-item agreement across them is printed. Takes no scenario
+  argument: the feeds name their own.
+- `--worktree PATH`, with `--external`, is the reviewed code checked out at the feed's snapshot,
+  so each cited `path:line` is checked for resolvability (DEC-151 on code). Omitted, the metric
+  is not emitted.
 - `--label`, `--condition`, `--work-root`, `--results-root`, and `--diff-against` control where
   the feed lands and what it is compared against.
 - `--report scorecard|comparison|ablation` runs the offline sweep and renders one evaluation

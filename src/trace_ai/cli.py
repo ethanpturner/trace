@@ -729,6 +729,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="where the feed is written (default: benchmarks/results/)",
     )
     evaluate.add_argument(
+        "--external",
+        type=_path,
+        metavar="PATH",
+        help=(
+            "score a hand-authored external-tool feed (DEC-155) — one results/<arm>/"
+            "<scenario>-run-<N>.yaml file, or a directory of them — by the same structural "
+            "matcher as the baselines; the row is non-authoritative and keyed external-<arm>"
+        ),
+    )
+    evaluate.add_argument(
+        "--worktree",
+        type=_path,
+        metavar="PATH",
+        help=(
+            "with --external: the reviewed code checked out at the feed's snapshot, so each "
+            "cited path:line is checked for resolvability (DEC-151 on code); omitted, the "
+            "metric is not emitted"
+        ),
+    )
+    evaluate.add_argument(
         "--report",
         choices=["scorecard", "comparison", "ablation"],
         help=(
@@ -3391,6 +3411,12 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
     from trace_ai.services.evaluation.harness import HarnessError, diff_feeds, run_scenario
     from trace_ai.services.evaluation.registry import CLEAN_CONDITION, load_registry
 
+    if args.external is not None:
+        if args.scenario or args.all_scenarios:
+            print("error: --external names its scenarios in the feed files", file=sys.stderr)
+            return 1
+        return _evaluate_external(args)
+
     if args.report is None and args.all_scenarios == bool(args.scenario):
         print("error: name one scenario or pass --all", file=sys.stderr)
         return 1
@@ -3736,6 +3762,144 @@ def _evaluate_baseline(args: argparse.Namespace) -> int:
         if feed.is_relative_to(PROJECT_ROOT):
             feed = feed.relative_to(PROJECT_ROOT)
         print(f"feed:         {feed}")
+    return 0
+
+
+def _evaluate_external(args: argparse.Namespace) -> int:
+    """Score one or more hand-authored external feeds (DEC-155) and report per run.
+
+    Where several runs of one arm cover one scenario, the per-item agreement across them is
+    printed from the derived feeds — the DEC-077 shape, read from feeds rather than driven live.
+    Exit 1 on a feed the loader refuses; nothing scored silently.
+    """
+    import json
+
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.services.evaluation.external_feed import (
+        ExternalFeedError,
+        discover_feeds,
+        score_feed,
+    )
+    from trace_ai.services.evaluation.harness import RESULTS_ROOT
+    from trace_ai.services.evaluation.stability import summarize_runs
+
+    target: Path = args.external
+    if target.is_dir():
+        # A directory is one arm's directory (results/<arm>/) or the whole results/ tree.
+        paths = discover_feeds(target) or discover_feeds(target.parent)
+        paths = [path for path in paths if path.is_relative_to(target)]
+    else:
+        paths = [target]
+    if not paths:
+        print(f"error: no external feed under {target}", file=sys.stderr)
+        return 1
+
+    results_root = args.results_root if args.results_root is not None else RESULTS_ROOT
+    outcomes = []
+    for path in paths:
+        try:
+            outcomes.append(score_feed(path, results_root=results_root, worktree=args.worktree))
+        except (ExternalFeedError, FileNotFoundError, KeyError) as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            return 1
+
+    def _relative(path: Path) -> str:
+        return str(path.relative_to(PROJECT_ROOT) if path.is_relative_to(PROJECT_ROOT) else path)
+
+    payload: dict[str, Any] = {"runs": [], "agreement": []}
+    for outcome in outcomes:
+        feed = outcome.feed
+        rejections = outcome.rejections
+        run_payload: dict[str, Any] = {
+            "scenario": feed.scenario,
+            "arm": feed.arm,
+            "run": feed.run,
+            "tool": {"name": feed.tool_name, "version": feed.tool_version},
+            "models": list(feed.models),
+            "snapshot_sha": feed.snapshot_sha,
+            "provenance": feed.provenance,
+            "matched": outcome.matched,
+            "missed": outcome.missed,
+            "divergent": outcome.divergent,
+            "spurious": outcome.spurious,
+            "unverified": [signature for signature, _ in feed.unverified],
+            "conditional_unreached": outcome.conditional_unreached,
+            "rejections": rejections,
+            "locators": (
+                {"resolved": outcome.locators.resolved, "total": outcome.locators.total}
+                if outcome.locators is not None
+                else None
+            ),
+            "metrics": outcome.metrics,
+            "feed": _relative(outcome.feed_path) if outcome.feed_path is not None else None,
+        }
+        payload["runs"].append(run_payload)
+        if not args.as_json:
+            print(f"scenario:     {feed.scenario} ({feed.condition}, {feed.label})")
+            print(f"tool:         {feed.tool_name} @ {feed.tool_version}")
+            print(f"models:       {', '.join(feed.models) or '- (unattributed)'}")
+            print(f"snapshot:     {feed.snapshot_sha}  provenance {feed.provenance}")
+            print(f"  matched      {', '.join(sorted(outcome.matched)) or '-'}")
+            print(f"  missed       {', '.join(outcome.missed) or '-'}")
+            print(f"  divergent    {', '.join(sorted(outcome.divergent)) or '-'}")
+            print(
+                f"  spurious     {len(outcome.spurious)} "
+                f"({len(feed.spurious)} naming no catalogue requirement)"
+            )
+            print(f"  unverified   {len(feed.unverified)} (enter no metric)")
+            scoreable = int(rejections.get("scoreable") or 0)
+            if scoreable:
+                print(
+                    f"  rejections   {len(rejections.get('breached') or {})} of {scoreable} "
+                    "breached"
+                )
+                for mechanism, counts in (rejections.get("by_mechanism") or {}).items():
+                    print(f"    {mechanism:<28} {counts[0]} of {counts[1]}")
+            else:
+                print("  rejections   none scoreable")
+            if outcome.locators is not None:
+                print(
+                    f"  locators     {outcome.locators.resolved} of {outcome.locators.total} "
+                    "resolve at the snapshot"
+                )
+            else:
+                print("  locators     not measured (no --worktree)")
+            if outcome.feed_path is not None:
+                print(f"feed:         {_relative(outcome.feed_path)}")
+            print()
+
+    by_key: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for outcome in outcomes:
+        if outcome.feed_path is None:
+            continue
+        derived = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
+        by_key.setdefault((outcome.feed.scenario, outcome.feed.arm), []).append(derived)
+    for (scenario, arm), feeds in sorted(by_key.items()):
+        if len(feeds) < 2:
+            continue
+        summary = summarize_runs(scenario, feeds)
+        payload["agreement"].append(
+            {
+                "scenario": scenario,
+                "arm": arm,
+                "n": summary.n,
+                "item_agreement": summary.item_agreement,
+                "metric_mean": summary.metric_mean,
+                "metric_stdev": summary.metric_stdev,
+            }
+        )
+        if not args.as_json:
+            print(f"agreement:    {scenario} / {arm}, n={summary.n}")
+            for key, count in sorted(summary.item_agreement.items()):
+                print(f"  {key:<28} matched in {count} of {summary.n}")
+            for metric in sorted(summary.metric_mean):
+                print(
+                    f"  {metric:<28} mean {summary.metric_mean[metric]:.4g}  "
+                    f"stdev {summary.metric_stdev[metric]:.4g}"
+                )
+
+    if args.as_json:
+        return _print_json("external-evaluation", payload)
     return 0
 
 

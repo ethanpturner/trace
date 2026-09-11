@@ -19,6 +19,13 @@ whose comparison tables fill every cell and cite nothing.
 STRIDE GPT is not a row: it cannot run through the seam, so it is scored in the portfolio
 write-up, not here (DEC-074). It is named under the table so its absence is a stated decision, not
 an omission.
+
+An **external arm** (DEC-155) is a row of a different kind and is labelled as one: a code
+reviewer's validated findings, hand-mapped to the catalogue and scored by the same matcher, keyed
+`external-<arm>`. It is non-authoritative, attributed to the model its feed names (DEC-136), and
+carries its provenance inline (DEC-152). Where a denominator is under five the cell shows counts
+and no percentage. No external feed committed means no external row, and the table renders
+exactly as before.
 """
 
 from __future__ import annotations
@@ -43,6 +50,8 @@ _BASELINE_LABELS = {
     "baseline-single-pass": "Whole assessment, one call (baseline)",
 }
 _TRACE_LABEL = "Trace"
+_EXTERNAL_PREFIX = "external-"
+_SMALL_DENOMINATOR = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +75,14 @@ class ToolSummary:
     # DEC-154: authored rejections a spurious finding breached, over the scoreable population.
     rejections_breached: int
     rejections_scoreable: int
+    # DEC-155: set on an external arm only — the tool, its models, its provenance, and how many
+    # of its cited code locators resolved at the reviewed snapshot (None where not measured).
+    external: bool = False
+    models: str | None = None
+    provenance: str | None = None
+    tool_identity: str | None = None
+    locators_resolved: int | None = None
+    locators_total: int | None = None
 
 
 def _spurious(feed: dict[str, Any]) -> int:
@@ -83,9 +100,15 @@ def _metric(feed: dict[str, Any], name: str) -> dict[str, Any] | None:
     return (feed.get("metrics") or {}).get(name)
 
 
+def _is_external(condition: str) -> bool:
+    return condition.startswith(_EXTERNAL_PREFIX)
+
+
 def _tool_of(feed: dict[str, Any]) -> str:
     condition = str(feed.get("condition", ""))
-    return condition if condition in _BASELINE_LABELS else _TRACE_LABEL
+    if condition in _BASELINE_LABELS or _is_external(condition):
+        return condition
+    return _TRACE_LABEL
 
 
 def summaries_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ToolSummary]:
@@ -97,7 +120,8 @@ def summaries_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ToolSummary]:
     for feed in feeds:
         buckets.setdefault(_tool_of(feed), []).append(feed)
 
-    order = [*_BASELINE_LABELS, _TRACE_LABEL]
+    external_arms = sorted(tool for tool in buckets if _is_external(tool))
+    order = [*_BASELINE_LABELS, *external_arms, _TRACE_LABEL]
     summaries: list[ToolSummary] = []
     for tool in order:
         tool_feeds = buckets.get(tool)
@@ -107,7 +131,54 @@ def summaries_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ToolSummary]:
     return summaries
 
 
+def _external_label(tool: str) -> str:
+    return f"{tool.removeprefix(_EXTERNAL_PREFIX)} (external, non-authoritative)"
+
+
+def _summarize_external(tool: str, feeds: Sequence[dict[str, Any]]) -> ToolSummary:
+    """One external arm's runs collapsed (DEC-155). Locator counts pool; rates never do."""
+    models = sorted({str(m) for feed in feeds for m in (feed.get("models") or [])})
+    provenances = sorted({str(feed.get("provenance") or "unstated") for feed in feeds})
+    tools = sorted(
+        {
+            f"{(feed.get('external') or {}).get('tool', {}).get('name', '?')} @ "
+            f"{(feed.get('external') or {}).get('tool', {}).get('version', '?')}"
+            for feed in feeds
+        }
+    )
+    resolved: int | None = None
+    total: int | None = None
+    for feed in feeds:
+        locators = (feed.get("external") or {}).get("locators")
+        if not locators:
+            continue
+        resolved = (resolved or 0) + int(locators.get("resolved") or 0)
+        total = (total or 0) + int(locators.get("total") or 0)
+    return ToolSummary(
+        tool=tool,
+        label=_external_label(tool),
+        scenarios=len({str(feed["scenario"]) for feed in feeds}),
+        runs=len(feeds),
+        schema_valid_runs=None,
+        evidence_covered=None,
+        evidence_total=None,
+        spurious=sum(_spurious(feed) for feed in feeds),
+        compliance=None,
+        compliance_runs=0,
+        rejections_breached=sum(_rejections(feed)[0] for feed in feeds),
+        rejections_scoreable=sum(_rejections(feed)[1] for feed in feeds),
+        external=True,
+        models=" + ".join(models) or None,
+        provenance=", ".join(provenances),
+        tool_identity="; ".join(tools),
+        locators_resolved=resolved,
+        locators_total=total,
+    )
+
+
 def _summarize(tool: str, feeds: Sequence[dict[str, Any]]) -> ToolSummary:
+    if _is_external(tool):
+        return _summarize_external(tool, feeds)
     is_baseline = tool in _BASELINE_LABELS
 
     schema_valid_runs: int | None = None
@@ -156,7 +227,20 @@ def _pct(value: float) -> str:
     return f"{value * 100:.0f}%"
 
 
+def _counts(numerator: int, denominator: int, unit: str) -> str:
+    """Counts, with the percentage only where the denominator is at least five (DEC-155)."""
+    noun = f" {unit}" if unit else ""
+    if denominator < _SMALL_DENOMINATOR:
+        return f"{numerator} of {denominator}{noun}"
+    return f"{numerator} of {denominator}{noun} ({_pct(numerator / denominator)})"
+
+
 def _schema_cell(summary: ToolSummary) -> str:
+    if summary.external:
+        return (
+            f"not applicable — responses {summary.provenance}, "
+            f"{summary.models or 'unattributed'} [^external]"
+        )
     if summary.schema_valid_runs is None:
         return "valid by construction [^schema]"
     rate = _pct(summary.schema_valid_runs / summary.runs) if summary.runs else "—"
@@ -164,6 +248,15 @@ def _schema_cell(summary: ToolSummary) -> str:
 
 
 def _evidence_cell(summary: ToolSummary) -> str:
+    if summary.external:
+        if summary.locators_total is None:
+            return "locators not measured [^external]"
+        if summary.locators_total == 0:
+            return "no mapped findings"
+        return (
+            _counts(summary.locators_resolved or 0, summary.locators_total, "locators")
+            + " resolve at the reviewed snapshot [^external]"
+        )
     if summary.evidence_total is None:
         # A baseline cites passages; what it cannot do is give the citation a referent.
         return "cited, unresolvable [^evidence]"
@@ -183,6 +276,11 @@ def _rejection_cell(summary: ToolSummary) -> str:
     """Breached over scoreable rejections, or a dash where the population is empty (DEC-150)."""
     if summary.rejections_scoreable == 0:
         return "— [^rejections]"
+    if summary.external:
+        return (
+            _counts(summary.rejections_breached, summary.rejections_scoreable, "")
+            + " [^rejections]"
+        )
     share = summary.rejections_breached / summary.rejections_scoreable
     return (
         f"{summary.rejections_breached} of {summary.rejections_scoreable} "
@@ -305,6 +403,30 @@ def render_comparison(
             "[scorecard](scorecard.html).\n"
         )
 
+    externals = [summary for summary in summaries if summary.external]
+    external_footnote = ""
+    if externals:
+        described = "; ".join(
+            f"{summary.label}: {summary.tool_identity}, {summary.runs} run"
+            f"{'' if summary.runs == 1 else 's'} over {summary.scenarios} scenario"
+            f"{'' if summary.scenarios == 1 else 's'}, responses {summary.provenance}, "
+            f"attributed to {summary.models or 'no recorded model'}"
+            for summary in externals
+        )
+        external_footnote = (
+            "\n[^external]: An external arm (DEC-155) is a code reviewer that cannot run through "
+            "the seam. Its validated findings were mapped by hand to a catalogue requirement and a "
+            "component under the DEC-056 rule, recorded in a committed feed under `results/`, and "
+            "scored by the same structural matcher as every other row, ties resolved in the "
+            "external tool's favour (DEC-074). The row is non-authoritative, never enters an "
+            "assessment, and is never a proposal. Findings the tool itself left unproven are "
+            "carried as unverified and enter no metric. Schema validity does not apply — the "
+            "mapping is a person's record, not a model's output. The evidence cell is DEC-151 "
+            "ported to code: whether each cited `path:line` resolves in the worktree at the "
+            "reviewed snapshot, reported as counts, with a rate only over five or more. "
+            f"{described}.\n"
+        )
+
     total_scenarios = len({str(feed["scenario"]) for feed in feeds})
     pin_text = ", ".join(f"{key} {value}" for key, value in pins.items())
 
@@ -385,6 +507,6 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     extraction recorded an `injection_attempt` observation against a real payload — one payload,
     one stage, n=1. Until a condition can be captured, this cell reports what a correct run was
     expected to do.
-{classes_footnote}
+{classes_footnote}{external_footnote}
 {stability_footnote}
 """

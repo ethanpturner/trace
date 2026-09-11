@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
     from trace_ai.services.evaluation.registry import Scenario
 
-__all__ = ["BASELINES", "BASELINE_SCHEMAS", "BaselineOutcome", "run_baseline"]
+__all__ = ["BASELINES", "BASELINE_SCHEMAS", "BaselineOutcome", "run_baseline", "score_produced"]
 
 # The prompt baselines, by the condition name their feed is keyed under and the prompt each
 # composes. The first two are DEC-074's; the third prices the agent-set structure itself — the
@@ -198,6 +198,19 @@ def _contract_catalog_version(entry: Scenario) -> str | None:
     parsed = yaml.safe_load(contract.read_text(encoding="utf-8"))
     version = parsed.get("catalog_version")
     return str(version) if version is not None else None
+
+
+def score_produced(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
+    """The baseline scorer, exposed for an external arm (DEC-155).
+
+    An external tool's hand-mapped findings carry the same three fields a baseline finding does
+    — `requirement_id`, `affected_component`, and a `title` that serves as its identifier — and
+    are scored by this function and no other, so the external row and the baseline rows are
+    classified under one rule (DEC-056, DEC-133, DEC-148, DEC-154) with ties resolved against
+    Trace (DEC-074). A second scorer for external tools would be a second matcher waiting to
+    drift.
+    """
+    return _score(entry, produced)
 
 
 def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:

@@ -683,6 +683,14 @@ write-up, not in-repo. The single-agent-versus-multi-agent row is DEC-126's
 `baseline-single-pass`: the whole assessment in one call, one combined schema, run as a
 non-authoritative harness condition; its live pair rides the keyed capture step.
 
+An **external arm** (DEC-155) is the one exception to "not in-repo", and it scores output rather
+than running a tool: a code reviewer's validated findings, mapped by hand to a requirement and a
+component under the DEC-056 rule and recorded in `results/<arm>/<scenario>-run-<N>.yaml`, are
+scored by the same matcher as the baselines (`trace evaluate --external`). The row is
+non-authoritative and labelled; findings the tool left unproven are carried as unverified and
+enter no metric; a cited `path:line` is checked for resolvability at the reviewed snapshot when a
+worktree is supplied. Nothing an external tool produces enters an assessment as a proposal.
+
 Examples:
 
 Single agent
@@ -801,7 +809,9 @@ Potential future evaluations include:
 6. How should business context be evaluated?
 7. ~~Should Trace benchmark itself against commercial tools?~~ Answered: the in-repo baselines
    are DEC-074's prompt baselines and DEC-126's single-pass condition; the external comparable
-   is scored in the portfolio write-up, not in-repo (DEC-074).
+   is scored in the portfolio write-up, not in-repo (DEC-074). Amended by DEC-155: a tool that
+   cannot run through the seam may have its *output* scored in-repo as a hand-mapped,
+   non-authoritative external arm, by the same matcher, without the tool being wrapped.
 8. Which metrics best predict reviewer trust?
 9. ~~When should evaluation block a release?~~ Answered: never, as decided repeatedly — the
    coverage baseline, the stability protocol, the agreement instrument, and the review-time
