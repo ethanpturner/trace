@@ -95,6 +95,9 @@ ignore = [
     "S106",
     "TC",    # pytest is needed at runtime for markers/fixtures, not just types
 ]
+# A scenario's code layer (DEC-156) carries its own tests, run from its own project; they are
+# tests all the same.
+"benchmarks/*/code/tests/**" = ["S101", "S105", "S106", "TC"]
 
 [tool.ruff.lint.flake8-type-checking]
 # Pydantic resolves annotations at runtime, so a type only imported under TYPE_CHECKING leaves the

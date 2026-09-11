@@ -1,0 +1,150 @@
+# Relay Answers code-level ground truth (DEC-156)
+#
+# The code layer's truth set, in RealVuln's ground-truth shape (github.com/kolega-ai/Real-Vuln-Benchmark,
+# arXiv 2604.13764) so scores against ../code/ compare with that leaderboard's. Top-level and
+# per-finding field names mirror RealVuln's `ground-truth/{repo}/ground-truth.json` exactly; two
+# values are project-specific and marked below. `is_vulnerable: false` entries are false-positive
+# traps: patterns a scanner is likely to flag that are not weaknesses here.
+#
+# Nothing in this directory is supplied to Trace, and nothing in it is supplied to a code reviewer.
+
+schema_version: "1.0"
+benchmark_version: "1.0"
+ground_truth_version: "1.0"
+repo_id: trace-benchmarks/rag-support-bot
+repo_url: https://github.com/ethanpturner/trace/tree/develop/benchmarks/rag-support-bot/code
+# RealVuln pins a commit here. This file lives inside the commit it would name, so the pin is the
+# `code` group digest in benchmarks/manifest.yaml (DEC-146), and a run records the SHA it reviewed.
+commit_sha: null
+type: 1
+language: python
+framework: fastapi
+authorship: human_authored
+authorship_model: null
+authorship_confidence: high
+authorship_evidence: Authored from expected/ by the scenario's author before any reviewer ran (DEC-156).
+
+findings:
+  - id: rag-support-bot-001
+    is_vulnerable: true
+    vulnerability_class: broken_access_control
+    primary_cwe: CWE-285
+    acceptable_cwes: [CWE-285, CWE-284, CWE-639, CWE-862, CWE-200]
+    file: relay_answers/index.py
+    location:
+      function: RetrievalIndex.search
+    severity: high
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        One shared index serves every workspace. search ranks every chunk by similarity and returns
+        the top eight with no workspace filter, so a passage from one tenant's resolved ticket
+        reaches another tenant's prompt and citations. The call site in main.answer has the caller's
+        workspace in hand and does not pass it. Realises FND-RSB-01.
+
+  - id: rag-support-bot-002
+    is_vulnerable: false
+    vulnerability_class: data_retention
+    primary_cwe: CWE-459
+    acceptable_cwes: [CWE-459, CWE-212]
+    file: relay_answers/retention.py
+    location:
+      function: propagate_deletions
+    severity: medium
+    scoring: non_scoring
+    non_scoring_reason: >
+      The job removes chunks for tickets that appear in the export with a deleted_at tombstone.
+      Whether a ticket deleted under the retention schedule arrives as a tombstone or vanishes from
+      the export is decided by the support platform, outside this code. The documentation layer
+      records this as GAP-RSB-01 for the same reason.
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        Deletion propagation exists and runs after every ingestion, keyed on tombstones in the
+        resolved-tickets export.
+
+  - id: rag-support-bot-003
+    is_vulnerable: false
+    vulnerability_class: prompt_injection
+    primary_cwe: CWE-1427
+    acceptable_cwes: [CWE-1427, CWE-77, CWE-94]
+    file: relay_answers/prompt.py
+    location:
+      function: assemble_prompt
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        Retrieved passages are placed inside a delimited context block under a system instruction
+        that names them reference material, and delimiter sequences inside a passage are
+        neutralised. Answers are returned as plain text. This is the documented handling the
+        catalog's own false-positive entry anticipates (REJ-RSB-01).
+
+  - id: rag-support-bot-004
+    is_vulnerable: false
+    vulnerability_class: sensitive_data_exposure
+    primary_cwe: CWE-359
+    acceptable_cwes: [CWE-359, CWE-200, CWE-201]
+    file: relay_answers/provider.py
+    location:
+      function: strip_identifiers
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        Workspace and user identifiers are removed from the request before it is sent to the model
+        provider, and the request goes over TLS. A finding that identifiers reach the provider
+        contradicts the code.
+
+  - id: rag-support-bot-005
+    is_vulnerable: false
+    vulnerability_class: missing_authentication
+    primary_cwe: CWE-306
+    acceptable_cwes: [CWE-306, CWE-200]
+    file: relay_answers/main.py
+    location:
+      function: health
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        The liveness probe is unauthenticated by declaration (openapi.yaml, security: []) and
+        returns a constant body.
+
+  - id: rag-support-bot-006
+    is_vulnerable: false
+    vulnerability_class: sensitive_data_exposure
+    primary_cwe: CWE-212
+    acceptable_cwes: [CWE-212, CWE-359]
+    file: relay_answers/ingestion.py
+    location:
+      function: mask_emails
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        Only email addresses are masked, as the operations notes state. That pasted configuration
+        survives masking is evidence for rag-support-bot-001's impact, not a separate weakness in
+        the masking function, which does what it claims.
+
+  - id: rag-support-bot-007
+    is_vulnerable: false
+    vulnerability_class: denial_of_service
+    primary_cwe: CWE-770
+    acceptable_cwes: [CWE-770, CWE-400]
+    file: relay_answers/quota.py
+    location:
+      function: DailyQuota.charge
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        A per-workspace daily answer quota bounds spend, and a per-workspace flag disables the
+        assistant. Both are documented and present.

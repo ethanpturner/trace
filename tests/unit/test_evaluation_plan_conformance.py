@@ -31,7 +31,10 @@ def test_every_committed_truth_set_file_is_admitted_by_a_documented_class() -> N
     documented_yaml = set(re.findall(r"expected-[a-z-]+\.yaml", section))
     assert documented_yaml, "section 5 names no expected-*.yaml classes; the parse is broken"
     apparatus = {"evaluation-contract.yaml", "reviewer-notes.md", "README.md"}
-    for name in apparatus:
+    # The code-layer class (DEC-156): the code reviewer's truth and the author's intent note,
+    # admitted under expected/ because a reviewer receives code/ whole.
+    code_layer = {"code-ground-truth.yaml", "code-notes.md"}
+    for name in apparatus | code_layer:
         assert name in section, f"section 5 no longer names {name}"
 
     unadmitted: list[str] = []
@@ -48,6 +51,8 @@ def test_every_committed_truth_set_file_is_admitted_by_a_documented_class() -> N
                 # adjudication record, admitted as a directory rather than per file.
                 continue
             if path.name in apparatus or path.name in documented_yaml:
+                continue
+            if path.name in code_layer and (entry.path / "code").is_dir():
                 continue
             unadmitted.append(f"{entry.slug}: {relative}")
 

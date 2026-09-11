@@ -1,0 +1,129 @@
+# Unsigned Webhooks code-level ground truth (DEC-156)
+#
+# The code layer's truth set, in RealVuln's ground-truth shape (github.com/kolega-ai/Real-Vuln-Benchmark,
+# arXiv 2604.13764) so scores against ../code/ compare with that leaderboard's. Top-level and
+# per-finding field names mirror RealVuln's `ground-truth/{repo}/ground-truth.json` exactly; two
+# values are project-specific and marked below. `is_vulnerable: false` entries are false-positive
+# traps: patterns a scanner is likely to flag that are not weaknesses here.
+#
+# Nothing in this directory is supplied to Trace, and nothing in it is supplied to a code reviewer.
+
+schema_version: "1.0"
+benchmark_version: "1.0"
+ground_truth_version: "1.0"
+repo_id: trace-benchmarks/unsigned-webhooks
+repo_url: https://github.com/ethanpturner/trace/tree/develop/benchmarks/unsigned-webhooks/code
+# RealVuln pins a commit here. This file lives inside the commit it would name, so the pin is the
+# `code` group digest in benchmarks/manifest.yaml (DEC-146), and a run records the SHA it reviewed.
+commit_sha: null
+type: 1
+language: python
+framework: fastapi
+authorship: human_authored
+authorship_model: null
+authorship_confidence: high
+authorship_evidence: Authored from expected/ by the scenario's author before any reviewer ran (DEC-156).
+
+findings:
+  - id: unsigned-webhooks-001
+    is_vulnerable: true
+    vulnerability_class: missing_authentication
+    primary_cwe: CWE-345
+    acceptable_cwes: [CWE-345, CWE-306, CWE-347, CWE-287, CWE-20]
+    file: deploy_notifier/main.py
+    location:
+      function: receive_event
+    severity: medium
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        The public receiver parses and dispatches any well-formed delivery. It reads no signature
+        header and never calls signing.verify_signature, although the CI platform signs deliveries
+        with a shared secret and the secret is accepted in configuration. Realises FND-UW-01.
+
+  - id: unsigned-webhooks-002
+    is_vulnerable: false
+    vulnerability_class: replay
+    primary_cwe: CWE-294
+    acceptable_cwes: [CWE-294, CWE-384]
+    file: deploy_notifier/replay.py
+    location:
+      function: DeliveryLedger.record
+    severity: low
+    scoring: non_scoring
+    non_scoring_reason: >
+      Replay handling is a bounded in-memory ledger of delivery identifiers. Whether that suffices
+      depends on process count, restart cadence, and eviction under load, none of which the code
+      decides. The documentation layer records this as GAP-UW-01 for the same reason.
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        A repeated delivery identifier is acknowledged and not re-posted while the process lives and
+        the identifier has not been evicted from the ledger.
+
+  - id: unsigned-webhooks-003
+    is_vulnerable: false
+    vulnerability_class: weak_cryptography
+    primary_cwe: CWE-327
+    acceptable_cwes: [CWE-327, CWE-208, CWE-328]
+    file: deploy_notifier/signing.py
+    location:
+      function: verify_signature
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        HMAC-SHA256 over the raw body with a constant-time compare, matching the platform's
+        documented scheme. The helper is correct. That it is never called is unsigned-webhooks-001,
+        located at the receiver, not a defect in this function.
+
+  - id: unsigned-webhooks-004
+    is_vulnerable: false
+    vulnerability_class: hardcoded_credentials
+    primary_cwe: CWE-798
+    acceptable_cwes: [CWE-798, CWE-522, CWE-532]
+    file: deploy_notifier/notifier.py
+    location:
+      function: ChatNotifier.post
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        The chat bearer token is read from the environment at startup, sent in an Authorization
+        header over HTTPS, and never logged. No credential is hardcoded.
+
+  - id: unsigned-webhooks-005
+    is_vulnerable: false
+    vulnerability_class: injection
+    primary_cwe: CWE-74
+    acceptable_cwes: [CWE-74, CWE-79, CWE-117]
+    file: deploy_notifier/events.py
+    location:
+      function: format_message
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        Repository, environment, and commit are interpolated into a plain-text string that becomes
+        one JSON field in the chat API request. Nothing interprets it as markup or a template.
+
+  - id: unsigned-webhooks-006
+    is_vulnerable: false
+    vulnerability_class: missing_authentication
+    primary_cwe: CWE-306
+    acceptable_cwes: [CWE-306, CWE-200]
+    file: deploy_notifier/main.py
+    location:
+      function: healthz
+    severity: low
+    evidence:
+      source: manual_review
+      cve_id: null
+      description: >
+        An unauthenticated liveness probe returning a constant body. It exposes nothing and accepts
+        nothing.

@@ -10460,3 +10460,112 @@ Open Questions:
   metric. Today it does not: the feed admits no severity field.
 - Whether an external run's cost belongs on the row. The tools report it differently (Codex
   Security caps it; Mantis records none) and a column with one populated cell would mislead.
+
+## DEC-156: A scenario may carry its system as code, authored from the truth set, that Trace never reads
+
+Date: 2026-09-10
+
+Status: Accepted
+
+Decision:
+
+**A benchmark scenario may hold a `code/` directory: the system its documents describe, as a
+running implementation.** It is authored after the truth set and from it, so that a code reviewer
+and a documentation reviewer can be measured on one system. Two scenarios carry one from this
+entry: `unsigned-webhooks`, whose receiver dispatches deliveries without calling the signature
+helper it ships, and `rag-support-bot`, whose retrieval call has the caller's workspace in hand and
+searches the shared index without it. Each is a standalone project with its own lock file, runs
+with one command, and misbehaves observably under its own tests.
+
+**Trace never reads it, and the mechanism is the existing one.** The harness supplies `input/` and
+nothing else; `code/` is a sibling of `input/`, never a descendant, and `tests/unit/test_benchmark_layout.py`
+holds that as a property of the layout the way it already holds it for `expected/`. The loader's
+suffix table admits no `.py`, and `trace source add-repo` selects by that table, so pointing Trace
+at a scenario directory would still ingest no code. The code layer joins none of Trace's dependency
+sets: FastAPI and uvicorn are the target's dependencies, pinned in the target's own `uv.lock`.
+
+**The code layer's truth lives under `expected/`, not under `code/`.** A code reviewer receives
+`code/` whole, so anything under it is visible to the reviewer. `expected/code-ground-truth.yaml`
+is the code-level truth and `expected/code-notes.md` is the author's intent per module, written
+before the code. Both sit where the existing rule already withholds them from Trace, and a test
+fails if any file under `code/` names a truth-set key, the truth file, or the intent note.
+
+**The code-level truth is in RealVuln's ground-truth shape, field for field.** RealVuln
+(github.com/kolega-ai/Real-Vuln-Benchmark, arXiv 2604.13764, Apache-2.0) is the one public code
+corpus with false-positive traps, stored scanner outputs, and a manifest pinning ground-truth
+hashes and commit SHAs, and thirty-three scanners are scored against it. Mirroring its top-level
+and per-finding fields exactly — `is_vulnerable`, `vulnerability_class`, `primary_cwe`,
+`acceptable_cwes`, `file`, `location`, `severity`, `evidence`, and the optional `scoring` /
+`non_scoring_reason` — means a score against a coded scenario reads beside that leaderboard without
+adopting its recall-weighted metric. Entries with `is_vulnerable: false` are the code-level negative
+set, on DEC-154's reasoning that a tool measured on recall alone is measured on the axis this
+project's instrument shows to be the unstable one. Each coded scenario authors at least three.
+One value diverges and says so: RealVuln pins `commit_sha`, and this file lives inside the commit
+it would name, so the pin is the `code` group digest in the manifest and a run records the SHA it
+reviewed.
+
+**The manifest digests `code/` as its own group (DEC-146), and the package version moves to
+1.1.** A code reviewer's snapshot identity pins the commit; the manifest's `code` digest is the
+same inventory stated the corpus's way, so a consumer can tell whether the code a number was
+reported against is the code they hold. Local scratch (`.venv`, tool caches) is excluded from the
+inventory, because it is gitignored and a digest that saw it would move on every local run. The
+bump is MINOR: the corpus grew, and no previously reported score changed meaning.
+
+**A documented gap stays a gap in code, as a non-scoring entry.** Each scenario's documented
+silence — replay handling, deletion propagation — is implemented in a form whose adequacy depends
+on deployment facts the code does not decide: a bounded in-memory ledger; a deletion job keyed on
+tombstones the export may or may not emit. RealVuln's `scoring: non_scoring` with a stated reason
+is the exact instrument for that, and it is the code-level form of DEC-009: the layer records that
+the question cannot be settled from what it holds rather than settling it either way.
+
+Why:
+
+- **No scenario contained code, and the comparison the portfolio now needs is docs against code
+  on one system.** Every reviewer surveyed on 2026-09-10 — Mantis, Codex Security, the AIxCC
+  systems — reads code only, and no public corpus pairs code with design documentation and an
+  authored truth set. Writing the code for two documented scenarios is the only route to that
+  combination, and authoring it from the truth set is what keeps the documentation-level and
+  code-level truths describing one system.
+- **A code reviewer's validation stages discard what does not run.** Mantis's reproduce stage and
+  Codex Security's container validation both need a target that starts and misbehaves. A sketch
+  would score every reviewer at zero and say nothing.
+- **Truth placement is a leakage question, and the existing rule already answers it.** The first
+  draft put `ground-truth.yaml` and the intent note under `code/`. A reviewer given `code/` would
+  have read both. Moving them under `expected/` reuses the one rule the corpus already enforces
+  structurally rather than adding an exclusion list to every copy step.
+
+Alternatives Considered:
+
+- A separate repository for each coded system (rejected: it would divorce the code from the truth
+  set and the documents it realises, and the manifest could no longer state that a number was
+  reported against a particular code inventory).
+- Adding FastAPI and uvicorn to Trace's development dependencies so the targets share the root
+  environment (rejected: the code layer is a review target, not part of Trace, and
+  `test_package_layout` already refuses a dependency nothing in Trace imports).
+- A truth schema of this project's own for the code layer (rejected: the point of the code layer
+  is comparability with tools scored elsewhere, and RealVuln's shape is the one those tools are
+  scored in).
+- Committing the code-level truth under `code/` with a copy-time exclusion (rejected above: an
+  exclusion a reviewer's harness has to remember is one it will forget once).
+- Making the documented gaps into clear code-level vulnerabilities so recall is measurable on
+  them too (rejected: the documentation layer records them as gaps because the inputs do not
+  settle them; code that settled them would make the two layers describe different systems).
+
+Tradeoffs:
+
+The code is the truth-set author's construction of a small system, and `benchmark-package.md`'s
+limitations section says so: a reviewer's score against it is a score against one author's idea
+of what a scanner will flag. The truth's `commit_sha` is null by necessity, and a consumer used to
+RealVuln's files has to read the manifest instead. Two standalone projects under the tree means
+two more lock files to keep current, on their own cadence. And the code layer is Python and
+FastAPI only; a reviewer strong in another stack is not measured here.
+
+Open Questions:
+
+- Whether the code layer should reach more scenarios. The two chosen have the corpus's two
+  adversarial conditions and one authored finding each, which keeps the first comparison small;
+  the organizational-control scenarios (`nightly-reconciler`, `oidc-portal`) are where a code-only
+  reviewer would be expected to lose most, and are the natural next two.
+- Whether a run against a coded scenario should record the reviewer's snapshot identity in the
+  metrics feed beside the manifest's `code` digest, so the two can be compared mechanically rather
+  than by a reader.

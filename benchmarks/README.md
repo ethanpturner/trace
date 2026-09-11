@@ -30,6 +30,12 @@ supplied to the pipeline), and `recorded/` (the response envelopes, the checkpoi
 the report-hash pins, and `baselines/`). `results/` is derived output from local runs and is
 gitignored.
 
+Two scenarios also hold `code/`: the documented system as a running FastAPI service, authored from
+the truth set so a code reviewer can be measured on the same system as Trace (DEC-156). Trace never
+reads it. Each is a standalone project (`cd benchmarks/<slug>/code && uv sync && uv run pytest`),
+and its truth is `expected/code-ground-truth.yaml`, in RealVuln's ground-truth shape. Hand a code
+reviewer `code/` and nothing else.
+
 **Before editing anything under `expected/`, read [Editing an authored
 expectation](../docs/architecture/evaluation-plan.md#editing-an-authored-expectation).** A truth
 set may be changed only on an argument from the scenario's own inputs, documentation, or internal

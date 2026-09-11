@@ -1,0 +1,31 @@
+[project]
+name = "deploy-notifier"
+version = "0.1.0"
+description = "The unsigned-webhooks benchmark scenario's system, as running code (DEC-156). A review target, not a product."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "httpx>=0.28",
+    "pydantic>=2.9",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["deploy_notifier"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+files = ["deploy_notifier", "tests"]
