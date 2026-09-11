@@ -46,6 +46,7 @@ from trace_ai.domain.identifiers import AssessmentId, SourceDocumentId
 
 __all__ = [
     "DEFAULT_TRUST_LEVEL",
+    "DocumentKind",
     "IngestionStatus",
     "MediaType",
     "SourceDocument",
@@ -85,6 +86,29 @@ class TrustLevel(StrEnum):
     REVIEWER_SUPPLIED = "reviewer_supplied"
     SYSTEM_FIXTURE = "system_fixture"
     TRUSTED_CATALOG = "trusted_catalog"
+
+
+class DocumentKind(StrEnum):
+    """What a document is *about*, as the operator states it at registration (DEC-157).
+
+    `system` is a document that describes the reviewed system: a design document, a specification,
+    a manifest, an infrastructure plan. `report` is a document that reports claims *made about* the
+    system by someone else -- a code reviewer's packet, a scanner's output, an audit letter. The
+    distinction is the one DEC-009 turns on: a report that says a weakness exists is evidence that
+    a claim was made, not evidence of the weakness.
+
+    The operator states the kind; nothing infers it from content, on the rule DEC-036 and DEC-070
+    apply to every other classification a document carries. It is not a trust level: a report is
+    no more or less trusted than a design document, and both stay inside the fence. Its one effect
+    is a routing reason at checkpoint 1 (`report_derived`), which triages attention and changes
+    nothing.
+    """
+
+    SYSTEM = "system"
+    """Describes the reviewed system. The value every document carried before DEC-157."""
+
+    REPORT = "report"
+    """Reports claims made about the system by a third party or a tool."""
 
 
 class IngestionStatus(StrEnum):
@@ -142,6 +166,13 @@ class SourceDocument(DomainModel):
     ingested_at: datetime | None = None
     ingestion_status: IngestionStatus
     trust_level: TrustLevel
+    document_kind: DocumentKind = DocumentKind.SYSTEM
+    """What the document is about, operator-stated (DEC-157).
+
+    Optional with `system` as the default, unlike `trust_level`: every document registered before
+    this field existed described the system, so the default is the record of what those documents
+    were, and the recorded replays load unchanged. A caller registering a report states so.
+    """
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("media_type", mode="before")

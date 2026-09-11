@@ -63,6 +63,7 @@ from trace_ai.services.context.review_file import (
     write_review_file,
 )
 from trace_ai.services.driver import resume_assessment, run_assessment
+from trace_ai.services.evaluation.registry import CLEAN_CONDITION
 from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.ingestion.loader import DocumentLoader
@@ -147,20 +148,32 @@ REHEARSAL_MARKER = "REHEARSAL"
 load-bearing guard is the `rehearsal` key each staged envelope carries (#534)."""
 
 
-def capture_dir(scenario: Scenario, *, rehearsal: bool = False) -> Path:
+def capture_dir(
+    scenario: Scenario, *, rehearsal: bool = False, condition: str = CLEAN_CONDITION
+) -> Path:
     """The staging directory a capture writes into, beside the scenario's `recorded/`.
 
     A rehearsal stages into its own directory: its artifacts are mechanics-validation output from
     the deterministic substitute, and a directory shared with a real capture would put a
     no-model-ever-said-this file one copy away from `recorded/` (#534).
+
+    A condition stages into its own directory for the same reason one level along: a clean
+    capture and an adversarial one answer different documents, and a shared directory would let
+    the second resume the first's recordings (DEC-152). The clean condition keeps the unsuffixed
+    name, so every existing staging path is unchanged.
     """
-    return scenario.path / ("capture-rehearsal" if rehearsal else "capture")
+    base = "capture-rehearsal" if rehearsal else "capture"
+    suffix = "" if condition == CLEAN_CONDITION else f"-{condition}"
+    return scenario.path / f"{base}{suffix}"
 
 
-def capture_data_root(scenario: Scenario, *, rehearsal: bool = False) -> Path:
+def capture_data_root(
+    scenario: Scenario, *, rehearsal: bool = False, condition: str = CLEAN_CONDITION
+) -> Path:
     """The capture's own data root, apart from the operator's assessments."""
     prefix = "capture-rehearsal" if rehearsal else "capture"
-    return PROJECT_ROOT / "data" / f"{prefix}-{scenario.slug}"
+    suffix = "" if condition == CLEAN_CONDITION else f"-{condition}"
+    return PROJECT_ROOT / "data" / f"{prefix}{suffix}-{scenario.slug}"
 
 
 def _usage_dict(usage: ModelUsage) -> dict[str, object]:
@@ -337,8 +350,9 @@ def _model(
     skip: int = 0,
     live: StructuredModel | None = None,
     rehearsal: bool = False,
+    condition: str = CLEAN_CONDITION,
 ) -> StructuredModel:
-    staging = capture_dir(scenario, rehearsal=rehearsal)
+    staging = capture_dir(scenario, rehearsal=rehearsal, condition=condition)
     recording = RecordingModel(
         live if live is not None else _live_model(profile), staging, rehearsal=rehearsal
     )
@@ -350,8 +364,10 @@ def _model(
     )
 
 
-def _assessment_id(scenario: Scenario, *, rehearsal: bool = False) -> str:
-    staging = capture_dir(scenario, rehearsal=rehearsal)
+def _assessment_id(
+    scenario: Scenario, *, rehearsal: bool = False, condition: str = CLEAN_CONDITION
+) -> str:
+    staging = capture_dir(scenario, rehearsal=rehearsal, condition=condition)
     return (staging / "assessment-id.txt").read_text(encoding="utf-8").strip()
 
 
@@ -385,6 +401,7 @@ def stage_extract(
     data_root: Path | None = None,
     rehearsal: bool = False,
     workflow_version: str | None = None,
+    condition: str = CLEAN_CONDITION,
     on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> None:
     """Create the assessment, load the scenario's inputs, and run to checkpoint 1.
@@ -399,10 +416,15 @@ def stage_extract(
     current workflow; a round trip or rehearsal replaying a recording that predates the current
     shape passes the version the recording carries (DEC-134), because responses are consumed
     under the shape that produced them.
+
+    `condition` selects the documents the run sees. The replay path has understood conditions
+    since DEC-075 and the capture path did not, which is why the adversarial corpus is authored
+    rather than captured (DEC-152); this is the parameter whose absence made a live capture under
+    attack inexpressible.
     """
-    staging = capture_dir(scenario, rehearsal=rehearsal)
+    staging = capture_dir(scenario, rehearsal=rehearsal, condition=condition)
     if data_root is None:
-        data_root = capture_data_root(scenario, rehearsal=rehearsal)
+        data_root = capture_data_root(scenario, rehearsal=rehearsal, condition=condition)
     if staging.exists() and any(staging.glob("[0-9]*.json")) and not from_recorded:
         raise CaptureRefusedError(
             f"{staging} holds recordings; a re-run would re-spend them. Resume with "
@@ -434,7 +456,7 @@ def stage_extract(
         )
         (staging / "assessment-id.txt").write_text(created.id + "\n", encoding="utf-8")
         loader = DocumentLoader(service.handle(created.id))
-        for path in scenario.input_documents():
+        for path in scenario.input_documents(condition):
             loader.load_document(
                 path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
             )
@@ -447,6 +469,7 @@ def stage_extract(
                 from_recorded=from_recorded,
                 live=live,
                 rehearsal=rehearsal,
+                condition=condition,
             ),
             profile=profile,
             budget=_budget(),
@@ -479,12 +502,13 @@ def stage_reason(
     live: StructuredModel | None = None,
     data_root: Path | None = None,
     rehearsal: bool = False,
+    condition: str = CLEAN_CONDITION,
     on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> None:
     """Apply the authored context decisions, approve, and run live to checkpoint 2."""
-    staging = capture_dir(scenario, rehearsal=rehearsal)
+    staging = capture_dir(scenario, rehearsal=rehearsal, condition=condition)
     if data_root is None:
-        data_root = capture_data_root(scenario, rehearsal=rehearsal)
+        data_root = capture_data_root(scenario, rehearsal=rehearsal, condition=condition)
     decisions = staging / "decisions-context.yaml"
     if not decisions.is_file():
         raise CaptureError(f"{decisions} does not exist; author it from review-export.yaml first")
@@ -498,7 +522,7 @@ def stage_reason(
     profile = resolve_profile(profile_name)
     _require_rehearsal_model(rehearsal, live)
     _refuse_fake(profile, live)
-    assessment_id = _assessment_id(scenario, rehearsal=rehearsal)
+    assessment_id = _assessment_id(scenario, rehearsal=rehearsal, condition=condition)
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         handle = service.handle(assessment_id)
@@ -533,6 +557,7 @@ def stage_reason(
                 skip=1,
                 live=live,
                 rehearsal=rehearsal,
+                condition=condition,
             ),
             profile=profile,
             budget=_budget(),
@@ -637,12 +662,13 @@ def stage_report(
     live: StructuredModel | None = None,
     data_root: Path | None = None,
     rehearsal: bool = False,
+    condition: str = CLEAN_CONDITION,
     on_phase: Callable[[PhaseProgress], None] | None = None,
 ) -> None:
     """Apply the authored finding decisions and run live to completion."""
-    staging = capture_dir(scenario, rehearsal=rehearsal)
+    staging = capture_dir(scenario, rehearsal=rehearsal, condition=condition)
     if data_root is None:
-        data_root = capture_data_root(scenario, rehearsal=rehearsal)
+        data_root = capture_data_root(scenario, rehearsal=rehearsal, condition=condition)
     decisions = staging / "decisions-findings.yaml"
     if (staging / "report-hash.txt").exists():
         # Checked before the decisions file: a zero-finding capture completes inside the reason
@@ -657,7 +683,7 @@ def stage_report(
     profile = resolve_profile(profile_name)
     _require_rehearsal_model(rehearsal, live)
     _refuse_fake(profile, live)
-    assessment_id = _assessment_id(scenario, rehearsal=rehearsal)
+    assessment_id = _assessment_id(scenario, rehearsal=rehearsal, condition=condition)
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         handle = service.handle(assessment_id)
@@ -689,7 +715,12 @@ def stage_report(
             service,
             assessment_id,
             model=_model(
-                scenario, profile=profile, from_recorded=False, live=live, rehearsal=rehearsal
+                scenario,
+                profile=profile,
+                from_recorded=False,
+                live=live,
+                rehearsal=rehearsal,
+                condition=condition,
             ),
             profile=profile,
             budget=_budget(),

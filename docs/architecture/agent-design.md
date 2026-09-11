@@ -487,6 +487,15 @@ Validate and normalize the output of the Context Extraction Agent before human r
   administrative-or-privileged one — the privilege-extremes check (DEC-068)
 - Prevent invalid workflow transitions
 
+One thing the node deliberately does not do: re-label a `documented` claim whose only evidence is
+a document that reports claims about the system rather than describing it — a code reviewer's
+packet, a scanner's output. Whether such a claim is `documented` or `inferred` is the extractor's
+judgment, and the node reports rather than corrects. What makes the case visible is the
+`report_derived` routing reason on the review package (DEC-157): every object or claim whose
+evidence rests entirely on documents the operator registered as `report` kind carries it, derived
+at package-build time from `SourceDocument.document_kind` and the evidence references, and it
+changes nothing but where the reviewer looks first.
+
 ## Outputs
 
 - Validated context objects

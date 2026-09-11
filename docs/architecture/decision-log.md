@@ -10569,3 +10569,109 @@ Open Questions:
 - Whether a run against a coded scenario should record the reviewer's snapshot identity in the
   metrics feed beside the manifest's `code` digest, so the two can be compared mechanically rather
   than by a reader.
+
+## DEC-157: A document that reports claims about the system is registered as one, and a subject resting on such documents alone carries a routing reason
+
+Date: 2026-09-11
+
+Status: Accepted
+
+Decision:
+
+**`SourceDocument` gains `document_kind`, operator-stated at registration, with two values.**
+`system` is a document that describes the reviewed system: a design document, a specification, a
+manifest, an infrastructure plan. `report` is a document that reports claims *made about* the
+system by a third party or a tool: a code reviewer's packet, a scanner's output, an audit letter.
+`trace source add --kind report` states it; the default is `system`, which is what every document
+registered before this entry was, so the recorded replays load and render unchanged. Nothing
+infers the kind from content, on the rule DEC-036 and DEC-070 apply to every other classification
+a document carries: the operator states it, the tool never guesses. The kind is not a trust level.
+A report is no more or less trusted than a design document, both stay inside the fence (DEC-021),
+and the field unlocks nothing.
+
+**The routing-reason vocabulary gains `report_derived`.** At package-build time, every context
+subject — component, actor, asset, data flow, trust boundary, context claim — whose evidence
+references all belong to `report`-kind documents carries the reason. A subject citing one passage
+of a system document beside the report does not: the report then corroborates rather than
+originates. A subject citing nothing does not either; that is `no_evidence`'s territory, and a
+`documented` claim with no evidence is already a validation error. The derivation is a
+deterministic function of persisted state (`document_kind`, the evidence references' documents,
+the subjects' evidence lists), stored nowhere, exactly DEC-062's shape and the shape
+`injection_flag` already takes.
+
+**The reason is non-blocking, and the Context Validation node is unchanged.** DEC-062's guards
+hold: the reason triages attention and filters nothing; every subject still requires a
+`ReviewerDecision` before checkpoint 1 advances (DEC-005), so a blocking question would add a
+second gate in front of a gate that already exists. The validation node still reports and routes
+and never corrects (`agent-design.md` section 8): it does not re-label a `documented` claim whose
+evidence is a report, because whether such a claim is `documented` or `inferred` is the
+extractor's judgment about what the passage asserts, and a validator that overrode it would be
+making the architectural judgment the checkpoint exists to give a person.
+
+Why:
+
+- **Two live runs made the failure concrete** (`docs/eval/exchange.md`). A Mantis review packet
+  entered Trace as an untrusted document beside `rag-support-bot`'s three design documents. With
+  the packet as emitted, the extractor classified its four unverified candidate records
+  `inferred` and built no object from them. With three fabricated records planted, the same
+  extractor on the same model classified every packet-derived claim `documented` and built a
+  component, an asset, a data flow, and a trust boundary whose only evidence was one fabricated
+  record. The checkpoint-1 package presented those four objects exactly like the eighteen that
+  rested on the design documents. Nothing flagged them, and a pass-through reviewer approved
+  them.
+- **The line DEC-009 draws is enforced downstream and was invisible upstream.** No fabrication
+  became a finding: evidence validation and critical review hold the rule that a claim becomes a
+  finding only with evidence describing the weakness. But the system model the analysis phases
+  reasoned over already carried a component that does not exist, and the reviewer who could have
+  removed it at checkpoint 1 had no signal to look. A document that says a weakness exists is
+  evidence that a claim was made, not of the weakness; the package should say which subjects
+  rest on that kind of evidence.
+- **Provenance the operator states is the instrument that fits.** The exchange page names the
+  shape: the same as `injection_flag`, which marks subjects by the provenance of their evidence.
+  Whether a document is a report of claims is a fact about where the document came from, known to
+  whoever registered it and unknowable to a validator reading its text without judging its
+  content — which is the judgment the node is forbidden.
+
+Alternatives Considered:
+
+- **Inferring report-ness from content** — a document that cites another tool's findings, uses a
+  reviewer's register, or names itself a report. Rejected: it is content sniffing at the fence's
+  edge, the validator would be judging what a document means, and a packet written to look like a
+  design document would pass. DEC-036 and DEC-070 settled that classifications are stated, not
+  inferred.
+- **Constraining the extractor's `documented` / `inferred` choice for report-kind evidence** —
+  a validation error or a forced re-label when a `documented` claim rests on a report alone.
+  Rejected here: re-labelling is the correction section 8 forbids, and a retry would invite the
+  extractor to reword the claim until it passes. Left open below; the prompt is untouched by this
+  entry.
+- **A blocking `Question` per report-derived subject.** Rejected: every subject already requires
+  a decision, so the question would duplicate the gate and slow the review without adding a
+  fact the reviewer lacks.
+- **A third `SourceObservation` kind.** Rejected: an observation records something the extractor
+  saw about a document; this is a fact the operator supplied, and a reason code derived from it
+  is re-derivable at any time where an observation would be a stored copy.
+- **A `TrustLevel` value.** Rejected: trust governs how content is handled inside the fence, and a
+  report's content is handled identically; conflating the two would suggest a report is less
+  trusted, which is not the claim.
+
+Tradeoffs:
+
+- The reason is only as good as the registration. An operator who registers a scanner's output
+  without `--kind report` gets no flag, and the package reads as it did before this entry. That
+  is the same shape as `trust_level`'s failure mode, and the field's documentation says so
+  rather than defaulting to `report`, which would flag every design document ever registered.
+- A subject resting on a report *and* one design passage carries no reason, even where the
+  design passage is incidental. The rule is deliberately the narrow one; widening it to "any
+  report evidence" would flag most of a well-corroborated model and dilute the signal.
+- `report_derived` says where the evidence came from, not whether the extractor's classification
+  was right. The doctored run's `documented` claims would carry it; so would the clean run's
+  `inferred` ones. Whether the classification itself should be constrained is the open question.
+
+Open Questions:
+
+- Should a `documented` claim whose evidence is entirely report-kind be a validation error with a
+  retry instruction, or should the extractor's prompt carry the distinction, or neither? The two
+  exchange runs are one sample per condition; more are needed before deciding.
+- Does `document_kind` want a third value for documents the operator cannot classify, or does
+  `system` with a note serve?
+- Should the report render the kind of each cited source in its source table?

@@ -2589,3 +2589,38 @@ def test_runs_repair_reason_reaches_the_error_summary(
         == 0
     )
     assert "killed by a sleeping laptop" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------------------------------
+# Capture conditions (DEC-152)
+
+
+def test_capture_refuses_a_condition_the_scenario_does_not_declare(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An unknown condition is refused by name rather than falling back to the clean documents.
+
+    `input_documents` returns the clean set for a name with no overlay, so without this refusal a
+    typo would spend real provider calls capturing a clean run under an adversarial label — the
+    exact confusion between an authored and a captured condition that DEC-152 exists to remove.
+    """
+    assert invoke(data_root, "capture", "forgeflow", "extract", "--condition", "advresarial") == 1
+    assert "does not declare condition" in capsys.readouterr().err
+
+
+def test_capture_refuses_a_condition_on_a_baseline_stage(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A baseline is one call over the clean documents (DEC-074); there is no defense to test."""
+    assert (
+        invoke(
+            data_root,
+            "capture",
+            "unsigned-webhooks",
+            "baseline-generic",
+            "--condition",
+            "adversarial",
+        )
+        == 1
+    )
+    assert "clean documents" in capsys.readouterr().err
