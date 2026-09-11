@@ -442,13 +442,20 @@ def render_report(
         or "No limitations were required by the run's state.",
     }
 
+    # DEC-159: section 9 has two empty states and they say different things. "Nothing was
+    # proposed" and "everything proposed was rejected" are both empty tables, and reporting the
+    # first when the second is true states an absence nobody established.
+    wording = dict(empty_wording)
+    if assembled.proposed_documentation_gap_count and not assembled.approved_documentation_gaps:
+        wording["documentation_gaps"] = wording["documentation_gaps_none_approved"]
+
     def substitute(match: re.Match[str]) -> str:
         kind, name = match.group(1), match.group(2)
         if kind == "agent":
             return agent_blocks[name]
         if kind == "render":
             return render_blocks[name]
-        return empty_wording[name] if not render_blocks.get(name) else ""
+        return wording[name] if not render_blocks.get(name) else ""
 
     rendered = _MARKER.sub(substitute, body)
     rendered = re.sub(r"\n{3,}", "\n\n", rendered)

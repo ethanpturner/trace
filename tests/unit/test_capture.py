@@ -17,6 +17,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.infrastructure.model.fake import DeterministicModel
@@ -327,12 +328,17 @@ def test_baseline_capture_refuses_the_fake_profile(tmp_path: Path) -> None:
     assert not (entry.path / "capture").exists()
 
 
-def test_a_zero_finding_run_completes_the_capture_inside_the_reason_stage(
+def test_a_zero_finding_run_with_gaps_pauses_for_them(
     tmp_path: Path,
 ) -> None:
-    """Five authored scenarios end with zero findings by design; checkpoint 2 then has no
-    subjects, the run never pauses, and the reason stage accepts the completion rather than
-    calling the scenario's success an error (DEC-091 amendment, #484)."""
+    """A zero-finding run still pauses when it produced documentation gaps (DEC-159).
+
+    Before DEC-159 this scenario completed inside the reason stage, because checkpoint 2's only
+    subjects were findings and it produced none — the DEC-091 amendment (#484) that this test
+    was written for. Gaps are subjects now, and oidc-portal produces eleven of them, so the run
+    pauses like any other and the export carries the gaps for authoring. The completion branch
+    survives for a run that produces neither, which no registered scenario does.
+    """
     oidc = PROJECT_ROOT / "benchmarks" / "oidc-portal"
     responses = sorted((oidc / "recorded").glob("[0-9]*.json"))
 
@@ -366,23 +372,19 @@ def test_a_zero_finding_run_completes_the_capture_inside_the_reason_stage(
             data_root=tmp_path / label / "capture-data",
         )
         staging = capture_dir(scenario)
-        assert (staging / "report-hash.txt").is_file()
+        # The run paused: no report was rendered inside this stage.
+        assert not (staging / "report-hash.txt").is_file()
         export = staging / "findings-export.yaml"
         assert export.is_file()
-        assert "findings: []" in export.read_text(encoding="utf-8")
-        if label == "a":
-            with pytest.raises(CaptureRefusedError, match="already ran"):
-                stage_report(
-                    scenario,
-                    profile_name=PROFILE,
-                    live=DeterministicModel([]),
-                    data_root=tmp_path / label / "capture-data",
-                )
-        return staging / "report-hash.txt"
+        exported = yaml.safe_load(export.read_text(encoding="utf-8"))
+        assert exported["findings"] == []
+        gaps = exported["documentation_gaps"]
+        assert len(gaps) == 11, "oidc-portal's gaps are what the pause is for"
+        assert all(gap["id"].startswith("gap-") for gap in gaps)
+        return export
 
-    # The completion renders the report inside this stage, so the stamp must be the pinned one:
-    # an unpinned wall-clock stamp made the first zero-finding captures unreproducible (#484,
-    # DEC-134 amendment). Two runs from the same recording must hash identically.
+    # Two runs from the same recording export the same subjects, which is what the DEC-134
+    # pinned stamp bought and what a capture author relies on.
     assert run_once("a").read_text() == run_once("b").read_text()
 
 

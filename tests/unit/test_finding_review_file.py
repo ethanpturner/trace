@@ -271,9 +271,9 @@ def test_the_package_renders_recorded_decisions(handle: AssessmentHandle) -> Non
 
 def test_every_reviewer_action_is_reachable_from_the_cli() -> None:
     """The acceptance criterion (#351): every action in `finding_review.__all__` — minus the
-    checkpoint node and its subject helper, which are the workflow's, not a reviewer's — is
-    called from the CLI surface: a flag in `cli.py` or a review-file entry in
-    `review_file.py`, both of which route through the same functions."""
+    checkpoint node, its two subject helpers, and the editable-field tuple, which are the
+    workflow's rather than a reviewer's — is called from the CLI surface: a flag in `cli.py` or
+    a review-file entry in `review_file.py`, both of which route through the same functions."""
     import inspect
 
     from trace_ai import cli
@@ -281,6 +281,11 @@ def test_every_reviewer_action_is_reachable_from_the_cli() -> None:
     from trace_ai.workflow import finding_review
 
     surface = inspect.getsource(cli) + inspect.getsource(review_file)
-    actions = set(finding_review.__all__) - {"FindingReviewNode", "finding_review_subjects"}
+    actions = set(finding_review.__all__) - {
+        "FindingReviewNode",
+        "GAP_EDITABLE_FIELDS",
+        "finding_review_subjects",
+        "gap_review_subjects",
+    }
     unreachable = sorted(action for action in actions if action not in surface)
     assert not unreachable, f"no CLI route calls: {unreachable}"

@@ -296,7 +296,9 @@ def run_scenario(
                 if live:
                     defaulted_decisions += _apply_finding_decisions_live(service, assessment_id)
                 else:
-                    _apply_finding_decisions(entry, service, assessment_id, condition=condition)
+                    _apply_finding_decisions(
+                        entry, service, assessment_id, condition=condition, ablations=ablations
+                    )
             outcome = resume_assessment(
                 service,
                 assessment_id,
@@ -441,7 +443,12 @@ def _apply_context_decisions(
 
 
 def _apply_finding_decisions(
-    entry: Scenario, service: AssessmentService, assessment_id: str, *, condition: str = "clean"
+    entry: Scenario,
+    service: AssessmentService,
+    assessment_id: str,
+    *,
+    condition: str = "clean",
+    ablations: Sequence[str] = (),
 ) -> None:
     from trace_ai.domain.enums import Severity
 
@@ -458,7 +465,20 @@ def _apply_finding_decisions(
     # a different finding set than the decisions were authored against. Silently zipping the shorter
     # of the two (the old `strict=False`) scored a different assessment than the truth set and said
     # nothing; a loud failure is the only honest answer.
-    if len(recorded_findings) != len(candidates):
+    # An ablation removes a node in order to change the finding set (DEC-012), so the clean
+    # condition's decisions are not a description of it and a count comparison would fire on the
+    # ablation working. The decisions that still land are the ones whose identifier the ablated
+    # run produced; the rest are dropped, and the run is non-authoritative by construction.
+    #
+    # This became reachable with DEC-159: before it, an ablation that lost every finding never
+    # paused at checkpoint 2 and never consulted this file at all. Gaps are subjects now, so it
+    # pauses, and the guard met a run it was never written for.
+    if ablations:
+        produced = {finding.id for finding in candidates}
+        recorded_findings = [
+            decided for decided in recorded_findings if str(decided.get("id")) in produced
+        ]
+    elif len(recorded_findings) != len(candidates):
         raise HarnessError(
             f"{entry.slug}/{condition}: the recording holds {len(recorded_findings)} finding "
             f"decision(s) but the run produced {len(candidates)}. The truth set no longer matches "
@@ -489,7 +509,70 @@ def _apply_finding_decisions(
             reject_finding(
                 handle, finding, reviewer_id=HARNESS_REVIEWER, rationale=decided.get("rationale")
             )
+    _apply_gap_decisions(recorded, handle, entry=entry, condition=condition)
     conclude_finding_review(service, assessment_id)
+
+
+GAP_MIGRATION_RATIONALE = (
+    "DEC-159 migration: this gap was not individually reviewed. Before DEC-159 a documentation "
+    "gap was proposed and decided nowhere, so the recorded scenarios carry a scenario-level "
+    "decision rather than 264 judgments nobody made. A re-capture authors one decision per gap."
+)
+
+
+def _apply_gap_decisions(
+    recorded: dict[str, Any],
+    handle: AssessmentHandle,
+    *,
+    entry: Scenario,
+    condition: str,
+) -> None:
+    """Apply the recorded documentation-gap decisions (DEC-159).
+
+    Two forms. A `documentation_gaps.default` names one disposition for every candidate gap, which
+    is the migration form and carries its own rationale saying so. A `documentation_gaps.gaps`
+    list decides them individually, by identifier, which is what a re-capture authors. A file
+    carrying neither leaves every gap undecided and the checkpoint refuses to conclude — which is
+    the honest failure, not a silent pass.
+    """
+    from trace_ai.domain.documentation_gap import DocumentationGap
+    from trace_ai.domain.enums import ObjectStatus
+    from trace_ai.workflow.finding_review import (
+        approve_documentation_gap,
+        reject_documentation_gap,
+    )
+
+    block = recorded.get("documentation_gaps") or {}
+    candidates = sorted(
+        handle.objects.list(DocumentationGap, status=ObjectStatus.CANDIDATE.value),
+        key=lambda gap: gap.id,
+    )
+    if not candidates:
+        return
+    by_id = {str(item.get("id")): item for item in (block.get("gaps") or [])}
+    default = str(block.get("default") or "").strip()
+    default_rationale = str(block.get("rationale") or GAP_MIGRATION_RATIONALE)
+    if not default and not by_id:
+        raise HarnessError(
+            f"{entry.slug}/{condition}: the run produced {len(candidates)} candidate "
+            f"documentation gap(s) and decisions-findings.yaml records no decision for them. "
+            f"Since DEC-159 a gap is a checkpoint-2 subject; add a `documentation_gaps:` block."
+        )
+    for gap in candidates:
+        recorded_gap = by_id.get(gap.id, {})
+        disposition = str(recorded_gap.get("decision") or default)
+        rationale = str(recorded_gap.get("rationale") or default_rationale)
+        if disposition == ReviewDisposition.APPROVE.value:
+            approve_documentation_gap(
+                handle, gap, reviewer_id=HARNESS_REVIEWER, rationale=rationale
+            )
+        elif disposition == ReviewDisposition.REJECT.value:
+            reject_documentation_gap(handle, gap, reviewer_id=HARNESS_REVIEWER, rationale=rationale)
+        else:
+            raise HarnessError(
+                f"{entry.slug}/{condition}: {disposition!r} is not a decision a documentation "
+                f"gap takes; use 'approve' or 'reject' (DEC-159)."
+            )
 
 
 STABILITY_REVIEWER = "stability-default-v1"
@@ -673,6 +756,21 @@ def _apply_finding_decisions_live(service: AssessmentService, assessment_id: str
             decided,
             reviewer_id=STABILITY_REVIEWER,
             rationale="Stability protocol default (DEC-077): approved as generated.",
+        )
+        defaulted += 1
+    # DEC-159: gaps are subjects here too, and the same default-policy argument applies — the
+    # protocol holds the reviewer constant, so every candidate takes one disposition. Approve:
+    # a gap asserts only that something could not be determined, which is what the run
+    # established, so approving adds no claim the run did not make.
+    from trace_ai.domain.documentation_gap import DocumentationGap as _Gap
+    from trace_ai.workflow.finding_review import approve_documentation_gap
+
+    for gap in handle.objects.list(_Gap, status=ObjectStatus.CANDIDATE.value):
+        approve_documentation_gap(
+            handle,
+            gap,
+            reviewer_id=STABILITY_REVIEWER,
+            rationale="Stability protocol default (DEC-077, DEC-159): approved as generated.",
         )
         defaulted += 1
     conclude_finding_review(service, assessment_id)

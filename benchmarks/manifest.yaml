@@ -13,7 +13,7 @@ package:
   registry_version: '1.0'
   generated_at: '2026-08-14T12:00:00+00:00'
   scenario_count: 15
-  corpus_digest: sha256:e03446e643a91dea0b32efad35827fb87760e920b095e2fe056f932e75ebb752
+  corpus_digest: sha256:9e9a9430debd7a85717e407088e9446b7cd8d6d72f8d21e46d714016e69d5fd1
 scenarios:
 - slug: forgeflow
   name: ForgeFlow
@@ -26,7 +26,7 @@ scenarios:
   conditions:
   - clean
   models: []
-  report_hash_offline: sha256:2dabc22724a4c59da59057f0073b9eb925d400101251152af25c05d225ae4065
+  report_hash_offline: sha256:650dc8d5ae3c446093ed4c583fceeffa91dfbae2e62daf7d6b297e6d7878206d
   files:
     input:
       count: 8
@@ -36,7 +36,7 @@ scenarios:
       digest: sha256:d4d775bc1d110e43c647e126da4c7369acc36412ad5630fd2be795fcf747a9eb
     recorded:
       count: 43
-      digest: sha256:2b531066d50fd25970ed6ed1cfa917bc5a205324f96299454cd2e932097a9d47
+      digest: sha256:8d5f0d739e5c88b95ded4f3939565c6814c0184fe961ea2affb1ed2deafb5da6
     baselines:
       count: 3
       digest: sha256:94c8ee768c0991cc96ff49bb954900ff78efd62bf92ab84e8ebf95b30289e7ef
@@ -46,7 +46,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:cb2c7cf91f876964eb64dc77ec16eae064b5a3497925c6b2fab578bcc952ae30
+  digest: sha256:f772d167fee553ac2da740123ff26f987c0d87c4ce46b9c6e38f816edca0d29d
 - slug: husky-ai
   name: Husky AI
   path: benchmarks/husky-ai
@@ -69,7 +69,7 @@ scenarios:
       digest: sha256:742effa1429e03cd7a5c8815032400b6e42f525d73ff4df63e5cb9b1f34f8c44
     recorded:
       count: 34
-      digest: sha256:dc38788576b0a0911bcd01c67bc961389b7e5660b212e6c13708708c55fa6c07
+      digest: sha256:bbfcb0956123044d5809e67c90baded2e91f3948c0c01fb3c8de6256a5f9d6a9
     baselines:
       count: 3
       digest: sha256:0780fdfb54cc7337efae4c5a401889109360adbcf89e9a8e1078fd2983707c7f
@@ -79,7 +79,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:ad613461b067cb09d19a51c00d5718b6d7d9319a0e7b49a268af27f6b2b85ab1
+  digest: sha256:1cce77b692d178a90f4235b2f756e2ec64a96d65e39a2734c4e9a20a811e46c0
 - slug: crypto-wallet
   name: Wallet and Exchange
   path: benchmarks/crypto-wallet
@@ -92,7 +92,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:ee851e711b14c4cd8307fd64cd0a61289c67e93e2f42fbc3853d1b019a09e4cf
+  report_hash_offline: sha256:d444f6ea711735b3322f8e0497bbd8c526b68d7fb101aed248daf1e4626553df
   files:
     input:
       count: 1
@@ -102,7 +102,7 @@ scenarios:
       digest: sha256:403c319730b84420e2ff389f6c43ca62401a69652c264e7c8d5d5c676035110d
     recorded:
       count: 34
-      digest: sha256:a4887d96b09e6b46644a7f674c0083cda19534556f6bf07395b6f699f27c8afc
+      digest: sha256:057a431107a33116082520e406d4d88f8cff1c6885bb8cb7842029d15b9adec3
     baselines:
       count: 3
       digest: sha256:5182091ff8e5ebebd4677b48c1e51a9a8d4dc3f3b3bc65f7b9aeda03167e60d1
@@ -112,7 +112,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:2fc2f0ef38d62d3695378b33ea89061fc2e63fb5b8d3791db0d4075c9851bc32
+  digest: sha256:4103584c801bdf0ecec2e5cfec5c1bcea4ed0ab25e09b84c5271cbca860879c1
 - slug: invoice-agent
   name: Invoice Agent
   path: benchmarks/invoice-agent
@@ -125,7 +125,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:2aa40f7ff2ced300a67aaf5f8530c79d64360698d195da393d1f96ab8c60bfa8
+  report_hash_offline: sha256:2a169e106e4242a5d6ddd1466c56dff050d1ae21ce484672454a1a7b1b45c05d
   files:
     input:
       count: 1
@@ -135,7 +135,7 @@ scenarios:
       digest: sha256:7ae598dbb21a18e4d5436fda6c126eccfc53acd86daf0cbc12bc36bbda608192
     recorded:
       count: 20
-      digest: sha256:058b5bf369026dde8b84af3c522a791a884e8b845a7019d12020e9518e663f2f
+      digest: sha256:699599d83835f6bcdc6949487b3f26d876de1de73a50e287d6c87ba53848311a
     baselines:
       count: 3
       digest: sha256:069ab5983422422feb58f8e9b719fecf0d5324b76d10255583c6a91b9aa5c448
@@ -145,7 +145,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:884459201da41ab4b385480de682d0bae30e4cfd72142146a401117243c97fee
+  digest: sha256:81cbf43067f36ff6050c9d23be0ec75850c309d50ac9271408f76ffff621b0da
 - slug: unsigned-webhooks
   name: Deploy Notifier
   path: benchmarks/unsigned-webhooks
@@ -160,7 +160,7 @@ scenarios:
   - adversarial
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:8a5424300e137ec54a3ce678eda2dc6ccd30bb069c5065c9999c00a6df4d449a
+  report_hash_offline: sha256:1861cb147c93c2612185e26bf22041a7b2769f59abab17605a0ca587b8776b56
   files:
     input:
       count: 1
@@ -169,18 +169,18 @@ scenarios:
       count: 9
       digest: sha256:02386e78086437fa67c421f23cbe48e8e58655c2c2ddf3e1867b92e8ed3f2e0f
     recorded:
-      count: 14
-      digest: sha256:8e0d3d0cede0f2f382020972ad5b4d8244934c91736823da594203391f7519f7
+      count: 15
+      digest: sha256:99293586850d05af60d762489625d9628af65473974848cada6b60ec13a5f62f
     baselines:
       count: 3
       digest: sha256:d97e98344da9d96bf764376a1f18bc417b95b8bc28cefdb1211f7235ce575391
     conditions:
       count: 16
-      digest: sha256:fdb79f43299a77b9fc37c738e11937b5d1d7a8abcdd11b9c12d8eb2dbf2eea2c
+      digest: sha256:9662e69cf34c9a352ef0f5e55cfd9b898dd2d5830bfc5b79d29c33747d4548f7
     code:
       count: 12
       digest: sha256:db462fc27d32bf0e7138c355c9631e5b4aac3747671552757fe0b60e2883dbda
-  digest: sha256:2140e7cce378e21da18261692303b2e6eff65f267a4573d8d35f9ee56655d1fc
+  digest: sha256:4e7d707ec7f35787ece1e6e7f85e8493910241ba01217f2d48685b839fff140a
 - slug: contradictory-docs
   name: Export Service
   path: benchmarks/contradictory-docs
@@ -193,7 +193,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:f1c44f7a56e94e1570c9ece2e3f5df2ef5a65536c962ed0f3af8810f92e4770b
+  report_hash_offline: sha256:8c206c9dbbd28a98372d18d6550030ea649ce6b6d9b39fda0568724cb94aae54
   files:
     input:
       count: 2
@@ -203,7 +203,7 @@ scenarios:
       digest: sha256:5a4d85a94622b27a3c8dbff131a5f06c1d10c7b2acf49200ef5d44041298b369
     recorded:
       count: 24
-      digest: sha256:146a3aa9ed08849dd0e4fcce3a931516a26b509b8bff4ee7627aa660f42580bb
+      digest: sha256:22cc0b520f6b1955790e3c262282af008c5a339584c13466941dac6634b27883
     baselines:
       count: 3
       digest: sha256:deddf255694703ababdf6d59ab1a3882f5d480db18dae23ddd78d0538d2473d0
@@ -213,7 +213,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:8bd0b45884af8a96770fb22940b124ea706b96b79884f02ea930d6fa3247f730
+  digest: sha256:38d77021b71198bce3df2656f815b5ff0b3e7372280dc99eeb045a7137352d60
 - slug: oidc-portal
   name: Support Portal
   path: benchmarks/oidc-portal
@@ -226,7 +226,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:1ba3fb0a5a0642964b610cbe1830833aa58b546c5e9b25686e98b86ac2672392
+  report_hash_offline: sha256:5a8e32c4b55cc6673c22d6c71452a7bebd05d79366c1c2243d94a42fe2ebe83d
   files:
     input:
       count: 2
@@ -235,8 +235,8 @@ scenarios:
       count: 8
       digest: sha256:393a4a3dc095097c7a0d902b402a42c28d1ef56e72899b0b2c8e749375ea2bfe
     recorded:
-      count: 18
-      digest: sha256:622ae2286eb24e9ffac41cf1bcb417939e182763cf95ee8df92cc46fa733912d
+      count: 19
+      digest: sha256:3ed93d966a6853d94be8aa42fc8bbbf59f58d2eb7c4fbece38c74693df31b3a7
     baselines:
       count: 3
       digest: sha256:5931c136d4c23968ac6a64180056a78f4d9c79a465a14513b09076a15f827b37
@@ -246,7 +246,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:fb484b2a7f31aaefd9325a1bf246378859cba459bc66f9cf6fc930efa82b804f
+  digest: sha256:ec56745ce72e4dffdd9378c79d9b12cb81781025c28daa40b20da2435efbdf5d
 - slug: managed-db-service
   name: Metrics Store
   path: benchmarks/managed-db-service
@@ -259,7 +259,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:ea28aee8613d5fb6231a37968d4dee9972932a814d69137c1c1ca7dc3e5584ef
+  report_hash_offline: sha256:a2cf3656bc087b79f1bb2cd440c32b485ba947c104498a150f62e40f04bfa684
   files:
     input:
       count: 2
@@ -269,7 +269,7 @@ scenarios:
       digest: sha256:8b73917535174fe495a3841c6f2ae6edeb61716306f50b729ff7fa00bb6c1e11
     recorded:
       count: 21
-      digest: sha256:3bd405028727168a7efca413748dadd077d02f4b4622d78fd5ede8e9deea1a0a
+      digest: sha256:be20acd9b7fe0859aaac5154e7078b0a76a524c0c563da93bd5e816ce4120778
     baselines:
       count: 3
       digest: sha256:6614feda5389184933f2be4bdb7ecf271c542084ccfe8d1b5efdbca08d4b3ef6
@@ -279,7 +279,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:d755e8dab7e4f9f4d8a6ca9aada743e10c0c0c7abd169fba17c403837300aeea
+  digest: sha256:dad65c01d9c39625a30dc7d8fcd35eb6a176df3194df09724142eca0cc3fa27a
 - slug: missing-docs
   name: Kiosk Sync Service
   path: benchmarks/missing-docs
@@ -292,7 +292,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:61b5fdd1381bd5a70948f5aa61fb84cb86b96ad8122a0b2da7286d7dcab1ceec
+  report_hash_offline: sha256:1ec60617f01b70d08da0c0d8ecc1377866d1cdf536689970714244daea2926a7
   files:
     input:
       count: 1
@@ -301,8 +301,8 @@ scenarios:
       count: 7
       digest: sha256:bbe286d8c6a216c57bc4e79cc673cdc3e381e15978e7c152c724c2dbbd309619
     recorded:
-      count: 22
-      digest: sha256:2bd001b95813143887cad520dc9653c5bdc9b4bab3c6a4827570c7eafd5d4e52
+      count: 23
+      digest: sha256:4b3b54df9a098503b02558108993e51f7e1910ba4bbd365186b89fe008cd99ce
     baselines:
       count: 3
       digest: sha256:721444d1f1d68b58125d28bb44271878358d5830153fd837d2a6ad6309931a71
@@ -312,7 +312,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:1a70b05b60e9ef8c629d87a52d8cb3b723139b47e4d9c3ba8dc9d0098bbc054f
+  digest: sha256:d445a5ffc1929d1e325d20a0150e9b9baf05d0e23b71a48c15b1103f75ecbd76
 - slug: rag-support-bot
   name: Relay Answers
   path: benchmarks/rag-support-bot
@@ -327,7 +327,7 @@ scenarios:
   - adversarial
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:f6c50ef3fcbe261971bac2b0fd0da57b0fbd252bd1ac40559a2cdd1df6388e31
+  report_hash_offline: sha256:662387a2d50acc260271770c3b30df4fb9e4bb8702fa24c1ae8b7303e4ec760d
   files:
     input:
       count: 3
@@ -337,17 +337,17 @@ scenarios:
       digest: sha256:61213bef9e19179b8e91f401391824889822ca8141031ea4b83d2388e3f9684c
     recorded:
       count: 24
-      digest: sha256:9a21191fc99fdf9d1509c82d540a41f99780b3210512321e6e6a7a8ce1a956fa
+      digest: sha256:4e29e306837e0c077865084e53042af051b8ceb3e6fafd1f6ed890d4fd60de90
     baselines:
       count: 3
       digest: sha256:1af6732978f228ae076a18585ccc1d3fb4f8fde0cc1b11cec2fa944ebcf486f1
     conditions:
       count: 19
-      digest: sha256:d2be3cb75a2b9445942c527ef789c2e087180a60e527894ed6fdfde3ddab011b
+      digest: sha256:d7fea1108540ce9b9a118955a923538753093a590255df96d8e05c452c95d215
     code:
       count: 16
       digest: sha256:bee8979fba0cf27ab2b715b064417f2ca91596824c6d9305514293feadffbb3a
-  digest: sha256:6b57b540f7d3c5703da5c1238792e60958f0ec8811808d59fef051bbd35494a3
+  digest: sha256:8cf4233bbf47a1744062d3a23ac437fa744268b2499f2a591172dd3caf4ffd36
 - slug: reply-tuner
   name: Reply Tuner
   path: benchmarks/reply-tuner
@@ -360,7 +360,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:1c4d680ea2759d0384cc7d7a0d85d91b6070432f8f05a52181628ee119e97f8d
+  report_hash_offline: sha256:5b33b8cde29092b318cd79bb0f67df43bdae28371adab62b3eba223b079df0d7
   files:
     input:
       count: 1
@@ -370,7 +370,7 @@ scenarios:
       digest: sha256:ea4c96a29ce24fc3f221c143fe412bcbe7b3f9d2112f146b722369b42e8d0d0e
     recorded:
       count: 24
-      digest: sha256:b7b542595adb4fdb9a2c108fddb857b7ea9bad5c227e3bb0456239678f640496
+      digest: sha256:a1387cd1e21f711ac3171d964e424c49949482e064d6d923b1400cdee69f3703
     baselines:
       count: 3
       digest: sha256:da0c7ef26a63ed7213f2e28e710e9198bea9bd87a1d8f0e5941c75b2d5221754
@@ -380,7 +380,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:6d659c6ad3a82aecbbecf3f5c053e8120b3c45f00264f749ae6a407c340e4284
+  digest: sha256:bbd59ae8eb313f8b922bf515da6d67e472f00d72fd24742b4eb1d18bbc611223
 - slug: order-notifier
   name: Order Notifier
   path: benchmarks/order-notifier
@@ -393,7 +393,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:ca8061da69257e1e94778c8bf4ef6e444beaa39242b493823ff2d9f0c163348c
+  report_hash_offline: sha256:b29fbc2f7aef7b694a95cafaa5fd558f83a0122f73174037b9e73192de7fc6dc
   files:
     input:
       count: 2
@@ -402,8 +402,8 @@ scenarios:
       count: 7
       digest: sha256:a902697f4cbd996bb8a71a75fc0cd8c6fcc4bbdcfb9f3caf7ae1a98824e1b405
     recorded:
-      count: 19
-      digest: sha256:bbc28b7ae36f4fcb815529c07e47f3c4d1a394af286243d1ca94caec9078e5cf
+      count: 20
+      digest: sha256:21bae5c3e3c982840db705b2192b94b79a0eed3e6c4f1cf3b3c947f73a2073c1
     baselines:
       count: 3
       digest: sha256:b6c993995b3e54b7d0f2c581af96d60232baa1fa6aebcf74cf1ceb8436d8fcf8
@@ -413,7 +413,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:630d360144083124c7626f9a01f10ad6db065dc40864edbc57f0fd567ee3f8ba
+  digest: sha256:65800ae1e35c54046c15a3e0021e31567a789538c26180e86a2d1e1a847515d0
 - slug: translation-gateway
   name: Helpdesk Translate
   path: benchmarks/translation-gateway
@@ -426,7 +426,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:1fe7195f9916d70f793f7a0383a74b424ea47b187ac535c2741aa40f6d29fa9a
+  report_hash_offline: sha256:d5773063b47aa353c36e01fdb248c603f4e76f10cd80ff9b50b1abc7dcf4dc4b
   files:
     input:
       count: 1
@@ -436,7 +436,7 @@ scenarios:
       digest: sha256:cefe01dab4170eef57a824e716508bf151e417b597f2742a779e147ca8342d8a
     recorded:
       count: 21
-      digest: sha256:fb04f3b579ebe0d9d7e2630779dae033c3b735023af86258d085405a08569861
+      digest: sha256:93985d218f48717ee25e85fb2109f62a7b28227633b0dc387f33a374b7e1dde7
     baselines:
       count: 3
       digest: sha256:cbfa66b7e8a503f70e045342d59b2026d53689af9aaabf93381e127b918d5944
@@ -446,7 +446,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:6b381bb474c29e40f46e96adf0080c33b7fd832a27525f11ea918f6a4a3cbf84
+  digest: sha256:b3dcae3862583bdda78f3de42396e512046e0e8281761205afe79aabde1e69c8
 - slug: parcel-platform
   name: Parcelworks
   path: benchmarks/parcel-platform
@@ -459,7 +459,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:43c1b69cfd22d0aed03336424856b0502d28b850a504dfae5331ed5238f31a51
+  report_hash_offline: sha256:52eb59d6ca308b0f116ed1564e10fcee0299c28cff5712ae0195af6dd4414c0a
   files:
     input:
       count: 1
@@ -469,7 +469,7 @@ scenarios:
       digest: sha256:67336aaf12345350312ab518f1784e005b13e2950a6d94633307895d59b45260
     recorded:
       count: 41
-      digest: sha256:3897a2874901311f62be12bf4abbd8e97e54b4dcd40fb3a3d03153c9365c2617
+      digest: sha256:4fd70d832406944b6ab5b0c64a05ed6edef1cbace5acddbc3a0b896fef111ce3
     baselines:
       count: 3
       digest: sha256:98a801961d73afb1a8484a433b106187a2c891a40bf9309dfc8724c358454fe9
@@ -479,7 +479,7 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:fcdbe0b90416beea58ef2465e270c78be368f0a830c9660563f84b2bcf64e7c1
+  digest: sha256:4451c3a0c02470083c7bbefc498c8629bc3dbcff42d824d4e9cb2724996bc5b6
 - slug: nightly-reconciler
   name: Nightly Reconciler
   path: benchmarks/nightly-reconciler
@@ -492,7 +492,7 @@ scenarios:
   - clean
   models:
   - openai/gpt-5.1
-  report_hash_offline: sha256:83af45ec6fdf48a4f1ee052076c11e76d208fadaba1c4429ec559111f4c5f22e
+  report_hash_offline: sha256:058ea228476a55d9d70779f054ed2959f66de5db79d44ef296195f48e33b9972
   files:
     input:
       count: 2
@@ -502,7 +502,7 @@ scenarios:
       digest: sha256:1f4490eb6f0bcb8414c11325a8b2ea8fc899f01c536e987a1b50c9f5b65d1a45
     recorded:
       count: 23
-      digest: sha256:a7f09f8c903cb5f7d9f46d686a461928a9d521245aefb6054dc44c895b3f041f
+      digest: sha256:0a795fd26c9fe2d118ddfa4ead5ed79557818a4d19311cb86f6e9bc8327e4527
     baselines:
       count: 3
       digest: sha256:9bcc9cab1da968e39a8d6d9d8a892f5f18e5aa44f78b6b55e5e3c5779e0c19cd
@@ -512,4 +512,4 @@ scenarios:
     code:
       count: 0
       digest: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  digest: sha256:f86517d0e7da62c603c974cb1ddce510fa2b887ac0e5bd75188c316d49fc6577
+  digest: sha256:4a5f60557bbec9a583902ef83c3642f1a5871408b761cc6cfaa2ac1874219101

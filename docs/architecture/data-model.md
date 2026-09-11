@@ -1946,9 +1946,9 @@ Records a human decision affecting an assessment object.
 |---|---|---|---|
 | id | string | Yes | Stable decision identifier |
 | assessment_id | string | Yes | Parent assessment |
-| subject_type | string | Yes | Object type reviewed |
+| subject_type | string | Yes | Object type reviewed. `finding` and `documentation_gap` are checkpoint 2's two subjects (DEC-159); `system_context` is checkpoint 1's |
 | subject_id | string | Yes | Object reviewed |
-| disposition | ReviewDisposition | Yes | Reviewer action |
+| disposition | ReviewDisposition | Yes | Reviewer action. On a `documentation_gap`, `approve`, `reject`, and `edit` only (DEC-159) |
 | prior_value | map[string, any] | No | Relevant prior state |
 | updated_value | map[string, any] | No | Updated state |
 | rationale | string | No | Reviewer explanation |

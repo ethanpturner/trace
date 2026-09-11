@@ -47,6 +47,7 @@ from trace_ai.config import (
     SourceCheckoutRequiredError,
 )
 from trace_ai.domain.assessment import default_configuration
+from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
@@ -120,12 +121,14 @@ from trace_ai.workflow.context_review import (
 from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.errors import WorkflowError
 from trace_ai.workflow.finding_review import (
+    approve_documentation_gap,
     approve_finding,
     assign_risk_treatment,
     change_severity,
     conclude_finding_review,
     defer_finding,
     edit_finding,
+    reject_documentation_gap,
     reject_finding,
     request_more_analysis,
 )
@@ -600,10 +603,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="an optional date to revisit an accepted risk",
     )
     findings_review.add_argument(
-        "--approve", action="append", dest="approved", default=[], metavar="ID"
+        "--approve",
+        action="append",
+        dest="approved",
+        default=[],
+        metavar="ID",
+        help="approve a finding or a documentation gap; both are subjects here (DEC-159)",
     )
     findings_review.add_argument(
-        "--reject", action="append", dest="rejected", default=[], metavar="ID"
+        "--reject",
+        action="append",
+        dest="rejected",
+        default=[],
+        metavar="ID",
+        help="reject a finding or a documentation gap",
     )
     findings_review.add_argument("--note", help="a rationale recorded with each decision")
     findings_review.add_argument(
@@ -3243,7 +3256,20 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
         findings[identifier] = updated
         decisions.append(decision)
 
+    # DEC-159: `--approve` and `--reject` take either subject of this checkpoint, dispatched on
+    # the identifier's own prefix. A separate flag per subject type would be a second spelling of
+    # the same verb, and the prefix already says which object the reviewer named.
+    gaps = {gap.id: gap for gap in handle.objects.list(DocumentationGap)}
+
     for identifier in args.rejected:
+        if identifier.startswith("gap-"):
+            gap = _require(gaps, identifier, "a documentation gap in this assessment")
+            updated_gap, decision = reject_documentation_gap(
+                handle, gap, reviewer_id=reviewer, rationale=args.note, workflow_run_id=run_id
+            )
+            gaps[identifier] = updated_gap
+            decisions.append(decision)
+            continue
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = reject_finding(
             handle, finding, reviewer_id=reviewer, rationale=args.note, workflow_run_id=run_id
@@ -3252,6 +3278,14 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
         decisions.append(decision)
 
     for identifier in args.approved:
+        if identifier.startswith("gap-"):
+            gap = _require(gaps, identifier, "a documentation gap in this assessment")
+            updated_gap, decision = approve_documentation_gap(
+                handle, gap, reviewer_id=reviewer, rationale=args.note, workflow_run_id=run_id
+            )
+            gaps[identifier] = updated_gap
+            decisions.append(decision)
+            continue
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = approve_finding(
             handle,

@@ -63,9 +63,11 @@ if TYPE_CHECKING:
     from trace_ai.workflow.nodes import NodeContext, NodeResult
 
 __all__ = [
+    "GAP_EDITABLE_FIELDS",
     "FindingReviewNode",
     "add_remediation_guidance",
     "add_reviewer_rationale",
+    "approve_documentation_gap",
     "approve_finding",
     "assign_risk_treatment",
     "change_severity",
@@ -73,9 +75,12 @@ __all__ = [
     "convert_to_documentation_gap",
     "convert_to_question",
     "defer_finding",
+    "edit_documentation_gap",
     "edit_finding",
     "finding_review_subjects",
+    "gap_review_subjects",
     "merge_by_reviewer",
+    "reject_documentation_gap",
     "reject_finding",
     "request_more_analysis",
 ]
@@ -84,15 +89,29 @@ __all__ = [
 GENERATED_BY: Final = "human-finding-review-v1"
 
 
+def gap_review_subjects(context: NodeContext) -> list[str]:
+    """The candidate documentation gaps checkpoint 2 waits on, in presentation order (DEC-159).
+
+    Read from the state for `finding_review_subjects`'s reason: the state is what the run carries
+    across the pause, so a resumed invocation waits on the list the paused one named. Gaps already
+    decided in an earlier run are filtered by the checkpoint's own `decided_in_run`, not here.
+    """
+    return list(context.state.documentation_gap_ids)
+
+
 def finding_review_subjects(context: NodeContext) -> list[str]:
-    """What checkpoint 2 waits on: the provisional findings, in presentation order.
+    """What checkpoint 2 waits on: the provisional findings and the candidate gaps (DEC-159).
 
     Read from the state rather than the store, because the state is what the run carries across
     the pause (DEC-017) and a resumed invocation must wait on the same list the paused one named.
-    Gaps and questions are shown at this checkpoint and are not subjects: the completion
-    condition is a decision per provisional finding, and a question is answered, not decided.
+
+    Gaps became subjects with DEC-159. Before it, they were shown here and decided nowhere, so
+    `DocumentationGap.status` never left `candidate`, report section 9 filtered on `approved` and
+    was structurally empty, and the deliverable stated that the assessment recorded no gaps while
+    the package held twenty-five. A question is still not a subject: a question is answered, not
+    decided, and answering it is not a disposition the system records.
     """
-    return list(context.state.candidate_finding_ids)
+    return [*context.state.candidate_finding_ids, *gap_review_subjects(context)]
 
 
 @dataclass(slots=True)
@@ -283,6 +302,178 @@ def approve_finding(
     )
 
 
+# --- Documentation gaps (DEC-159) -------------------------------------------------------------
+#
+# A gap is decided here, alongside the findings, with a narrower vocabulary than a finding's.
+# `approve`, `reject`, and `edit` are the three dispositions that have meaning for an object whose
+# whole claim is that something could not be determined. The rest of `ReviewDisposition` does not:
+# `defer` and `request_more_analysis` both say "more analysis may settle this", and what settles a
+# gap is more *documentation*, which `requested_evidence` already records; the two conversions are
+# DEC-051's escape hatches out of a finding that rests on silence, and a gap is already on the
+# correct side of that line.
+#
+# There is no severity gate here, and its absence is the decision rather than an omission. A
+# finding is created `unassigned` because the reviewer supplies severity at this checkpoint
+# (DEC-030); DEC-045 refuses `unassigned` on a gap at construction, because the node that raises
+# the gap is the only step that ever rates it. The gap analogue of the severity gate therefore
+# already ran, one layer down, and adding a second one here would gate on a field nothing can
+# change.
+
+
+def _gap_edited(gap: DocumentationGap, changes: dict[str, Any]) -> DocumentationGap:
+    """The gap with `changes` applied, built through the schema (DEC-023).
+
+    `model_validate`, never `model_copy`, for `_edited`'s reason. No timestamp is stamped here:
+    `DocumentationGap` carries none, and `extra="forbid"` refuses one rather than accepting a
+    field the section-23 table never sanctioned."""
+    from trace_ai.domain.documentation_gap import DocumentationGap as _Gap
+
+    return _Gap.model_validate({**gap.model_dump(), **changes})
+
+
+def _decide_gap(
+    handle: AssessmentHandle,
+    gap: DocumentationGap,
+    *,
+    status: ObjectStatus,
+    disposition: ReviewDisposition,
+    reviewer_id: str,
+    rationale: str | None,
+    workflow_run_id: str | None,
+    at: datetime | None,
+) -> tuple[DocumentationGap, ReviewerDecision]:
+    stamp = at if at is not None else now()
+    decided = _gap_edited(gap, {"status": status})
+    with handle.objects.transaction() as repository:
+        decision = ReviewerDecision.model_validate(
+            {
+                "id": repository.allocate("dec"),
+                "assessment_id": gap.assessment_id,
+                "subject_type": "documentation_gap",
+                "subject_id": gap.id,
+                "disposition": disposition,
+                "rationale": rationale,
+                "reviewer_id": reviewer_id,
+                "created_at": stamp,
+                "workflow_run_id": workflow_run_id,
+            }
+        )
+        repository.save(decided)
+        repository.save(decision)
+    return decided, decision
+
+
+def approve_documentation_gap(
+    handle: AssessmentHandle,
+    gap: DocumentationGap,
+    *,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[DocumentationGap, ReviewerDecision]:
+    """Approve one candidate gap — the only path to `approved`, and so into report section 9.
+
+    One refusal, the structural mirror of the merged-finding refusal in `approve_finding`: a gap
+    that is no longer a candidate has already been decided, superseded, or converted, and a second
+    decision would be a judgment about an object no longer under review.
+    """
+    if gap.status is not ObjectStatus.CANDIDATE:
+        raise ReviewerActionError(
+            f"{gap.id} is {gap.status.value!r}, not a candidate, and cannot be approved. It has "
+            f"already been decided, superseded, or converted; the object under review is the one "
+            f"still carrying 'candidate'."
+        )
+    return _decide_gap(
+        handle,
+        gap,
+        status=ObjectStatus.APPROVED,
+        disposition=ReviewDisposition.APPROVE,
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=at,
+    )
+
+
+def reject_documentation_gap(
+    handle: AssessmentHandle,
+    gap: DocumentationGap,
+    *,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[DocumentationGap, ReviewerDecision]:
+    """Reject one candidate gap. Retained, never deleted, like a rejected finding (section 18).
+
+    Rejecting is what a reviewer does to a gap the documentation does establish after all, or one
+    raised against a requirement that does not apply, or — the case that produced DEC-159 — one
+    whose only support is a document reporting somebody else's claim.
+    """
+    if gap.status is not ObjectStatus.CANDIDATE:
+        raise ReviewerActionError(
+            f"{gap.id} is {gap.status.value!r}, not a candidate, and cannot be rejected."
+        )
+    return _decide_gap(
+        handle,
+        gap,
+        status=ObjectStatus.REJECTED,
+        disposition=ReviewDisposition.REJECT,
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=at,
+    )
+
+
+# What a reviewer may change on a gap: its prose and what would close it. Identifiers, status,
+# provenance, and the fingerprint are the application's (DEC-018, DEC-066).
+GAP_EDITABLE_FIELDS: Final = ("title", "description", "importance", "requested_evidence")
+
+
+def edit_documentation_gap(
+    handle: AssessmentHandle,
+    gap: DocumentationGap,
+    changes: dict[str, Any],
+    *,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[DocumentationGap, ReviewerDecision]:
+    """Edit a gap's text, recorded with the delta (DEC-023). Does not decide it."""
+    unknown = sorted(set(changes) - set(GAP_EDITABLE_FIELDS))
+    if unknown:
+        raise ReviewerActionError(
+            f"{unknown} is not editable on a documentation gap; the editable fields are "
+            f"{list(GAP_EDITABLE_FIELDS)}."
+        )
+    stamp = at if at is not None else now()
+    updated = _gap_edited(gap, changes)
+    prior = {field: gap.model_dump(mode="json")[field] for field in changes}
+    after = {field: updated.model_dump(mode="json")[field] for field in changes}
+    with handle.objects.transaction() as repository:
+        decision = ReviewerDecision.model_validate(
+            {
+                "id": repository.allocate("dec"),
+                "assessment_id": gap.assessment_id,
+                "subject_type": "documentation_gap",
+                "subject_id": gap.id,
+                "disposition": ReviewDisposition.EDIT,
+                "prior_value": prior,
+                "updated_value": after,
+                "rationale": rationale,
+                "reviewer_id": reviewer_id,
+                "created_at": stamp,
+                "workflow_run_id": workflow_run_id,
+            }
+        )
+        repository.save(updated)
+        repository.save(decision)
+    return updated, decision
+
+
 def conclude_finding_review(service: AssessmentService, assessment_id: str) -> Assessment:
     """Move the assessment forward once every provisional finding has a decision.
 
@@ -294,6 +485,7 @@ def conclude_finding_review(service: AssessmentService, assessment_id: str) -> A
     restated where the deliverable's lifecycle advances.
     """
     from trace_ai.domain.base import now
+    from trace_ai.domain.documentation_gap import DocumentationGap
     from trace_ai.domain.execution import WorkflowRun
     from trace_ai.workflow.reason_codes import revisit_due_findings
 
@@ -307,13 +499,21 @@ def conclude_finding_review(service: AssessmentService, assessment_id: str) -> A
     # the current run's decision — so an approval carried from a prior run does not conclude it. The
     # subjects and the scoping match the checkpoint node's, or the two would disagree about done.
     runs = handle.objects.list(WorkflowRun)
-    subjects = {finding.id for finding in provisional} | revisit_due_findings(handle, now().date())
+    candidate_gaps = {
+        gap.id for gap in handle.objects.list(DocumentationGap, status=ObjectStatus.CANDIDATE.value)
+    }
+    subjects = (
+        {finding.id for finding in provisional}
+        | revisit_due_findings(handle, now().date())
+        | candidate_gaps
+    )
     decided = decided_in_run(handle, runs[-1].id) if runs else decided_object_ids(handle)
     undecided = sorted(subjects - decided)
     if undecided:
         raise ReviewerActionError(
             f"the finding checkpoint is not complete: {undecided} await a ReviewerDecision. "
-            f"The assessment advances when every provisional finding has one (DEC-005)."
+            f"The assessment advances when every provisional finding and every candidate "
+            f"documentation gap has one (DEC-005, DEC-159)."
         )
     return service.resume_from_review(assessment_id)
 

@@ -39,7 +39,8 @@ import yaml
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.assessment import Assessment, default_configuration
-from trace_ai.domain.enums import Severity, SourceOrigin
+from trace_ai.domain.documentation_gap import DocumentationGap
+from trace_ai.domain.enums import ObjectStatus, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import WorkflowRun
 from trace_ai.domain.finding import Finding
@@ -75,9 +76,11 @@ from trace_ai.workflow.context_review import (
 )
 from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.finding_review import (
+    approve_documentation_gap,
     approve_finding,
     change_severity,
     conclude_finding_review,
+    reject_documentation_gap,
     reject_finding,
 )
 from trace_ai.workflow.limits import Budget
@@ -569,20 +572,26 @@ def stage_reason(
             on_phase=on_phase,
         )
         if not outcome.paused:
-            # A run with no candidate findings never pauses at checkpoint 2: the checkpoint
-            # advances on an empty subject list (DEC-005's gate is vacuously satisfied), report
-            # generation runs, and the whole capture completes inside this stage. That is the
-            # scenario working — five of the fifteen authored scenarios end with zero findings
-            # by design — so the stage accepts it, writes the same completion artifacts the
-            # report stage would have, and says the report stage is not needed. Any other
-            # non-pause is still an error. Recorded as a DEC-091 amendment (#484).
+            # A run with no checkpoint-2 subject at all never pauses: the checkpoint advances on
+            # an empty subject list (DEC-005's gate is vacuously satisfied), report generation
+            # runs, and the whole capture completes inside this stage. That is the scenario
+            # working, so the stage accepts it, writes the same completion artifacts the report
+            # stage would have, and says the report stage is not needed. Any other non-pause is
+            # still an error. Recorded as a DEC-091 amendment (#484).
+            #
+            # DEC-159 narrowed this: the subjects are the findings *and* the candidate gaps, so a
+            # zero-finding run with gaps now pauses like any other. The branch survives for the
+            # run that produces neither.
             handle = service.handle(assessment_id)
             candidate_findings = [
                 finding
                 for finding in handle.objects.list(Finding)
                 if finding.duplicate_of_id is None
             ]
-            if not outcome.completed or candidate_findings:
+            candidate_gaps = handle.objects.list(
+                DocumentationGap, status=ObjectStatus.CANDIDATE.value
+            )
+            if not outcome.completed or candidate_findings or candidate_gaps:
                 raise CaptureError(
                     f"expected a pause at checkpoint 2, got {outcome.stopped_because}"
                 )
@@ -618,9 +627,26 @@ def _write_findings_export(staging: Path, handle: AssessmentHandle, assessment_i
         {"id": question.id, "question": question.question, "status": question.status.value}
         for question in handle.objects.list(Question)
     ]
+    # DEC-159: gaps are decided at checkpoint 2, so the export carries them for the same reason
+    # it carries the findings — an author cannot decide what the export does not show.
+    gaps = [
+        {
+            "id": gap.id,
+            "title": gap.title,
+            "importance": gap.importance,
+            "severity": gap.severity.value,
+            "related_object_ids": list(gap.related_object_ids),
+        }
+        for gap in handle.objects.list(DocumentationGap, status=ObjectStatus.CANDIDATE.value)
+    ]
     (staging / "findings-export.yaml").write_text(
         yaml.safe_dump(
-            {"assessment_id": assessment_id, "findings": findings, "questions": questions},
+            {
+                "assessment_id": assessment_id,
+                "findings": findings,
+                "questions": questions,
+                "documentation_gaps": gaps,
+            },
             sort_keys=False,
             allow_unicode=True,
             width=100,
@@ -709,6 +735,32 @@ def stage_report(
                     handle, finding, reviewer_id=REVIEWER, rationale=entry["rationale"]
                 )
             findings[finding.id] = finding
+        # DEC-159: the same file decides the candidate gaps, either one at a time under `gaps:`
+        # or with a `default:` for all of them. A capture that authored neither is refused here
+        # rather than at the checkpoint, where the message would name fifty identifiers.
+        block = recorded.get("documentation_gaps") or {}
+        by_id = {str(item.get("id")): item for item in (block.get("gaps") or [])}
+        default = str(block.get("default") or "").strip()
+        candidates = handle.objects.list(DocumentationGap, status=ObjectStatus.CANDIDATE.value)
+        if candidates and not default and not by_id:
+            raise CaptureError(
+                f"{decisions} records no decision for {len(candidates)} candidate documentation "
+                f"gap(s); since DEC-159 a gap is a checkpoint-2 subject. Add a "
+                f"`documentation_gaps:` block with `default:` or per-gap `gaps:` entries."
+            )
+        for gap in candidates:
+            entry = by_id.get(gap.id, {})
+            disposition = str(entry.get("decision") or default)
+            rationale = str(entry.get("rationale") or block.get("rationale") or "")
+            if disposition == "approve":
+                approve_documentation_gap(handle, gap, reviewer_id=REVIEWER, rationale=rationale)
+            elif disposition == "reject":
+                reject_documentation_gap(handle, gap, reviewer_id=REVIEWER, rationale=rationale)
+            else:
+                raise CaptureError(
+                    f"{gap.id}: {disposition!r} is not a decision a documentation gap takes; "
+                    f"use 'approve' or 'reject' (DEC-159)."
+                )
         conclude_finding_review(service, assessment_id)
 
         outcome = resume_assessment(

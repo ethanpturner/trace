@@ -10762,3 +10762,118 @@ Open Questions:
 - Does a reason that is verbatim identical across many subjects deserve a warning? It is the
   blanket pass wearing a sentence, and detecting it is cheap; whether that is the application's
   business or the reviewer's is not settled.
+
+## DEC-159: A documentation gap is decided at checkpoint 2, and section 9 distinguishes "none proposed" from "none approved"
+
+Date: 2026-09-11
+
+Status: Accepted
+
+Decision:
+
+**Checkpoint 2's subjects are the provisional findings and the candidate documentation gaps.**
+Both take a `ReviewerDecision`, and the checkpoint completes when every one of them has one. The
+node, the conclusion condition, the review package, the review file, and `--approve`/`--reject`
+all carry the widened set; nothing gains a flag, and the two structural checkpoints stay two
+(DEC-005, DEC-012).
+
+**A gap's decision vocabulary is `approve`, `reject`, and `edit`.** Those are the three
+dispositions with meaning for an object whose whole claim is that something could not be
+determined. The rest of `ReviewDisposition` is refused rather than silently accepted:
+
+- `defer` and `request_more_analysis` both say *more analysis may settle this*. What settles a
+  gap is more **documentation**, which `DocumentationGap.requested_evidence` already records, and
+  re-running analysis against the same silent documents produces the same silence.
+- `convert_to_question` and `convert_to_documentation_gap` are DEC-051's escape hatches out of a
+  finding that rests on silence rather than evidence. A gap is already on the correct side of that
+  line, so converting one is a move it has no reason to make.
+
+**No new approval gate, and its absence is the decision.** A finding may not be approved while
+`severity` is `unassigned` because the reviewer supplies severity at this checkpoint (DEC-030);
+DEC-045 refuses `unassigned` on a gap at construction, because the node that raises the gap is the
+only step that ever rates it. The gap analogue of the severity gate therefore already ran, one
+layer down, and a second one here would gate on a field nothing can change. The one refusal is
+structural and mirrors the merged-finding refusal: a gap whose status is no longer `candidate` has
+been decided, superseded, or converted, and a second decision would judge an object no longer under
+review.
+
+**Report section 9 keeps its `approved` filter, which becomes satisfiable, and gains a second
+authored empty wording.** `templates/report-v1.md` now holds both `empty.documentation_gaps` — no
+gap was proposed — and `empty.documentation_gaps_none_approved` — gaps were proposed and the
+reviewer approved none. The renderer picks between them from a count the assembler carries
+(`ReportInput.proposed_documentation_gap_count`). DEC-035's section table, ownership, and the rule
+that a rendered section draws from approved objects are unchanged.
+
+**The recorded corpus migrates with a scenario-level decision, recorded as a migration.** The
+change makes 264 candidate gaps across fifteen scenarios into subjects at once. Authoring 264
+individual judgments inside the change that created the need for them would be inventing a review
+nobody performed, so each scenario's `recorded/decisions-findings.yaml` carries a
+`documentation_gaps:` block with one `default:` and a rationale that says it is a migration and not
+a review. A re-capture authors one entry per gap under `gaps:` instead; the harness, the capture's
+report stage, and `scripts/replay_forgeflow.py` all accept either form and refuse a file that
+carries neither. The default is `approve`, because a candidate gap asserts only that something
+could not be determined from the documents supplied — which is what the run established — so
+approving adds no claim the run did not make. That is the opposite of a finding, where approval
+asserts a weakness exists.
+
+**This is a re-pin cycle, not a re-capture** (DEC-101's distinction). Fifteen
+`report-hash-offline.txt` pins, `demo/forgeflow/recorded/report-hash.txt`, and the committed demo
+report asset were regenerated because section 9 now renders. No recording changed and no identifier
+moved.
+
+Why:
+
+**The deliverable stated an absence nobody established.** `DocumentationGap.status` never left
+`candidate`, because checkpoint 2's subjects were findings and no other step decided a gap. Section
+9 filtered on `approved`, so it was structurally empty in every report ever rendered, and its
+authored empty wording reads "The assessment recorded no documentation gaps. Every requirement it
+applied could be evaluated against the documentation provided." Both sentences were false whenever
+a gap existed. `docs/eval/exchange.md` measured it: the clean run reported no gaps while holding
+twelve, the doctored run reported none while holding twenty-five.
+
+This is the same defect DEC-101 found in section 7 and fixed the same way — a filter that was never
+satisfiable, printing an authored absence — and the fact that it recurred is the argument for
+checking each rendered section's filter against something that can actually set it.
+
+**The gap is the product, so it is the thing a reviewer must stand behind.** DEC-009 exists to keep
+"evidence supports a weakness" apart from "it could not be determined whether a control exists",
+and the second is what most of an honest assessment consists of. Leaving it undecided made the
+distinction invisible in the deliverable, which is where it matters most. The doctored exchange run
+is the case that settles it: eighteen of its twenty-five candidate gaps cited a fabricated packet,
+and a reviewer should be able to reject those. Nothing in the pipeline let them.
+
+Alternatives Considered:
+
+- **Gaps decided at checkpoint 1, with the context.** A gap is a statement about what the documents
+  do not establish, which sounds like context. Rejected on sequencing: gaps are raised by
+  requirement mapping, which runs after checkpoint 1, so the objects do not exist yet.
+- **A third checkpoint for gaps.** Rejected against DEC-005: two checkpoints are structural, and a
+  third would make the count a matter of what objects exist rather than of where human judgment is
+  load-bearing.
+- **Section 9 renders candidate gaps, labelled proposed.** Cheapest, and rejected twice over: it
+  breaks DEC-035's rule that a rendered section draws from approved objects, and it puts unreviewed
+  model output in the deliverable, which is the DEC-009 collapse in the other direction.
+- **Fix only the empty wording, leaving gaps undecided.** Honest about the absence and leaves the
+  product unrenderable forever. Rejected: it converts a false statement into a true statement that
+  the pipeline can never stop making.
+- **Authoring 264 per-gap decisions in this change.** Rejected as inventing a review nobody
+  performed; the migration block says what it is instead.
+
+Tradeoffs:
+
+- A reviewer now decides every gap as well as every finding, and husky-ai produces sixty-two. That
+  is real added work at the checkpoint, and the review file (`--export`/`--apply`) is the surface
+  that makes it bearable. A bulk disposition in the CLI is an open question below.
+- Every recorded report grew a populated section 9, so fifteen pinned hashes moved in one change.
+  The pins are the mechanism working: a derived output changed, and the change had to be stated.
+- The migration default is uniform, so the recorded corpus carries no example of a *rejected* gap
+  until a scenario is re-captured. The adversarial condition is the natural first one.
+
+Open Questions:
+
+- Should the reviewer be able to reject a set of gaps in one action, and if so, does a bulk
+  disposition stay a decision per subject in the store?
+- Should a gap whose evidence is entirely report-kind (DEC-157's `report_derived`) be refused
+  approval outright rather than merely flagged?
+- Does an approved gap belong in the report's assumption or limitation machinery as well as section
+  9, given that a gap bounds what the assessment could conclude?

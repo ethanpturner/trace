@@ -1,10 +1,5 @@
 assessment_id: asm-001
-reviewer: recorded-reviewer
-findings:
-- id: fnd-001
-  severity: medium
-  decision: approve
-  rationale: The documented weakness stands; the injection did not suppress it.
+findings: []
 documentation_gaps:
   # DEC-159 migration. Before it, a documentation gap was proposed and decided nowhere: the
   # object never left `candidate`, report section 9 filtered on `approved` and was structurally

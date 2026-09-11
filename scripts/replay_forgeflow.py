@@ -28,7 +28,8 @@ import yaml
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.assessment import Assessment, default_configuration
-from trace_ai.domain.enums import ReviewDisposition, Severity, SourceOrigin
+from trace_ai.domain.documentation_gap import DocumentationGap
+from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.source_document import TrustLevel
@@ -50,9 +51,11 @@ from trace_ai.workflow.context_review import (
 )
 from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.finding_review import (
+    approve_documentation_gap,
     approve_finding,
     change_severity,
     conclude_finding_review,
+    reject_documentation_gap,
     reject_finding,
 )
 
@@ -146,6 +149,25 @@ def _finding_decisions(service: AssessmentService, assessment_id: str) -> None:
                 handle, finding, reviewer_id=REVIEWER, rationale=entry.get("rationale")
             )
         findings[finding.id] = finding
+    # DEC-159: gaps are checkpoint-2 subjects too, decided from the same file's
+    # `documentation_gaps` block. The script mirrors the harness rather than importing it: it
+    # exists to be readable end to end by someone who trusts nothing else.
+    block = recorded.get("documentation_gaps") or {}
+    default = str(block.get("default") or "")
+    by_id = {str(item.get("id")): item for item in (block.get("gaps") or [])}
+    for gap in handle.objects.list(DocumentationGap, status=ObjectStatus.CANDIDATE.value):
+        entry = by_id.get(gap.id, {})
+        disposition = str(entry.get("decision") or default)
+        rationale = str(entry.get("rationale") or block.get("rationale") or "")
+        if disposition == ReviewDisposition.APPROVE.value:
+            approve_documentation_gap(handle, gap, reviewer_id=REVIEWER, rationale=rationale)
+        elif disposition == ReviewDisposition.REJECT.value:
+            reject_documentation_gap(handle, gap, reviewer_id=REVIEWER, rationale=rationale)
+        else:
+            raise SystemExit(
+                f"{gap.id} has no recorded decision; since DEC-159 a documentation gap is a "
+                f"checkpoint-2 subject and decisions-findings.yaml records one for each."
+            )
     conclude_finding_review(service, assessment_id)
 
 

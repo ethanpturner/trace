@@ -9,3 +9,10 @@ findings:
   severity: medium
   decision: approve
   rationale: The over-scoped token is documented as a convenience choice against a stated narrower need; the blast radius of a token theft is the workspace.
+documentation_gaps:
+  # DEC-159: the gap this authored run raises is a checkpoint-2 subject like the findings.
+  # Approved so the fixture exercises the rendering path a real scenario takes.
+  default: approve
+  rationale: >-
+    Approved as generated: the run established that the retention question cannot be answered
+    from the documents supplied, which is all a gap claims.
