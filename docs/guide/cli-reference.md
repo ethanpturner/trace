@@ -140,14 +140,14 @@ Register and inspect source documents.
 ### source add
 
 ```
-trace source add [--no-index] <assessment_id> <path>
+trace source add [--no-index] [--kind {system,report}] <assessment_id> <path>
 ```
 
 Registers a file or a directory of files. Accepted formats are `.md`, `.markdown`, `.txt`, `.tf`,
 `.json`, `.yaml`, `.yml`, and `.pdf`, each at most 10 MB; text formats must be valid UTF-8 and
 JSON/YAML must parse. A PDF is read text-layer only (DEC-123) and an image-only PDF is refused
 with a named error. Office and web ingestion are deferred and refused with a named error
-(exit 1); repository ingestion is `source add-repo` below. `--no-index` registers without normalizing and indexing. Exits 0 on success.
+(exit 1); repository ingestion is `source add-repo` below. `--no-index` registers without normalizing and indexing. `--kind` states what the document is about (DEC-157): `system`, the default, for a document that describes the reviewed system; `report` for one that reports claims made about it by a third party or a tool, such as a code reviewer's packet. Every checkpoint-1 subject whose evidence rests on `report` documents alone carries the `report_derived` routing reason. Exits 0 on success.
 
 ```console
 $ uv run trace source add asm-001 demo/forgeflow/input
@@ -489,7 +489,8 @@ report. Otherwise exits 0 on a scored run, 1 on a refusal or error.
 
 ```
 trace capture scenario {extract,reason,report,baseline-generic,baseline-structured}
-              [--from-recorded] [--model-profile MODEL_PROFILE]
+              [--condition CONDITION] [--from-recorded]
+              [--model-profile MODEL_PROFILE]
               [--rehearse] [--response PATH]...
 ```
 
@@ -513,6 +514,14 @@ The three stages pause where a person authors checkpoint decisions:
 Decisions are authored per capture, against the run's own objects; a previous capture's committed
 decision files answer its replay, not a new live run. `--from-recorded` resumes an interrupted
 capture: staged recordings answer the calls they cover, and only unanswered calls go live.
+
+`--condition` selects the documents the capture runs against (default: `clean`). A named
+condition reads the scenario's `conditions/<name>/input` overlay and stages into
+`capture-<condition>/` with its own data root, so an adversarial capture cannot resume a clean
+one's recordings (DEC-075, DEC-152). The clean condition keeps the unsuffixed paths. A condition
+the scenario does not declare is refused by name rather than silently falling back to the clean
+documents, and `--condition` is refused with a baseline stage: a baseline is a single call over
+the clean documents (DEC-074), so there is no defense there to test.
 
 Each stage refuses to run twice — a re-run would re-spend it — and the refusal exits 3. The
 offline profile is refused (exit 1) before any side effect. The capture uses its own data root,

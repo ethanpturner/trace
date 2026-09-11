@@ -52,7 +52,12 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.review_session import ReviewCheckpoint
-from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
+from trace_ai.domain.source_document import (
+    DocumentKind,
+    IngestionStatus,
+    SourceDocument,
+    TrustLevel,
+)
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
@@ -79,6 +84,7 @@ from trace_ai.services.context.review_file import (
 )
 from trace_ai.services.driver import resume_assessment, run_assessment
 from trace_ai.services.evaluation.capture import CaptureRefusedError
+from trace_ai.services.evaluation.registry import CLEAN_CONDITION
 from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES, record_rubric
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
@@ -364,6 +370,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-index",
         action="store_true",
         help="register without normalizing and indexing",
+    )
+    added.add_argument(
+        "--kind",
+        choices=[kind.value for kind in DocumentKind],
+        default=DocumentKind.SYSTEM.value,
+        help=(
+            "what the document is about: 'system' (default) describes the reviewed system; "
+            "'report' reports claims made about it by a third party or a tool, and every "
+            "context subject resting on report-kind evidence alone carries the report_derived "
+            "routing reason at checkpoint 1 (DEC-157)"
+        ),
     )
 
     add_repo = source_commands.add_parser(
@@ -791,6 +808,16 @@ def build_parser() -> argparse.ArgumentParser:
             "authored context decisions and runs to checkpoint 2; report applies the authored "
             "finding decisions and runs to completion; baseline-generic and baseline-structured "
             "each make the one DEC-074 baseline call and stage its recording (DEC-100)"
+        ),
+    )
+    capture.add_argument(
+        "--condition",
+        default=CLEAN_CONDITION,
+        help=(
+            "the condition whose documents the capture runs against (default: clean). A named "
+            "condition stages into its own directory and reads the scenario's "
+            "conditions/<name>/input overlay, so an adversarial capture cannot resume a clean "
+            "one's recordings (DEC-075, DEC-152)"
         ),
     )
     capture.add_argument(
@@ -1314,6 +1341,21 @@ def _capture(args: argparse.Namespace) -> int:
     from trace_ai.services.evaluation.registry import scenario as registered_scenario
 
     target = registered_scenario(args.scenario)
+    condition = getattr(args, "condition", CLEAN_CONDITION)
+    # A condition the scenario does not declare is refused by name rather than staging an empty
+    # overlay: `input_documents` falls back to the clean set for an unknown name, so an
+    # unvalidated typo would spend real money capturing the clean condition under an
+    # adversarial label (DEC-152, DEC-075).
+    if condition != CLEAN_CONDITION and condition not in target.conditions:
+        raise CommandInputError(
+            f"scenario {target.slug!r} does not declare condition {condition!r}; "
+            f"declared: {', '.join(target.conditions) or 'none'}"
+        )
+    if condition != CLEAN_CONDITION and args.stage.startswith("baseline-"):
+        raise CommandInputError(
+            "a baseline is a single call over the clean documents (DEC-074); "
+            "--condition applies to the pipeline stages only"
+        )
     rehearsal_model = None
     if args.rehearse:
         # The rehearsal's whole model: the deterministic substitute serving the supplied
@@ -1350,6 +1392,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            condition=condition,
             on_phase=_print_phase_progress,
         )
     elif args.stage == "reason":
@@ -1359,6 +1402,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            condition=condition,
             on_phase=_print_phase_progress,
         )
     elif args.stage == "report":
@@ -1367,6 +1411,7 @@ def _capture(args: argparse.Namespace) -> int:
             profile_name=args.model_profile,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            condition=condition,
             on_phase=_print_phase_progress,
         )
     else:
@@ -2152,10 +2197,14 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
     handle = service.handle(args.assessment_id)
     loader = DocumentLoader(handle)
     before = {document.id for document in handle.objects.list(SourceDocument)}
+    kind = DocumentKind(args.kind)
 
     if args.path.is_dir():
         documents = loader.load_directory(
-            args.path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
+            args.path,
+            origin=SourceOrigin.UPLOADED_DOCUMENT,
+            trust_level=TrustLevel.UNTRUSTED,
+            document_kind=kind,
         )
     else:
         documents = [
@@ -2163,6 +2212,7 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
                 args.path,
                 origin=SourceOrigin.UPLOADED_DOCUMENT,
                 trust_level=TrustLevel.UNTRUSTED,
+                document_kind=kind,
             )
         ]
     skipped = [document for document in documents if document.id in before]

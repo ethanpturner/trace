@@ -45,6 +45,7 @@ from trace_ai.domain.base import now
 from trace_ai.domain.enums import SourceOrigin
 from trace_ai.domain.hashing import content_hash
 from trace_ai.domain.source_document import (
+    DocumentKind,
     IngestionStatus,
     MediaType,
     SourceDocument,
@@ -189,10 +190,13 @@ class DocumentLoader:
         origin: SourceOrigin,
         trust_level: TrustLevel,
         extra_metadata: Mapping[str, object] | None = None,
+        document_kind: DocumentKind = DocumentKind.SYSTEM,
     ) -> SourceDocument:
         """Register one file. `origin` and `trust_level` are required, never inferred.
 
         Inferring either would mean deciding from the file what to believe about the file.
+        `document_kind` is stated the same way (DEC-157) and defaults to `system`, the kind every
+        document was before the field existed.
 
         Registration is idempotent: a file whose name and bytes are already registered returns
         the existing `SourceDocument` unchanged (#320).
@@ -205,11 +209,19 @@ class DocumentLoader:
         """
         if self._ledger is None:
             return self._load(
-                path, origin=origin, trust_level=trust_level, extra_metadata=extra_metadata
+                path,
+                origin=origin,
+                trust_level=trust_level,
+                extra_metadata=extra_metadata,
+                document_kind=document_kind,
             )
         with self._ledger.record(NODE_NAME, node_version=NODE_VERSION) as execution:
             document = self._load(
-                path, origin=origin, trust_level=trust_level, extra_metadata=extra_metadata
+                path,
+                origin=origin,
+                trust_level=trust_level,
+                extra_metadata=extra_metadata,
+                document_kind=document_kind,
             )
             execution.produced(document.id)
             return document
@@ -221,6 +233,7 @@ class DocumentLoader:
         origin: SourceOrigin,
         trust_level: TrustLevel,
         extra_metadata: Mapping[str, object] | None = None,
+        document_kind: DocumentKind = DocumentKind.SYSTEM,
     ) -> SourceDocument:
         media_type = self._media_type(path)
         content = self._read(path, text=media_type is not MediaType.PDF)
@@ -266,6 +279,7 @@ class DocumentLoader:
                     created_at=now(),
                     ingestion_status=IngestionStatus.REGISTERED,
                     trust_level=trust_level,
+                    document_kind=document_kind,
                     metadata=metadata,
                 )
                 repository.save(document)
@@ -285,6 +299,7 @@ class DocumentLoader:
         *,
         origin: SourceOrigin = SourceOrigin.UPLOADED_DOCUMENT,
         trust_level: TrustLevel = TrustLevel.UNTRUSTED,
+        document_kind: DocumentKind = DocumentKind.SYSTEM,
     ) -> list[SourceDocument]:
         """Register every supported file in a directory, in filename order.
 
@@ -299,7 +314,9 @@ class DocumentLoader:
         if not path.is_dir():
             raise DocumentLoadError(path, "it is not a directory")
         return [
-            self.load_document(child, origin=origin, trust_level=trust_level)
+            self.load_document(
+                child, origin=origin, trust_level=trust_level, document_kind=document_kind
+            )
             for child in sorted(path.iterdir())
             if child.is_file()
         ]

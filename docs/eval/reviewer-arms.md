@@ -123,16 +123,19 @@ prompt injection is unmitigated, `req-AI-001`; `REJ-RSB-02`, the corpus write pa
 | Arm | Completed runs | Cost per run (list price) | Wall per run |
 | --- | --- | --- | --- |
 | mantis | 5 of 5 | $3.02, $2.52, $3.52, $2.76, $3.53 — mean $3.07 ± 0.44 | 847, 666, 710, 691, 769 s |
-| codex-security | 0 of 1 completed; 1 capped partial | $7.11 list ($10.03 by the tool's table, its `--max-cost 10` limit) | 620 s |
+| codex-security | 1 of 2 attempts; 1 capped partial | run 5 $4.85 list; run 4 $7.11 list ($10.03 by the tool's table, its `--max-cost 10` limit) | 672, 620 s |
 
-Codex Security stopped at its own limit with `findings.json`, the SARIF export, and a checkpoint
-written, so its three findings are scored below as a **capped partial**, labelled as such in the
-feed. Every Mantis row was again `PROVISIONALLY_VALID`.
+Run 4 stopped at its own `--max-cost 10` limit with `findings.json`, the SARIF export, and a
+checkpoint written, so its three findings are scored below as a **capped partial**, labelled as such
+in the feed. Run 5 repeated the scan with the limit raised to $20 and finished in 672 s at $4.85
+list price without approaching it: the tool's own stricter cost table, not the work, is what stopped
+run 4. Both are kept, and the capped partial is not withdrawn. Every Mantis row was again
+`PROVISIONALLY_VALID`.
 
 ### Requirement level, as emitted
 
 Mantis emitted 40 rows, 18 of them byte-identical within-run duplicates, leaving 22 distinct findings.
-Codex Security's partial holds 3.
+Codex Security holds 3 in each of its two runs.
 
 | Run | Emitted (distinct) | FND-RSB-01 | Spurious | Breached REJ-RSB-01 (`no_evidence`, prompt injection) | Breached REJ-RSB-02 (`no_evidence`, write path) | Locators resolve |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -142,12 +145,14 @@ Codex Security's partial holds 3.
 | mantis run 4 | 3 | matched | 2 | no | no | 3 of 3 |
 | mantis run 5 | 5 | matched | 4 | no | no | 0 of 5 |
 | codex-security run 4 (capped partial) | 3 | matched | 2 | no | no | 3 of 3 |
+| codex-security run 5 | 3 | matched | 2 | no | no | 3 of 3 |
 
 Pooled: Mantis matched the expected finding in 5 of 5 runs, produced 17 spurious findings, every one
 mapped to a catalogue requirement, and breached 1 of 10 scoreable rejections (run 1 asserted that
 ticket-borne prompt injection reaches answers unmitigated, the claim `REJ-RSB-01` records the documents
 answer). Locators: 14 of 22 resolve; in runs 3 and 5 Mantis again cited the target root and no file.
-Codex Security's partial matched in 1 of 1 with 2 spurious and 0 of 2 breached.
+Codex Security matched in 2 of 2 runs with 2 spurious each and 0 of 4 breached; all 6 of its
+locators resolve.
 
 The spurious findings fall into five claims. A repository-known development bearer credential is
 accepted when production token configuration is absent (`req-SECRET-001`), in 5 of 5 Mantis runs and
@@ -162,7 +167,7 @@ is an argument about the truth set to be made from its inputs, recorded here and
 
 ### Requirement level, tool-validated
 
-Mantis claimed 0 findings in 5 of 5 runs. Codex Security's partial claims its 3.
+Mantis claimed 0 findings in 5 of 5 runs. Codex Security claims its 3 in each run.
 
 ### Code level, RealVuln-style
 
@@ -174,6 +179,7 @@ Mantis claimed 0 findings in 5 of 5 runs. Codex Security's partial claims its 3.
 | mantis run 4 | 3 | 1 | 2 | 0 | 0 | 0 | 1 of 3 | 1 of 1 |
 | mantis run 5 | 5 | 0 | 0 | 0 | 0 | 5 | 0 of 0 | 0 of 1 |
 | codex-security run 4 (capped partial) | 3 | 1 | 2 | 0 | 0 | 0 | 1 of 3 | 1 of 1 |
+| codex-security run 5 | 3 | 1 | 2 | 0 | 0 | 0 | 1 of 3 | 1 of 1 |
 
 Two rows show where the file rule and the requirement rule part. In run 1 Mantis located the
 cross-workspace disclosure at the answer endpoint in `main.py` rather than at `index.py:search`, so
@@ -191,23 +197,33 @@ verified manifests. At the requirement level: FND-RSB-01 in 5 of 5, the developm
 in 5 of 5, the tenant-separation claim in 5 of 5, deletion propagation in 3 of 5, provider
 minimisation in 2 of 5, prompt injection in 1 of 5, the quota race in 1 of 5.
 
+Codex Security's two runs share no signature either, and both map to the same three requirements:
+`req-RAG-002`, `req-SECRET-001`, and `req-TPI-002` — though the third pairs different claims, an
+unbounded request body in run 4 and a quota race in run 5. Two runs are not a rate, and the page
+reports them as counts.
+
 ## The program
 
-Twenty jobs were planned: two scenarios, two arms, five runs each. Fifteen ran. All ten Mantis runs
-completed. Of Codex Security's attempts, three stopped at the tool's $3 limit inside three minutes
-with nothing written, one completed under a $10 limit, and one stopped at the $10 limit with a
-partial written; the remaining five Codex Security runs were not started once the cap behaviour was
-known. List-price cost of the fifteen: $46.81 ($40.36 for the twelve runs the orchestrator finished
-or capped, plus $6.45 for the three early capped attempts), against the program's $60 cap. Job time
-summed: 8,805 s, about 2 h 27 min, with up to five jobs concurrent. Every completed run and both
-capped partials are attested in attestrun manifests, twelve of which verify; the three early capped
-attempts wrote no findings and have no manifest.
+Twenty jobs were planned: two scenarios, two arms, five runs each. Sixteen ran. All ten Mantis runs
+completed. Of Codex Security's six attempts, three stopped at the tool's $3 limit inside three
+minutes with nothing written, one completed under a $10 limit, one stopped at the $10 limit with a
+partial written, and one completed under a $20 limit without approaching it; the remaining four
+Codex Security runs were not started. List-price cost of the sixteen: $51.66 ($45.21 for the
+thirteen runs the orchestrator finished or capped, plus $6.45 for the three early capped attempts),
+against the program's $60 cap. Job time summed: 9,477 s, about 2 h 38 min, with up to five jobs
+concurrent. Every completed run and both capped partials are attested in attestrun manifests,
+thirteen of which verify; the three early capped attempts wrote no findings and have no manifest.
+
+What the cap behaviour turned out to be: Codex Security prices a scan against its own bundled table,
+which for `gpt-5.6-sol` is stricter than the provider's list price by about a third, so a limit set
+from list-price expectations stops a scan that would have cost less than the limit allows. The one
+run given room finished the thirteen-file scenario in 672 s for $4.85 at list price.
 
 Across both scenarios the picture is the same. Both reviewers find the documented weakness in every
 completed run where Trace's live recall was 2 of 5 and 3 of 5 on comparable findings. Mantis breaches
 a rejection in 4 of 20 scoreable cases, three of them the replay gap and one the prompt-injection
 `no_evidence` case, and never the false-positive-class rejection; Codex Security breaches none of 4.
-Precision as emitted is 10 matched of 41 distinct Mantis claims and 2 of 6 for Codex Security. And
+Precision as emitted is 10 matched of 41 distinct Mantis claims and 3 of 9 for Codex Security. And
 under Mantis's own validation vocabulary it claimed nothing in any of ten runs.
 
 What is not claimed: anything about reproduction, chaining, or patching, which did not run; a cost
