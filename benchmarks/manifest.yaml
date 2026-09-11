@@ -13,7 +13,7 @@ package:
   registry_version: '1.0'
   generated_at: '2026-08-14T12:00:00+00:00'
   scenario_count: 15
-  corpus_digest: sha256:762d257556d2b6e293b55773326d05f9c94d4e5bb33009df602b2cccc797fb5a
+  corpus_digest: sha256:e03446e643a91dea0b32efad35827fb87760e920b095e2fe056f932e75ebb752
 scenarios:
 - slug: forgeflow
   name: ForgeFlow
@@ -167,7 +167,7 @@ scenarios:
       digest: sha256:7f49765674b9afb92ce28bc68ac60c81daf2c64028267b7c5a9aed5904f2c8f2
     expected:
       count: 9
-      digest: sha256:d66ad0e2797cbd0f5a2cdb137a80492bac97f2daa370110d0081dd003980a943
+      digest: sha256:02386e78086437fa67c421f23cbe48e8e58655c2c2ddf3e1867b92e8ed3f2e0f
     recorded:
       count: 14
       digest: sha256:8e0d3d0cede0f2f382020972ad5b4d8244934c91736823da594203391f7519f7
@@ -179,8 +179,8 @@ scenarios:
       digest: sha256:fdb79f43299a77b9fc37c738e11937b5d1d7a8abcdd11b9c12d8eb2dbf2eea2c
     code:
       count: 12
-      digest: sha256:57f220894800b78a6355cc22c1315e0a560ef9029d8dcf4744366cb96b880c8c
-  digest: sha256:4d9b065ebdebe9070280b8d400e84ffe31fc83b87b37a0b67be4a5a9637c759d
+      digest: sha256:db462fc27d32bf0e7138c355c9631e5b4aac3747671552757fe0b60e2883dbda
+  digest: sha256:2140e7cce378e21da18261692303b2e6eff65f267a4573d8d35f9ee56655d1fc
 - slug: contradictory-docs
   name: Export Service
   path: benchmarks/contradictory-docs
@@ -334,7 +334,7 @@ scenarios:
       digest: sha256:f3258510ef62dabb113414dce36c6eb3b9e363de4b692e97821861940ee9d63d
     expected:
       count: 9
-      digest: sha256:9e61cf9f9d7383a7d1898f8e95cfc3d0ab6040c98253df2eee73bb67f3c89244
+      digest: sha256:61213bef9e19179b8e91f401391824889822ca8141031ea4b83d2388e3f9684c
     recorded:
       count: 24
       digest: sha256:9a21191fc99fdf9d1509c82d540a41f99780b3210512321e6e6a7a8ce1a956fa
@@ -346,8 +346,8 @@ scenarios:
       digest: sha256:d2be3cb75a2b9445942c527ef789c2e087180a60e527894ed6fdfde3ddab011b
     code:
       count: 16
-      digest: sha256:a032836a138ada4fe0de6696e135aa9191d19003aee369c90cdc0c20433e9f74
-  digest: sha256:f33c37ec5ca2794db4df580fa0bbc2efa128df81fcf48c73f431c56842a48d7c
+      digest: sha256:bee8979fba0cf27ab2b715b064417f2ca91596824c6d9305514293feadffbb3a
+  digest: sha256:6b57b540f7d3c5703da5c1238792e60958f0ec8811808d59fef051bbd35494a3
 - slug: reply-tuner
   name: Reply Tuner
   path: benchmarks/reply-tuner
