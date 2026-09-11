@@ -1,0 +1,40 @@
+# DEC-155 external feed: hand-mapped; identifiers and locators only, no tool prose.
+feed_version: '1'
+arm: codex-security
+scenario: rag-support-bot
+run: 5
+tool:
+  name: openai/codex-security
+  version: 0.1.26
+models:
+- gpt-5.6-sol
+snapshot_sha: c5b0590320fc0c3d54523ec290b3fa47c69862e8
+provenance: captured
+mapped_by: 'hand-mapped under the DEC-056 rule (requirement + component name), reasoning per row; mapper:
+  the session coordinator''s Codex-completion fork; date: 2026-09-11. The run completed under a raised
+  `--max-cost 20` limit after 672 s without reaching it; it is the scenario''s first complete Codex
+  Security run, and the capped run 4 partial is retained beside it.'
+findings:
+- raw_signature: codex-security/v1:sha256:f5cdd9b998fa4e02e8b86e70dae741920be0870bc780fc53e6d73cb0c377d906
+  requirement_id: req-RAG-002
+  component: Retrieval index
+  evidence_locator: relay_answers/index.py:60
+  mapper_reasoning: retrieval ranks every chunk in the shared index and returns the top passages without
+    the requester's workspace (req-RAG-002); realises FND-RSB-01; the tool cites the scenario's own
+    cross-workspace test beside the index
+- raw_signature: codex-security/v1:sha256:f5339a880f540e91be3d47662749124f67918fe28cfd783c22f8ce7e05c62419
+  requirement_id: req-SECRET-001
+  component: Configuration
+  evidence_locator: relay_answers/config.py:24
+  mapper_reasoning: asserts a repository-known development bearer credential is accepted when production
+    token configuration is absent (nearest requirement req-SECRET-001, credential handling); no truth-set
+    item; the same claim the run 4 partial and every Mantis run make
+- raw_signature: codex-security/v1:sha256:c4093144a8e360246e718436c1913ab45f41442caa86b87a5607685ba7930c72
+  requirement_id: req-TPI-002
+  component: Quota
+  evidence_locator: relay_answers/quota.py:24
+  mapper_reasoning: asserts the per-workspace daily quota can be exceeded by concurrent requests
+    (req-TPI-002, work triggered by external events is bounded); no truth-set item; mapped as Mantis
+    run 1's quota race was
+unverified: []
+spurious: []
