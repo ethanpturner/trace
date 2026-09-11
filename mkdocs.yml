@@ -73,6 +73,7 @@ nav:
       - eval/ablation.md
       - eval/reviewer-arms.md
       - eval/exchange.md
+      - eval/self-review.md
   - Presentation:
       - presentation/README.md
       - presentation/deck.md

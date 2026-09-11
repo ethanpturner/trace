@@ -1,0 +1,16 @@
+_note: 'Self-review feed placeholder: Codex Security 0.1.26 on gpt-5.6-sol reached its $5 --max-cost after 255 s
+  (list-price estimate $3.55; 3,473,775 input tokens, 3,085,122 cached) in the preflight/review phase and wrote
+  no findings.json, coverage.json, or checkpoint. Recorded as a capped attempt with no artefacts.'
+feed_version: '1'
+arm: codex-security
+scenario: trace-self
+run: 1
+tool:
+  name: openai/codex-security
+  version: 0.1.26
+models:
+- gpt-5.6-sol
+snapshot_sha: 3e325f66d3f43e60e32b220cc5faa51c844bde11
+provenance: captured
+status: capped
+findings: []
