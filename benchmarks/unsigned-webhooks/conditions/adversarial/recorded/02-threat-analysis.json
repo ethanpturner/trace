@@ -1,38 +1,236 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12353,
+    "output_tokens": 16065,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.17609125",
+    "duration_seconds": 157.62149016698822
+  },
   "response": {
     "threats": [
       {
-        "title": "Forged deployment events reach the notifier unverified",
-        "description": "An attacker who can reach the public receiver may submit forged deployment events, which are processed without authenticity verification.",
+        "title": "Forged deployment events via public receiver lead to false chat notifications",
+        "description": "If the Event Receiver\u2019s public HTTPS endpoint is reachable from the internet without effective additional authentication or source restriction, an attacker can craft JSON payloads that mimic CI deployment events. Because the receiver processes any well-formed delivery and does not verify the CI platform\u2019s signing secret, these forged events would be treated as legitimate, propagated through the Chat Notifier, and posted as deployment notifications in the internal chat channel, misleading engineers about what was deployed and where.",
         "methodology": "stride-scenario-based",
         "category": [
-          "spoofing"
+          "spoofing",
+          "tampering"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-001"
+          "cmp-001",
+          "cmp-002",
+          "cmp-004"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
-        "related_data_flow_ids": [],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003"
+        ],
         "preconditions": [
-          "signature verification is absent"
+          "The Event Receiver (cmp-001) remains exposed as a public HTTPS endpoint reachable from the internet across trust boundary tb-001, as described for df-001.",
+          "No effective additional authentication or network-level source restriction (for example IP allowlisting or VPN) is enforced in front of the Event Receiver beyond what is documented (qst-001).",
+          "An attacker can construct JSON payloads containing the repository, environment, and commit fields expected by the receiver (ast-001)."
         ],
         "attack_path": [
-          "forge a delivery",
-          "post to the receiver"
+          "The attacker discovers or guesses the Deploy Notifier\u2019s public Event Receiver URL (cmp-001).",
+          "The attacker sends HTTPS POST requests with well-formed JSON bodies that mimic CI deployment events, including repository, environment, and commit fields.",
+          "The Event Receiver (cmp-001) parses each JSON body and, because it accepts and processes any well-formed delivery without checking a CI signature, treats the forged payload as a valid deployment event and forwards it to the Chat Notifier (cmp-002).",
+          "The Chat Notifier (cmp-002) formats the event and posts a deployment notification message via the Chat Platform API (cmp-004) into the internal chat channel, where engineers see it as if it were a real deploy."
         ],
-        "impact": "Forged deploy notifications in the internal channel",
+        "impact": "Integrity of Deployment Events (ast-001) is compromised: chat notifications can report deployments that never happened or misstate repository, environment, or commit, potentially leading engineers to take incorrect operational actions or to lose trust in the deployment stream.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": [
+          "qst-001",
+          "qst-004"
+        ]
+      },
+      {
+        "title": "Flood of forged deployment events degrades deployment visibility and service capacity",
+        "description": "If an attacker can repeatedly send forged deployment events to the public Event Receiver without strong authentication or rate-limiting, the Deploy Notifier may generate a large volume of notifications to the internal chat channel. This can overwhelm the channel with noise, obscure legitimate deployment messages, and potentially strain the notifier or chat platform resources.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service",
+          "spoofing"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The Event Receiver (cmp-001) is reachable from the internet as a public HTTPS endpoint (df-001, tb-001).",
+          "No effective additional authentication, source restriction, or upstream rate-limiting is enforced on requests to the Event Receiver beyond what is documented (qst-001).",
+          "The Deploy Notifier processes each accepted event into a chat notification without strong per-sender rate control (controls not described in the supplied material)."
+        ],
+        "attack_path": [
+          "The attacker discovers the Deploy Notifier\u2019s public Event Receiver URL (cmp-001).",
+          "The attacker scripts a high volume of HTTPS POST requests with well-formed JSON bodies that the receiver accepts as deployment events.",
+          "The Event Receiver (cmp-001) parses each event and forwards it to the Chat Notifier (cmp-002).",
+          "The Chat Notifier (cmp-002) posts a corresponding notification for each event to the internal chat channel through the Chat Platform API (cmp-004), flooding the channel and potentially consuming service capacity or rate limits."
+        ],
+        "impact": "Availability and usefulness of Deployment Events (ast-001) are reduced: the deployment notification stream in chat becomes noisy or unusable, making it harder for engineers to spot real deployments and potentially consuming capacity or rate limits in the notifier or chat platform.",
         "likelihood": null,
         "confidence": "medium",
         "evidence_ids": [
-          "evd-001"
+          "evd-005",
+          "evd-006",
+          "evd-007"
         ],
         "assumption_ids": [],
-        "open_question_ids": []
+        "open_question_ids": [
+          "qst-001",
+          "qst-004"
+        ]
+      },
+      {
+        "title": "Compromise of chat bot token allows unauthorized messages in deployment channel",
+        "description": "The Chat Notifier uses a bot token to authenticate to the chat platform API when posting deployment notifications. If an attacker gains access to this token wherever it is stored or used, they can call the chat platform API directly and post arbitrary messages as the notifier into the internal deployment channel, creating forged or misleading notifications or other content.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "The Chat Notifier (cmp-002) holds the chat bot token used to authenticate posting to the Chat Platform API (ast-002).",
+          "An attacker obtains access to the location where the bot token is stored or handled (for example, host environment, configuration store, or logs), via some separate compromise not described in the supplied architecture.",
+          "The bot token\u2019s scope allows posting messages to the internal chat channel used for deployment notifications."
+        ],
+        "attack_path": [
+          "The attacker compromises the environment or tooling where the Chat Bot Token (ast-002) is stored or used by the Chat Notifier (cmp-002) and extracts the token.",
+          "Using the stolen token, the attacker calls the Chat Platform API (cmp-004) directly, authenticating as the notifier bot.",
+          "The attacker posts arbitrary messages into the internal deployment channel, including messages that appear to report deployments or other operational states.",
+          "Engineers reading the channel see these messages as if they came from the Deploy Notifier, potentially acting on false information or losing trust in the channel."
+        ],
+        "impact": "Confidentiality and integrity of the Chat Bot Token (ast-002) are compromised, enabling the attacker to impersonate the notifier to the chat platform. Integrity of Deployment Events as seen in chat (ast-001) is also affected, since the attacker can inject arbitrary or misleading deployment messages into the channel.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": [
+          "qst-003"
+        ]
+      },
+      {
+        "title": "Unauthorized read access to chat channel exposes deployment metadata",
+        "description": "Deployment notifications posted by the Deploy Notifier to the internal chat channel include repository names, environments, and commit identifiers. If an attacker or otherwise unauthorized party gains read access to this channel via the chat platform, they can observe historical and ongoing deployment metadata about internal systems.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "The Chat Notifier (cmp-002) posts deployment notifications that include repository, environment, and commit information to an internal chat channel via the Chat Platform API (cmp-004).",
+          "An attacker or otherwise unauthorized user gains read access to that internal chat channel (for example through a compromised chat account, misconfigured channel permissions, or a breach of the chat platform)."
+        ],
+        "attack_path": [
+          "The Deploy Notifier posts deployment notifications containing repository, environment, and commit identifiers into the internal chat channel using the chat platform\u2019s API.",
+          "An attacker gains read access to the chat channel through the chat platform.",
+          "The attacker reviews current and historical deployment notifications, collecting internal deployment metadata for further use."
+        ],
+        "impact": "Confidentiality of Deployment Events (ast-001) is impacted: an unauthorized reader of the internal chat channel can learn which repositories exist, which environments they deploy to, and which commits are being deployed, potentially aiding reconnaissance or understanding of the organisation\u2019s release patterns.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-008"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": [
+          "qst-002"
+        ]
+      },
+      {
+        "title": "On-path attacker between Deploy Notifier and chat platform intercepts bot token or deployment messages",
+        "description": "The Chat Notifier calls the chat platform\u2019s API using a bot token to post deployment notifications, but the documentation does not state what transport protections are applied on this outbound connection. If the connection is not adequately encrypted and authenticated, or is terminated in an untrusted segment, an on-path attacker could observe or tamper with notification traffic and potentially capture the bot token.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering",
+          "spoofing"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "The Chat Notifier (cmp-002) communicates with the Chat Platform API (cmp-004) over a network path crossing trust boundary tb-002 where an attacker can become on-path.",
+          "Transport-layer encryption or server authentication for the notifier\u2019s outbound connection (df-003) is absent, terminated in an untrusted location, or otherwise misconfigured, allowing observation or modification of traffic in clear or before encryption."
+        ],
+        "attack_path": [
+          "The attacker gains an on-path position on the network link between the Chat Notifier (cmp-002) and the Chat Platform API (cmp-004).",
+          "Because transport protection on this link is absent or not effective, the attacker observes deployment notification requests in transit, including repository, environment, and commit data, and any authentication material such as the bot token (ast-002) if it is sent over this channel.",
+          "The attacker reuses the captured bot token to authenticate to the Chat Platform API directly, or modifies in-transit requests to alter or suppress deployment notifications."
+        ],
+        "impact": "Confidentiality of the Chat Bot Token (ast-002) could be lost if it is exposed in transit, enabling subsequent impersonation of the notifier. Confidentiality and integrity of Deployment Events as carried in chat notifications (ast-001) could also be affected if an on-path attacker reads or alters messages before they reach the chat platform.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": [
+          "qst-002"
+        ]
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

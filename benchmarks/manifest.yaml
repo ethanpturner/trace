@@ -13,7 +13,7 @@ package:
   registry_version: '1.0'
   generated_at: '2026-08-14T12:00:00+00:00'
   scenario_count: 15
-  corpus_digest: sha256:9e9a9430debd7a85717e407088e9446b7cd8d6d72f8d21e46d714016e69d5fd1
+  corpus_digest: sha256:c3f402cd131a2c5e74b25f9d848dade484ad8a615b328072b248a9bf827f6ab7
 scenarios:
 - slug: forgeflow
   name: ForgeFlow
@@ -175,12 +175,12 @@ scenarios:
       count: 3
       digest: sha256:d97e98344da9d96bf764376a1f18bc417b95b8bc28cefdb1211f7235ce575391
     conditions:
-      count: 16
-      digest: sha256:9662e69cf34c9a352ef0f5e55cfd9b898dd2d5830bfc5b79d29c33747d4548f7
+      count: 27
+      digest: sha256:0201ef11bc803f24baf9d6898264e5986de953b927d128a0e78a18cefc26477b
     code:
       count: 12
       digest: sha256:db462fc27d32bf0e7138c355c9631e5b4aac3747671552757fe0b60e2883dbda
-  digest: sha256:4e7d707ec7f35787ece1e6e7f85e8493910241ba01217f2d48685b839fff140a
+  digest: sha256:d5d6dbac630d96d6f071377d5ba6383df192b79ab3d56316675e21e257d382c8
 - slug: contradictory-docs
   name: Export Service
   path: benchmarks/contradictory-docs

@@ -83,6 +83,9 @@ class ToolSummary:
     tool_identity: str | None = None
     locators_resolved: int | None = None
     locators_total: int | None = None
+    # How many of the adversarial runs behind `compliance` name a model, so the cell can say
+    # captured or authored per DEC-152 instead of asserting one for all of them.
+    compliance_captured_runs: int = 0
 
 
 def _spurious(feed: dict[str, Any]) -> int:
@@ -165,6 +168,7 @@ def _summarize_external(tool: str, feeds: Sequence[dict[str, Any]]) -> ToolSumma
         spurious=sum(_spurious(feed) for feed in feeds),
         compliance=None,
         compliance_runs=0,
+        compliance_captured_runs=0,
         rejections_breached=sum(_rejections(feed)[0] for feed in feeds),
         rejections_scoreable=sum(_rejections(feed)[1] for feed in feeds),
         external=True,
@@ -206,6 +210,15 @@ def _summarize(tool: str, feeds: Sequence[dict[str, Any]]) -> ToolSummary:
         if (entry := _metric(feed, "injected_instruction_compliance_rate")) is not None
     ]
     compliance = sum(compliance_values) / len(compliance_values) if compliance_values else None
+    # A run whose feed names a model consumed a live capture; one that names none replayed an
+    # authored recording. The cell reports the split rather than labelling every run by the
+    # provenance of the majority (DEC-152, DEC-150).
+    captured_runs = sum(
+        1
+        for feed in feeds
+        if _metric(feed, "injected_instruction_compliance_rate") is not None
+        and (feed.get("models") or [])
+    )
 
     return ToolSummary(
         tool=tool,
@@ -218,6 +231,7 @@ def _summarize(tool: str, feeds: Sequence[dict[str, Any]]) -> ToolSummary:
         spurious=sum(_spurious(feed) for feed in feeds),
         compliance=compliance,
         compliance_runs=len(compliance_values),
+        compliance_captured_runs=captured_runs,
         rejections_breached=sum(_rejections(feed)[0] for feed in feeds),
         rejections_scoreable=sum(_rejections(feed)[1] for feed in feeds),
     )
@@ -294,12 +308,17 @@ def _compliance_cell(summary: ToolSummary, *, labelled_per_class: bool = False) 
     scenarios = summary.compliance_runs
     plural = "scenario" if scenarios == 1 else "scenarios"
     marker = " [^classes]" if labelled_per_class else ""
-    # Every adversarial recording in the corpus is authored (DEC-152), and the cell says so
-    # rather than letting the rate read as a capture. When one is captured live this qualifier
-    # comes off with the recording it describes.
-    return (
-        f"{_pct(summary.compliance)} ({scenarios} adversarial {plural}, authored responses){marker}"
-    )
+    # Provenance is stated per run rather than asserted for all of them (DEC-152). An adversarial
+    # feed that names a model consumed a live capture; one that names none replayed an authored
+    # recording, and a rate that mixes the two says how many of each it rests on.
+    captured = summary.compliance_captured_runs
+    if captured == scenarios:
+        provenance = "captured live"
+    elif captured == 0:
+        provenance = "authored responses"
+    else:
+        provenance = f"{captured} captured live, {scenarios - captured} authored"
+    return f"{_pct(summary.compliance)} ({scenarios} adversarial {plural}, {provenance}){marker}"
 
 
 def _class_rates(feeds: Sequence[dict[str, Any]]) -> dict[str, float]:
@@ -399,8 +418,14 @@ def render_comparison(
             f"as a universal claim: {breakdown}. Checkpoint bypass is structural — a checkpoint "
             "advances only on a recorded reviewer decision (DEC-005) — and its zero is shown "
             "with that basis rather than measured each run; every other class is measured "
-            "against what the run produced. The per-run detail is in the "
-            "[scorecard](scorecard.html).\n"
+            "against what the run produced. **A non-zero rate here is not yet evidence that a "
+            "payload worked**: five of the classes share one rule — an expected finding vanished "
+            "or an unsupported conclusion survived — so a scenario whose finding the *clean* run "
+            "also misses reads as several compliances at once. On unsigned-webhooks the clean "
+            "recording misses FND-UW-01 too, which makes the delta between the attacked and "
+            "unattacked runs zero (#691). The per-run detail is in the "
+            "[scorecard](scorecard.html); the confound is in "
+            "[adversarial-defence](../architecture/adversarial-defence.md).\n"
         )
 
     externals = [summary for summary in summaries if summary.external]

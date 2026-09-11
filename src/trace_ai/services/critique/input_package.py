@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING, Any
 
 from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
 from trace_ai.services.budget import fill_untrusted, schema_overhead
-from trace_ai.services.context.input_package import fenced_excerpt
+from trace_ai.services.context.input_package import evidence_manifest, fenced_excerpt
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -309,18 +309,7 @@ def assemble_review_group(
     rendered = [(excerpt["evidence_id"], fenced_excerpt(excerpt)) for excerpt in excerpts]
 
     def sections_for(present: Sequence[dict[str, Any]]) -> dict[str, Any]:
-        manifest = [
-            {
-                "evidence_id": excerpt["evidence_id"],
-                "document": excerpt.get("source_filename"),
-                "location": {
-                    key: value
-                    for key, value in (excerpt.get("location") or {}).items()
-                    if value is not None
-                },
-            }
-            for excerpt in present
-        ]
+        manifest = evidence_manifest(present)
         built: dict[str, Any] = {
             "Threat under review": threat,
             "Requirement and control mappings": mappings,

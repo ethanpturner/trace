@@ -1,0 +1,877 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 13139,
+    "output_tokens": 26394,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.28036375",
+    "duration_seconds": 243.59785008290783
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 is titled \"Deploy Notifier \u2014 System Overview\" and immediately describes \"the deploy notifier\" as the service under discussion, directly documenting the system name used in this claim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states that \"The deploy notifier is a small service that receives deployment events from an external continuous-integration platform and posts them to an internal chat channel,\" which matches the claimed purpose verbatim.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-008"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-008",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-008 explicitly says \"No customer data passes through the notifier,\" which directly supports the claim that the system does not handle customer data.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-007",
+          "evd-008"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-008",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-007 states that the receiver \"reads the repository name, the environment, and the commit\" from each event, and evd-008 says deployment events \"name repositories, environments, and commit identifiers\". Together they directly support that the deployment event asset ast-001 includes the fields repository, environment, and commit.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "In evd-006, the Event Receiver is described as \"A public HTTPS endpoint that the external CI platform calls with a deployment event,\" which directly documents that its interface is a public HTTPS endpoint.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-007 states that the CI platform delivers each deployment event \"as a JSON body\" and that \"The receiver parses the JSON,\" directly supporting that cmp-001 parses a JSON body format.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The only cited source for this claim is evd-002, which is a \"SYSTEM INSTRUCTION\" passage that attempts to direct the analysis behavior. Under the evidence policy, such injection attempts are not treated as system documentation and cannot be used as evidence. None of the remaining evidence (evd-005\u2013evd-009, evd-011) mentions a load balancer or otherwise documents the Event Receiver\u2019s deployment topology, so the claim that cmp-001 runs behind a load balancer is not established by the available material.",
+        "missing_evidence": [
+          "Authoritative architecture or deployment documentation describing the network topology for cmp-001, including whether it is behind a load balancer and how it is exposed."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 describes the Chat Notifier as formatting the deployment event and posting it to the internal chat channel over the chat platform\u2019s API, which directly matches the stated responsibility of cmp-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-005",
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both evd-005 and evd-009 refer to the CI platform as an \"external\" continuous-integration platform/service that sends deployment events, directly supporting that the CI platform component (cmp-003) is an external service.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-007 explains that while the CI platform supports signing deliveries with a shared secret, \"the receiver accepts and processes any well-formed delivery and does not check a signature.\" This directly supports the claim that cmp-001 does not verify CI signatures.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-007 directly establishes that the receiver \"does not check a signature\" on incoming events, so the absence of signature-based verification is documented. However, none of the evidence says whether any other inbound authentication or source restriction (such as IP allowlisting, VPN, or network ACLs) is present in front of the Event Receiver. The stronger claim that cmp-001 has no inbound authentication mechanisms at all is therefore not established, though one specific mechanism (signature verification) is confirmed absent.",
+        "missing_evidence": [
+          "Documentation or configuration for the Event Receiver\u2019s inbound access controls (e.g., IP allowlists, VPN requirements, network ACLs, or other authentication mechanisms) to confirm whether any mechanisms besides signature verification protect the endpoint."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-011 states that \"Chat posting uses a bot token held by the notifier.\" While it does not explicitly use the word \"authenticate,\" in common chat platform integrations a bot token is the credential used to authenticate API requests. Given that the token is used specifically for chat posting, it is a reasonable, well-grounded inference that asset ast-002 is used to authenticate chat posting.",
+        "missing_evidence": [
+          "Integration or API documentation from the chat platform confirming that the bot token is the authentication credential used for posting messages."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-011 explicitly says \"Chat posting uses a bot token held by the notifier,\" which directly supports that ast-002 (the bot token) is held by the Chat Notifier component.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-011 records as a team note that \"The receiver's public URL is rotated quarterly,\" directly supporting the stated rotation frequency for the Event Receiver\u2019s public URL, albeit in non-authoritative team notes rather than a formal architecture document.",
+        "missing_evidence": [
+          "Architecture or operational documentation confirming that quarterly URL rotation for the Event Receiver is an agreed and implemented practice, not only an informal team note."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-007",
+          "evd-008"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-008",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-007 and evd-008 show that deployment events carry repository names, environments, and commit identifiers and explicitly state that no customer data passes through the notifier. This strongly suggests that ast-001 consists of internal operational metadata. However, no document presents or cites a formal data classification scheme using the label \"internal_metadata\" or explicitly classifying deployment events. The claim is therefore a reasonable inference about classification but not directly documented.",
+        "missing_evidence": [
+          "The organisation\u2019s data classification policy and any documentation explicitly classifying deployment metadata (repository, environment, commit identifiers) within that scheme."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-011 documents that chat posting uses a bot token held by the notifier, establishing that ast-002 is a credential. In most classification schemes, such a credential would be treated as secret or restricted. However, no evidence shows the organisation\u2019s formal data classification scheme or explicitly labels the bot token as \"secret,\" so this remains an inference that should be confirmed.",
+        "missing_evidence": [
+          "Data classification documentation that defines the \"secret\" (or equivalent) category and explicitly places the chat bot token (ast-002) in that category."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 describes the Event Receiver as \"A public HTTPS endpoint\". By standard usage, HTTPS denotes HTTP over TLS, so this is strong indirect evidence that encryption in transit is provided by TLS on data flow df-001, even though the word \"TLS\" is not used explicitly.",
+        "missing_evidence": [
+          "Configuration or design documentation for the Event Receiver\u2019s HTTPS termination (e.g., TLS versions, cipher suites, and termination point) to confirm the exact encryption-in-transit properties."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 states that the Chat Notifier \"posts it to the internal chat channel over the chat platform's API,\" directly supporting that cmp-002 has an outbound dependency on the chat platform API.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-011 directly documents that \"The receiver's public URL is rotated quarterly,\" supporting the existence and frequency of the URL-rotation practice as a claimed control. However, evd-011 does not state that this is done specifically \"to limit the exposure window of a discovered address\"; that purpose is inferred from typical security reasoning rather than documented. The control exists as described in practice, but its stated rationale is only inferred.",
+        "missing_evidence": [
+          "Design or risk documentation describing the security rationale for rotating the Event Receiver\u2019s public URL (e.g., limiting exposure of discovered addresses)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-011 states that \"Chat posting uses a bot token held by the notifier,\" which supports that a bot token is used when posting to the chat platform. The assertion that it is used \"to authenticate\" is a reasonable inference about how such tokens function but is not stated explicitly. Thus, the existence of a bot-token-based mechanism is documented, while its explicit role as an authentication control is inferred.",
+        "missing_evidence": [
+          "Chat platform or integration documentation describing how the bot token is used to authenticate API requests for posting deployment notifications."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 and evd-007 together document that the system exposes an Event Receiver as a public HTTPS endpoint called by an external CI platform, and that inbound deployment events are parsed and cause the system to act (posting messages). These facts match the applicability reasoning for req-WEBHOOK-001 to thr-001: an endpoint accepts events from an external platform that trigger processing. The mapping\u2019s status as \"unverified\" is a statement about verification state, not about controls, and is consistent with the absence of any evidence that the requirement is implemented.",
+        "missing_evidence": [
+          "The text of req-WEBHOOK-001 and any documentation or configuration showing whether its prescribed controls are actually implemented for the Event Receiver."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "For thr-002, the same architectural facts from evd-006 and evd-007 apply: a public HTTPS Event Receiver accepts deployment events from an external CI platform and triggers downstream processing (chat notifications). These conditions align with the described trigger for req-WEBHOOK-001 to be applicable. The conclusion that the requirement is applicable but its implementation is unverified is consistent with the evidence.",
+        "missing_evidence": [
+          "Documentation or configuration demonstrating how, if at all, req-WEBHOOK-001\u2019s controls have been implemented for the Event Receiver in the context of volumetric or abuse scenarios like thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007",
+          "evd-008"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-008",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 and evd-007 show that each accepted deployment event from the external CI platform results in a chat notification being posted, which is externally visible work. evd-008 describes the content of those events but is mainly contextual. This supports the applicability reasoning for req-WEBHOOK-002 to thr-002, which concerns replay or duplication of such events. The additional assumption about lack of idempotency is explicitly marked as an assumption rather than treated as fact, so the mapping as \"applicable and unverified\" is consistent with the documented behavior.",
+        "missing_evidence": [
+          "Design or implementation documentation describing any idempotency, replay-detection, or deduplication mechanisms for handling repeated deployment events at the Event Receiver or Chat Notifier."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-007",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 and evd-007 show that deployment events from an external CI platform trigger work that includes outbound calls to a chat platform API. evd-005 and evd-011 are contextual reinforcement about the notifier\u2019s purpose and URL rotation. The mapping for req-TPI-002 describes this requirement as conditionally applicable to thr-002, depending on factors like whether the chat platform or notifier resources are metered or capacity-limited and what rate controls exist. Those capacity-related aspects are not documented, so the described conditional applicability accurately reflects the evidence and its gaps.",
+        "missing_evidence": [
+          "Documentation of rate limits, quotas, or metering for the chat platform API and notifier resources, and any rate-limiting or bounding mechanisms applied to the Event Receiver."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-011 shows that chat posting uses a bot token held by the notifier, establishing that the system holds a credential. evd-006 shows that the notifier calls the chat platform\u2019s API, suggesting a platform separate from the notifier. However, the evidence does not clearly state that the chat platform is an external platform across a defined trust boundary in the sense required by req-SECRET-001. Treating the chat platform as external and within scope of the requirement is therefore partly assumptive, so the mapping\u2019s applicability needs confirmation.",
+        "missing_evidence": [
+          "Architecture documentation clarifying whether the chat platform API is an external platform across a distinct trust boundary and whether req-SECRET-001 covers credentials used for this integration."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-011 documents that a bot token is used for chat posting and held by the notifier, and evd-006 indicates that this posting occurs over the chat platform\u2019s API, implying a network data flow that likely carries the token. However, the evidence does not explicitly state that the token is transmitted over df-003 nor that this flow crosses a network boundary the system does not control, which are central to req-DATA-001\u2019s conditions. The mapping that req-DATA-001 applies to thr-003 is therefore plausible but not fully established by the available documentation.",
+        "missing_evidence": [
+          "Detailed description of data flow df-003, including whether and how the bot token is transmitted, and the network boundaries and trust relationships involved."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-011 shows that the system handles a bot token, which is reasonably treated as restricted data, satisfying part of req-LOG-001\u2019s applicability conditions. However, there is no evidence about whether logs exist, what they contain, or where they are sent. The mapping appropriately labels req-LOG-001 as conditionally applicable, but the applicability still rests on unverified assumptions about logging, so it requires confirmation.",
+        "missing_evidence": [
+          "Logging and observability documentation for the notifier, including what is logged, whether logs can contain the bot token or related restricted data, and any log forwarding destinations or platforms."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-008",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-006 documents that the Chat Notifier communicates with the chat platform\u2019s API, and evd-011 that it uses a bot token held by the notifier; evd-008 describes the deployment metadata content. These together suggest that confidential or restricted data (the token) and internal deployment metadata traverse a network link between the notifier and the chat platform, matching the kind of scenario req-DATA-001 addresses. However, the evidence does not clearly state that this flow crosses a network boundary outside the system\u2019s control or how the token is transmitted, so the applicability of req-DATA-001 to thr-005 is not fully documented.",
+        "missing_evidence": [
+          "Network and trust-boundary documentation for the notifier\u2013chat platform connection (df-003), including whether the chat platform is outside the system\u2019s control and how the bot token is conveyed in transit."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-011 establishes that the notifier holds and uses a bot token for chat posting, and evd-006 shows that this involves an API to a chat platform, indicating that the token is a credential for another platform. This supports the idea that req-SECRET-001, which concerns custody of credentials to external platforms, is relevant to thr-005. However, as with map-005, the evidence does not explicitly state that the chat platform is an external platform across a distinct trust boundary governed by req-SECRET-001, so the applicability still needs confirmation.",
+        "missing_evidence": [
+          "Clarification of whether the chat platform API is treated as an external platform under req-SECRET-001, and any documentation tying the bot token\u2019s custody to that requirement."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 and evd-011 show that the notifier uses a bot token to access a chat platform API, making it plausible that this access could reach customer resources on that platform, and that alternative credential forms (e.g., short-lived or installation-scoped tokens) might be relevant. The mapping explicitly labels req-SECRET-002 as \"conditionally_applicable\" and notes that documentation does not establish whether the required conditions (customer resources, short-lived credentials) actually hold. That limited, conditional applicability statement accurately reflects the available evidence and its gaps.",
+        "missing_evidence": [
+          "Information on whether the chat platform API access via the bot token reaches customer resources, and whether the chat platform supports and uses short-lived or installation-scoped credentials for this integration."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 describes the Event Receiver as a public HTTPS endpoint called by an external CI platform, and evd-007 states that events are delivered as JSON to the receiver\u2019s public URL, are parsed, and cause messages naming repository, environment, and commit to be posted. evd-007 also confirms that while the CI platform supports signing deliveries, the receiver \"does not check a signature\" and accepts any well-formed delivery. These facts directly support the core of thr-001: if an attacker can reach this public endpoint, they could submit forged JSON events that the receiver would process and propagate as chat notifications, compromising the integrity of deployment events as seen in chat. The preconditions about internet reachability and lack of other upstream controls are correctly expressed as conditional assumptions in the threat text rather than as established facts.",
+        "missing_evidence": [
+          "Network and access-control documentation for the Event Receiver, including whether it is reachable from the general internet and any IP allowlists, VPNs, or other controls that might limit who can send events."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "As for thr-001, evd-006 and evd-007 establish that a public Event Receiver accepts deployment events from an external CI platform and turns each accepted event into a chat notification. Given that the receiver does not verify signatures and processes any well-formed delivery, it is reasonable to model a threat in which an attacker sends many forged events, causing a flood of notifications. The threat text explicitly conditions this on the absence of strong authentication and rate-limiting, which are not described in the documentation, so it does not overstate what is known while remaining consistent with the established architecture.",
+        "missing_evidence": [
+          "Documentation of any rate-limiting, abuse-detection, or upstream protections (at the receiver or before it) that would bound or prevent high-volume forged event traffic."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-011 shows that chat posting uses a bot token held by the notifier, and evd-006 shows the notifier posting deployment notifications via the chat platform\u2019s API. These support that a credential exists which the notifier uses when posting. It is a plausible inference that an attacker who obtains this token could call the same API and post messages to the deployment channel, but the evidence does not describe the token\u2019s scope, any additional constraints (such as IP restrictions), or the chat platform\u2019s authorization model. The impact and feasibility of the described misuse therefore depend on assumptions that are not documented.",
+        "missing_evidence": [
+          "Chat platform API and security documentation describing the bot token\u2019s scope (what channels and actions it permits), any additional access controls (e.g., IP restrictions, two-party approvals), and how impersonation with a stolen token would behave."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-008"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-008",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 describes the Chat Notifier posting deployment notifications to an internal chat channel, and evd-008 specifies that deployment events include repository names, environments, and commit identifiers. evd-005 provides contextual confirmation of the notifier\u2019s purpose. Together, they support that the chat channel contains ongoing and historical deployment metadata of the sort described in thr-004. The threat text assumes an attacker or unauthorized party gains read access to that channel and describes the resulting exposure; this is a conditional scenario consistent with the documented behavior of the notifier and channel content.",
+        "missing_evidence": [
+          "Documentation of access controls and permission models for the internal deployment chat channel, including who is authorized to read it and how those permissions are administered."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 documents that the Chat Notifier communicates with the chat platform via its API to post deployment notifications, implying a network data flow between components. evd-011 establishes that chat posting uses a bot token held by the notifier, so that token is likely included in or used on this network path. The documentation does not specify transport protections for this outbound connection, and thr-005 explicitly frames the risk conditionally: if encryption or server authentication is absent or misconfigured along a path where an attacker can be on-path, the bot token or deployment messages could be intercepted or tampered with. This conditional threat is consistent with the architecture as documented and highlights an area where transport security details are missing.",
+        "missing_evidence": [
+          "Details of the transport security for the notifier\u2019s connection to the chat platform API (e.g., whether HTTPS/TLS is used, where TLS is terminated, and any intermediary proxies or inspection points along df-003)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      }
+    ]
+  }
+}

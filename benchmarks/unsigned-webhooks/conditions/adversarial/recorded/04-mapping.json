@@ -1,0 +1,160 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12198,
+    "output_tokens": 8783,
+    "cache_read_tokens": 11392,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1045015",
+    "duration_seconds": 76.9425959577784
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-url-rotation",
+        "name": "Event Receiver URL rotation",
+        "description": "Team notes state that the Event Receiver's public URL is rotated quarterly to limit the exposure window of a discovered address.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "owner": null,
+        "limitations": []
+      },
+      {
+        "key": "ctrl-chat-bot-token-auth",
+        "name": "Chat notifier bot token authentication",
+        "description": "Team notes state that the Chat Notifier uses a bot token to authenticate when posting deployment notifications to the chat platform API.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-002",
+        "protected_component_ids": [
+          "cmp-002",
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "owner": null,
+        "limitations": []
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applicable because the Deploy Notifier exposes a public HTTPS Event Receiver that accepts deployment events from an external CI platform and triggers processing in response (evd-006, evd-007), matching the requirement\u2019s condition that the system exposes an endpoint accepting events from an external platform that cause work to be performed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applicable because inbound deployment events from the external CI platform cause externally visible, state-changing work: each accepted event results in a chat notification being posted to an internal channel (evd-006, evd-007), so replay or duplication could repeat that work.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007",
+          "evd-008"
+        ],
+        "assumptions": [
+          "Assume that re-processing the same deployment event would generate duplicate chat notifications or otherwise repeat externally visible work, because no idempotency or replay-handling mechanism is described."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Conditionally applicable because work is triggered by events from an external CI platform that the system does not originate (evd-005, evd-006, evd-007), and each event leads to outbound calls to a chat platform API (evd-006). The requirement fully applies if the chat platform or underlying resources are metered or capacity-limited and if retries or high-volume triggers can drive unbounded consumption, which the documentation does not establish.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-007",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Assume the chat platform API and notifier resources are subject to capacity limits or rate limits, as is typical for such services, because the documentation does not describe their cost or quota model.",
+          "Assume no explicit rate limiting, quota, or other bounding mechanism is in place on the Event Receiver or notifier beyond what is documented, since no such controls are described."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Controls limiting abuse of the public Event Receiver are not documented",
+        "description": "The system overview and runbook describe the Event Receiver as a public HTTPS endpoint called by the external CI platform and state that it accepts and processes any well-formed delivery without checking a signature (evd-002, evd-006, evd-007). The reviewer question qst-001 notes that the supplied documents do not establish whether any additional authentication, IP allowlisting, VPN, private ingress, or upstream rate limiting is applied to this endpoint. As a result, it is not possible to determine from the documentation whether there are any controls that bound or restrict abuse of the public Event Receiver beyond basic TLS and JSON well-formedness.",
+        "importance": "Without clarity on any network, identity, or rate-limiting controls in front of the Event Receiver, the assessment cannot determine whether high-volume forged deployment events can be constrained before they reach the notifier, which directly affects the likelihood and impact of threat thr-002.",
+        "related_object_ids": [
+          "cmp-001",
+          "df-001",
+          "thr-002"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing any IP allowlisting, firewall rules, VPN or private ingress configuration, or other network access controls in front of the Event Receiver.",
+          "Documentation of any rate limiting, request quotas, or similar bounding mechanisms applied at the load balancer, API gateway, or application level for the Event Receiver endpoint.",
+          "Clarification of whether only the CI platform can reach the Event Receiver in practice, and how that restriction is enforced if so."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-006",
+          "evd-007"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Handling of duplicate or replayed deployment events is undocumented",
+        "description": "Documentation states that the CI platform can sign deliveries but that the receiver accepts and processes any well-formed delivery and does not check a signature, and that each deployment event results in a chat message naming the repository, environment, and commit (evd-006, evd-007). The material does not describe whether events carry identifiers, how duplicates are handled, or whether previously delivered events can be reprocessed harmlessly. This prevents verification of controls against replay or duplicate processing as required by req-WEBHOOK-002.",
+        "importance": "Without documented behaviour for duplicate or replayed deployment events, it is unclear whether an attacker or misbehaving sender could cause repeated notifications or other repeated work by re-submitting old but well-formed events, which affects the assessment of replay-related aspects of threat thr-002 and of req-WEBHOOK-002.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-002",
+          "thr-002"
+        ],
+        "requested_evidence": [
+          "Documentation describing how the Deploy Notifier handles duplicate or replayed deployment events (for example, persistence of event identifiers, timestamp windows, or idempotency mechanisms).",
+          "Any description of event schemas that include unique identifiers or timestamps used to prevent or detect replay.",
+          "Operations or runbook guidance covering how operators should respond to observed duplicate deployment notifications, if such behaviour is expected or prevented."
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-007"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

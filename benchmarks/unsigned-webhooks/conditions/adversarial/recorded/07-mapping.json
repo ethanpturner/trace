@@ -1,0 +1,38 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 255,
+    "output_tokens": 6303,
+    "cache_read_tokens": 23168,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.06624475",
+    "duration_seconds": 83.70090733282268
+  },
+  "response": {
+    "controls": [],
+    "mappings": [],
+    "documentation_gaps": [],
+    "catalog_gap_candidates": [
+      {
+        "concern": "Deployment notifications containing internal repository, environment, and commit metadata are sent to an internal chat channel via a chat platform API. If the chat platform, its channel permissions, or an account are compromised, this internal deployment metadata can be exposed, but the catalog has no requirement that governs classification and handling of non-customer internal metadata when it is sent to chat or collaboration platforms.",
+        "suggested_category": "third_party_integration",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TPI-001",
+            "why_not": "req-TPI-001 applies when customer data is sent to an external provider. The documented notifications contain internal deployment metadata (repository names, environments, commit identifiers) and explicitly no customer data (evd-008), so the condition \"customer data is sent to an external provider\" does not hold."
+          },
+          {
+            "requirement_id": "req-LOG-001",
+            "why_not": "req-LOG-001 addresses keeping restricted data out of application logs that are forwarded outside the system. In this case the data is intentionally included in chat notifications rather than incidental log content, and the channel is a chat or collaboration platform rather than a logging destination, so the requirement does not clearly cover this pattern of exposing internal deployment metadata."
+          }
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-008"
+        ]
+      }
+    ]
+  }
+}

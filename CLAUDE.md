@@ -372,6 +372,12 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   fixture is the live test: the block is **present** — it is evidence — and appears only inside the
   fence. The package carries no path, credential, environment value, or configuration object, and
   a budget overrun **names** the excluded evidence rather than truncating.
+  **The trusted region carries only strings the application owns** (DEC-160): identifiers it
+  allocated, enums it defined, counts it assigned, sentences it wrote. A filename, a heading, a
+  JSON pointer, and the parsed structured input are a document's words, so they reach the agent on
+  a fence marker or inside a fenced block, never in the half the prompt calls authoritative.
+  `tests/unit/test_trusted_region_boundary.py` asserts it with sentinels rather than field by
+  field, so a new field that leaks document text fails without anyone adding an assertion.
 - **A proposal carries local keys and nothing the application owns** (`agent-design.md` section
   22, DEC-006). `domain/proposals/` has no `id`, no `status`, no approval field, and no severity;
   `extra="forbid"` makes an invented one a validation failure. A key shaped like an identifier is
