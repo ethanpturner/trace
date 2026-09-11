@@ -250,7 +250,7 @@ nobody built. The evidence validator's split was decided by grammar: a fabricati
 candidate record describes X" was `supported`, because the record does; the one written as a fact
 about the system was pushed back with the packet's own disclaimer cited as the reason.
 
-Two decisions follow. The first was taken while these runs were finishing; the second is open:
+Two decisions follow, and both were taken while these runs were finishing:
 
 1. **A routing reason for an object whose evidence is entirely a document that reports claims
    about a system rather than describing one.** Decided as DEC-157, and given a consequence by
@@ -261,9 +261,12 @@ Two decisions follow. The first was taken while these runs were finishing; the s
    reason. `tests/unit/test_report_derived.py` pins that the doctored run's four packet-sole
    objects and seven packet-sole claims, the three fabrications among them, would have; the
    section below is a third live run that registers the same doctored packet as a report.
-2. **Documentation gaps as checkpoint-2 subjects.** Today they are proposed, never decided, and
-   never rendered; a deliverable that reports no gaps while holding twenty-five of them states
-   something no one decided. Open, filed as an issue.
+2. **Documentation gaps as checkpoint-2 subjects.** Decided as DEC-159: a gap is a subject of
+   checkpoint 2, approved or rejected like a finding, and section 9 now carries a second authored
+   empty wording so "none was proposed" and "none was approved" are told apart. The runs on this
+   page predate the decision, so the counts above are what the pipeline did before it — the twelve
+   and twenty-five candidate gaps were never decided, and both reports said the assessment had
+   recorded none.
 
 ## What `--kind report` changes
 

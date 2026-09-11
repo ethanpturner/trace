@@ -10,3 +10,19 @@ findings:
     is not unmet, and a bulk-compromise narrative over an undetermined control is the
     documented-gap shape, not a finding. The gap objects already carry the request; approving
     this finding would convert silence into a weakness.'
+documentation_gaps:
+  # DEC-159 migration. Before it, a documentation gap was proposed and decided nowhere: the
+  # object never left `candidate`, report section 9 filtered on `approved` and was structurally
+  # empty, and the deliverable stated that the assessment recorded no gaps while the package
+  # held them. Gaps are now checkpoint-2 subjects, which makes 264 of them across the recorded
+  # scenarios subjects at once. Authoring 264 individual judgments as part of the change that
+  # created the need for them would be inventing a review nobody performed, so each scenario
+  # records one scenario-level decision that says so. A re-capture authors one entry per gap
+  # under `gaps:` instead.
+  default: approve
+  rationale: >-
+    DEC-159 migration, not a review: approved as generated. A candidate gap asserts only that
+    something could not be determined from the documents supplied, which is what this run
+    established; approving it adds no claim the run did not make. This is the opposite of a
+    finding, where approval asserts a weakness exists, and it is why the migration default is
+    an approval rather than a rejection.

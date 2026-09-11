@@ -29,21 +29,26 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.question import QuestionPriority
 from trace_ai.workflow.context_review import ReviewerActionError
 from trace_ai.workflow.finding_review import (
+    GAP_EDITABLE_FIELDS,
     add_remediation_guidance,
     add_reviewer_rationale,
+    approve_documentation_gap,
     approve_finding,
     assign_risk_treatment,
     change_severity,
     convert_to_documentation_gap,
     convert_to_question,
     defer_finding,
+    edit_documentation_gap,
     edit_finding,
     merge_by_reviewer,
+    reject_documentation_gap,
     reject_finding,
     request_more_analysis,
 )
@@ -142,6 +147,20 @@ def export_finding_review_file(package: FindingReviewPackage) -> dict[str, Any]:
         }
         for item in package.findings
     ]
+    document["documentation_gaps"] = [
+        {
+            "id": item.gap.id,
+            "title": item.gap.title,
+            "severity": item.gap.severity.value,
+            "decision": None,
+            "rationale": None,
+            "editable": {
+                field: item.gap.model_dump(mode="json")[field] for field in GAP_EDITABLE_FIELDS
+            },
+        }
+        for item in package.documentation_gaps
+        if item.awaiting_decision
+    ]
     document["merges"] = []
     return document
 
@@ -221,7 +240,87 @@ def apply_finding_review_file(
                 workflow_run_id=workflow_run_id,
             )
         )
+
+    gaps = {gap.id: gap for gap in handle.objects.list(DocumentationGap)}
+    for entry in document.get("documentation_gaps") or []:
+        decisions.extend(
+            _apply_gap_entry(
+                handle,
+                entry,
+                gaps,
+                reviewer_id=reviewer_id,
+                workflow_run_id=workflow_run_id,
+            )
+        )
     return decisions
+
+
+def _apply_gap_entry(
+    handle: AssessmentHandle,
+    entry: dict[str, Any],
+    gaps: dict[str, DocumentationGap],
+    *,
+    reviewer_id: str,
+    workflow_run_id: str | None,
+) -> list[ReviewerDecision]:
+    """One documentation-gap entry: edits first, then the decision (DEC-159).
+
+    Same ordering rule as a finding entry, for the same reason — deciding before applying an edit
+    would record a judgment about the version the reviewer replaced.
+    """
+    identifier = str(entry.get("id") or "")
+    gap = gaps.get(identifier)
+    if gap is None:
+        raise FindingReviewFileError(f"{identifier} is not a documentation gap in this assessment")
+
+    produced: list[ReviewerDecision] = []
+    rationale = str(entry.get("rationale") or "").strip() or None
+    current = gap.model_dump(mode="json")
+    changes = {
+        field: value
+        for field, value in (entry.get("editable") or {}).items()
+        if field in GAP_EDITABLE_FIELDS and current.get(field) != value
+    }
+    try:
+        if changes:
+            gap, decision = edit_documentation_gap(
+                handle,
+                gap,
+                changes,
+                reviewer_id=reviewer_id,
+                rationale=rationale,
+                workflow_run_id=workflow_run_id,
+            )
+            produced.append(decision)
+
+        decision_value = str(entry.get("decision") or "").strip()
+        if decision_value == ReviewDisposition.APPROVE.value:
+            _, decision = approve_documentation_gap(
+                handle,
+                gap,
+                reviewer_id=reviewer_id,
+                rationale=rationale,
+                workflow_run_id=workflow_run_id,
+            )
+            produced.append(decision)
+        elif decision_value == ReviewDisposition.REJECT.value:
+            _, decision = reject_documentation_gap(
+                handle,
+                gap,
+                reviewer_id=reviewer_id,
+                rationale=rationale,
+                workflow_run_id=workflow_run_id,
+            )
+            produced.append(decision)
+        elif decision_value:
+            raise FindingReviewFileError(
+                f"{identifier}: {decision_value!r} is not a decision a documentation gap takes. "
+                f"A gap is approved or rejected (DEC-159); what would settle it is more "
+                f"documentation, which `requested_evidence` already records."
+            )
+    except ReviewerActionError as refused:
+        raise FindingReviewFileError(f"{identifier}: {refused}") from None
+    return produced
 
 
 def _filled(block: dict[str, Any] | None, *fields: str) -> bool:

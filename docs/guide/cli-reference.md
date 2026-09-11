@@ -317,10 +317,13 @@ the assessment has more than one.
 
 ## findings
 
-The checkpoint-2 interface: review and approve candidate findings.
+The checkpoint-2 interface: review and approve candidate findings **and candidate documentation
+gaps**. Both are subjects of this checkpoint and both take a decision before the run continues
+(DEC-159).
 
 **findings show** — `trace findings show <assessment_id>`. Prints the review package for the
-finding checkpoint, findings first, evidence excerpts labelled. Exits 0.
+finding checkpoint, findings first, then the documentation gaps, evidence excerpts labelled.
+Exits 0.
 
 ### findings review
 
@@ -345,6 +348,9 @@ as.
 - `--treatment ID=VALUE` assigns a risk treatment: `undecided`, `mitigate`, `accept`, `transfer`,
   or `avoid`. Approving a finding treated as `accept` requires `--treatment-rationale`, the
   residual-risk statement; `--treatment-review-by` optionally dates a revisit.
+- `--approve ID` / `--reject ID` take either subject: an identifier beginning `gap-` decides a
+  documentation gap, anything else a finding. A gap takes no severity and no treatment; approve,
+  reject, and edit are its whole vocabulary (DEC-159).
 - `--override-rationale` approves past the deterministic gate, with the override recorded.
 - `--defer ID` leaves the finding a candidate, with the deferral as the record.
 - `--request-more-analysis ID` requires `--note` saying what is missing.
@@ -359,8 +365,9 @@ gate refuses.
 trace findings approve <assessment_id>
 ```
 
-Concludes the finding review once every finding is decided, so the run can continue with
-`trace resume`. Exits 0; with findings still undecided it exits 1 naming them. This is not the
+Concludes the finding review once every finding and every candidate documentation gap is
+decided, so the run can continue with `trace resume`. Exits 0; with subjects still undecided it
+exits 1 naming them. This is not the
 final sign-off — that is `assessment approve`, after the report exists.
 
 ## report

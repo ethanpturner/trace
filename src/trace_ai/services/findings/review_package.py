@@ -127,8 +127,15 @@ class GapPresentation:
 
     gap: DocumentationGap
     excerpts: tuple[QuotedExcerpt, ...]
+    decisions: tuple[ReviewerDecision, ...] = ()
+    """Decisions already recorded about this gap, so a half-finished review shows its own work."""
 
     KIND: ClassVar[str] = "documentation gap — asserts nothing about the implementation"
+
+    @property
+    def awaiting_decision(self) -> bool:
+        """Whether this gap still needs a decision to conclude the checkpoint (DEC-159)."""
+        return self.gap.status is ObjectStatus.CANDIDATE
 
 
 @dataclass(frozen=True, slots=True)
@@ -323,7 +330,7 @@ def build_finding_review_package(
     outcomes = _outcomes_by_critique(application)
     decisions_by_subject: dict[str, list[ReviewerDecision]] = {}
     for recorded in repository.list(ReviewerDecision):
-        if recorded.subject_type == "finding":
+        if recorded.subject_type in ("finding", "documentation_gap"):
             decisions_by_subject.setdefault(recorded.subject_id, []).append(recorded)
 
     presented: list[FindingPresentation] = []
@@ -349,7 +356,12 @@ def build_finding_review_package(
         )
 
     gap_presentations = tuple(
-        GapPresentation(gap=gap, excerpts=_location(index, gap.evidence_ids)) for gap in gaps
+        GapPresentation(
+            gap=gap,
+            excerpts=_location(index, gap.evidence_ids),
+            decisions=tuple(decisions_by_subject.get(gap.id, ())),
+        )
+        for gap in gaps
     )
 
     awaiting = sum(1 for item in presented if item.awaiting_severity)
@@ -371,7 +383,7 @@ def build_finding_review_package(
         statement = (
             "No provisional findings were proposed. A successful assessment may produce no "
             "findings; what could not be determined is recorded as documentation gaps and "
-            "questions below."
+            "questions below. The gaps are decided here too (DEC-159)."
         )
     else:
         statement = (

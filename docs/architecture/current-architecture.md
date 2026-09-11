@@ -614,7 +614,11 @@ Neither this node nor an agent has the business context severity depends on.
 
 ## 5.12 Human Finding Review
 
-The reviewer can:
+The checkpoint's subjects are the provisional findings **and the candidate documentation gaps**
+(DEC-159). Both take a `ReviewerDecision`, and the checkpoint completes when every one of them has
+one.
+
+On a finding, the reviewer can:
 
 - Approve a finding
 - Reject a finding
@@ -625,6 +629,13 @@ The reviewer can:
 - Convert a finding to a question
 - Convert a finding to a documentation gap
 - Add reviewer notes
+
+On a documentation gap, the reviewer can approve it, reject it, or edit its text. That vocabulary
+is narrower on purpose (DEC-159): deferring a gap or asking for more analysis both say *more
+analysis may settle this*, and what settles a gap is more documentation, which
+`requested_evidence` already records. An approved gap is what report section 9 renders; before
+DEC-159 nothing set a gap's status, so the section was structurally empty and its authored empty
+wording claimed the assessment had recorded none.
 
 **Assigning severity is not optional.** Findings arrive carrying `unassigned`, and an
 approval whose finding still carries it is rejected by validation (DEC-030). The reviewer

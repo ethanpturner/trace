@@ -143,6 +143,13 @@ class ReportInput:
     Rendered in section 14 and given to the Report Generation agent so its limitations prose can
     bound blind spots honestly; the authoritative table stays the rendered one."""
 
+    proposed_documentation_gap_count: int = 0
+    """How many gaps the run proposed, whatever the reviewer decided (DEC-159).
+
+    Carried so the renderer can tell "none was proposed" from "none was approved". Before
+    DEC-159 the two were indistinguishable in the deliverable, and the report stated the first
+    while the second was true."""
+
 
 def _by_id[ModelT](items: list[ModelT]) -> tuple[ModelT, ...]:
     return tuple(sorted(items, key=lambda item: str(getattr(item, "id", ""))))
@@ -235,7 +242,8 @@ def assemble_report_input(
     )
 
     findings = sorted(approved_findings(handle), key=lambda finding: finding.id)
-    gaps = repository.list(DocumentationGap, status=ObjectStatus.APPROVED.value)
+    all_gaps = repository.list(DocumentationGap)
+    gaps = [gap for gap in all_gaps if gap.status is ObjectStatus.APPROVED]
     open_questions = order_for_review(
         question for question in repository.list(Question) if question.status is QuestionStatus.OPEN
     )
@@ -281,6 +289,7 @@ def assemble_report_input(
         system_context=approved_context,
         approved_findings=tuple(findings),
         approved_documentation_gaps=_by_id(gaps),
+        proposed_documentation_gap_count=len(all_gaps),
         open_questions=tuple(open_questions),
         confirmed_controls=_by_id(confirmed),
         threats=_by_id(threats),

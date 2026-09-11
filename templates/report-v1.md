@@ -214,6 +214,14 @@ The assessment recorded no documentation gaps. Every requirement it applied coul
 against the documentation provided. This is not a statement that the documentation is complete —
 only that its silences did not block a conclusion the assessment tried to reach.
 
+<!-- empty.documentation_gaps_none_approved -->
+The assessment proposed documentation gaps and the reviewer approved none of them. Each was
+rejected at the finding checkpoint: the documentation established the point after all, the
+requirement did not apply, or the gap rested on something the reviewer would not stand behind.
+
+This section is empty because of those decisions and not because nothing was proposed. The
+assessment's execution record holds the candidates and the reason given for each.
+
 <!-- empty.assumptions -->
 The assessment recorded no assumptions. Every claim in the approved context is documented in a
 source document or was confirmed by the reviewer.

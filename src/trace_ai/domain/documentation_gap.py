@@ -18,8 +18,10 @@ widening of what a gap claims.
 vocabulary for a different meaning — how much the inability to verify impedes the assessment — and
 that is the easiest field on the object to misread. It is also the one place this object departs
 from DEC-030: a `Finding` is created with `unassigned` because the reviewer assigns severity at
-checkpoint 2, and **a gap may never carry `unassigned`**, because checkpoint 2 reviews findings and
-no step anywhere would ever assign it. A field nothing can fill is not a field awaiting a value.
+checkpoint 2, and **a gap may never carry `unassigned`**, because the node that raises the gap is
+the only step that ever rates it. A field nothing can fill is not a field awaiting a value. DEC-159
+made the gap a checkpoint-2 subject and deliberately added no severity gate there for this reason:
+the reviewer approves or rejects the gap, and its severity was settled at construction.
 
 **`importance` is required and is not `severity`.** `severity` is a label; `importance` is the
 sentence saying why the gap matters. A gap with neither is indistinguishable from noise, and a gap
@@ -118,10 +120,10 @@ class DocumentationGap(DomainModel):
         """A gap carries a real severity, because no later step supplies one (DEC-045).
 
         `Finding` is created with `unassigned` and DEC-030 has the reviewer resolve it at
-        checkpoint 2. Checkpoint 2 reviews findings; `current-architecture.md` section 5.12 lists
-        no gap action at all. An `unassigned` gap would therefore be rendered unassigned into
-        report section 9, which is not a value awaiting a decision — it is a decision nobody was
-        ever asked to make.
+        checkpoint 2. A gap is a checkpoint-2 subject too since DEC-159, but the reviewer decides
+        it rather than rating it: section 5.12's gap actions are approve, reject, and edit. An
+        `unassigned` gap would therefore be rendered unassigned into report section 9, which is
+        not a value awaiting a decision — it is a decision nobody was ever asked to make.
         """
         if self.severity is Severity.UNASSIGNED:
             raise ValueError(
