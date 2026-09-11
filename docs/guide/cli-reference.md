@@ -147,7 +147,7 @@ Registers a file or a directory of files. Accepted formats are `.md`, `.markdown
 `.json`, `.yaml`, `.yml`, and `.pdf`, each at most 10 MB; text formats must be valid UTF-8 and
 JSON/YAML must parse. A PDF is read text-layer only (DEC-123) and an image-only PDF is refused
 with a named error. Office and web ingestion are deferred and refused with a named error
-(exit 1); repository ingestion is `source add-repo` below. `--no-index` registers without normalizing and indexing. `--kind` states what the document is about (DEC-157): `system`, the default, for a document that describes the reviewed system; `report` for one that reports claims made about it by a third party or a tool, such as a code reviewer's packet. Every checkpoint-1 subject whose evidence rests on `report` documents alone carries the `report_derived` routing reason. Exits 0 on success.
+(exit 1); repository ingestion is `source add-repo` below. `--no-index` registers without normalizing and indexing. `--kind` states what the document is about (DEC-157): `system`, the default, for a document that describes the reviewed system; `report` for one that reports claims made about it by a third party or a tool, such as a code reviewer's packet. Every checkpoint-1 subject whose evidence rests on `report` documents alone carries the `report_derived` routing reason, and approval is refused until each such subject's decision carries a rationale (DEC-158). Exits 0 on success.
 
 ```console
 $ uv run trace source add asm-001 demo/forgeflow/input
@@ -237,7 +237,7 @@ when the context is ready to approve, 3 when it is not, with every approval bloc
 
 ```
 trace context review [--reviewer REVIEWER] [--export PATH | --apply PATH]
-                     [--approve ID] [--reject ID] [--confirm ID]
+                     [--approve ID] [--reject ID] [--reason TEXT] [--confirm ID]
                      [--answer ID=TEXT] [--attach ID=EVD[,EVD...]]
                      [--resolve ID=VALUE --rationale RATIONALE]
                      [--request-re-extraction REASON]
@@ -251,6 +251,9 @@ The exported file is derived, not stored; applying an unchanged export records z
 design.
 
 - `--approve ID` / `--reject ID` decide an object or claim.
+- `--reason TEXT` records why, on every decision the invocation makes. Required for a
+  `report_derived` subject, whose approval is refused without one (DEC-158); optional elsewhere.
+  In the review file the same slot is `decision_rationale:` on the entry.
 - `--confirm ID` records a claim as user-confirmed.
 - `--answer ID=TEXT` answers an open question.
 - `--attach ID=EVD[,EVD...]` links existing evidence references to an object or claim.

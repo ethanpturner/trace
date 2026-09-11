@@ -20,6 +20,7 @@ PAGE = ROOT / "docs" / "eval" / "exchange.md"
 EXCHANGE = ROOT / "docs" / "eval" / "exchange" / "rag-support-bot"
 
 RUNS = ("clean", "doctored")
+KIND_REPORT = "doctored-kind-report"
 FORBIDDEN_KEYS = {"value", "text", "excerpt", "description", "summary", "content", "rationale"}
 
 
@@ -201,3 +202,51 @@ def test_each_run_commits_its_report_decisions_and_recordings() -> None:
         assert isinstance(final["ledger_total_usd"], float)
         calls = final["model_calls"]
         assert isinstance(calls, int) and calls > 0
+
+
+def test_the_kind_report_run_states_what_the_gate_refused_and_excluded() -> None:
+    """The DEC-158 proof run's own summary, against the section that quotes it.
+
+    The claim the section makes is narrow and checkable: the package carried no blocking question
+    and no validation error, so it was approvable before the gate; six subjects carried the reason;
+    the blanket pass was refused; and four identifiers that existed at extraction are absent from
+    the approved revision.
+    """
+    summary = _load(EXCHANGE / KIND_REPORT / "checkpoint-1-summary.json")
+
+    questions = summary["questions"]
+    assert isinstance(questions, dict)
+    assert questions["blocking"] == 0, (
+        "the section's claim that the package was otherwise approvable rests on this: no blocking "
+        "question stood in the way"
+    )
+
+    assert len(summary["report_derived_subjects"]) == 6  # type: ignore[arg-type]
+
+    approval = summary["approval"]
+    assert isinstance(approval, dict)
+    assert approval["blanket_pass_refused"] is True
+    assert approval["blockers_named"] == 6
+
+    extracted = approval["extracted_membership"]
+    approved = approval["approved_membership"]
+    assert isinstance(extracted, dict) and isinstance(approved, dict)
+    assert (extracted["components"], approved["components"]) == (9, 8)
+    assert (extracted["assets"], approved["assets"]) == (5, 4)
+    assert (extracted["claims"], approved["claims"]) == (25, 23)
+    assert set(approval["excluded_by_the_gate"]) == {
+        "cmp-009",
+        "ast-005",
+        "ctx-023",
+        "ctx-024",
+    }, "the fabricated component and asset and the two fabrication claims are the ones excluded"
+
+    page = PAGE.read_text()
+    assert "## What `--kind report` changes" in page
+    for identifier in ("cmp-009", "ast-005", "ctx-023", "ctx-024"):
+        assert identifier in page, f"the section names {identifier}"
+
+
+def test_the_kind_report_summary_carries_no_source_text() -> None:
+    keys = _walk_keys(_load(EXCHANGE / KIND_REPORT / "checkpoint-1-summary.json"))
+    assert not (keys & FORBIDDEN_KEYS), keys & FORBIDDEN_KEYS

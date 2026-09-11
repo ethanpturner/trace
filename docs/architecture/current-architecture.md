@@ -967,7 +967,9 @@ as deterministic functions of persisted state, never stored (DEC-062; `report_de
 DEC-157's, and marks a subject whose evidence is entirely documents the operator registered as
 reports of claims about the system rather than descriptions of it). Reasons triage the reviewer's attention and
 never filter: a subject with no reasons is routine, not exempt, and every subject still requires
-a `ReviewerDecision` before the checkpoint advances.
+a `ReviewerDecision` before the checkpoint advances. One reason also conditions the gate:
+`report_derived` subjects must be decided *with a rationale*, and approval is refused naming any
+that are not (DEC-158).
 
 ### How a checkpoint is passed, and what rejection does
 

@@ -10675,3 +10675,90 @@ Open Questions:
 - Does `document_kind` want a third value for documents the operator cannot classify, or does
   `system` with a note serve?
 - Should the report render the kind of each cited source in its source table?
+
+## DEC-158: A report-derived subject's decision must say why, or the context is not approved
+
+Date: 2026-09-11
+
+Status: Accepted
+
+Decision:
+
+**A `report_derived` subject (DEC-157) is an approval blocker until a `ReviewerDecision` both
+decides it and carries a rationale.** `ContextReviewPackage.approval_blockers` gains a third class
+beside the unanswered blocking question and the outstanding validation error: every subject whose
+evidence rests entirely on documents registered `--kind report`, and that carries no approve-or-
+reject decision with a non-empty rationale, is named and stands between the package and an
+approval. `approve_context` refuses as it already does, in the same words and by the same
+mechanism. The review file gains `decision_rationale:` on object and claim entries, exported as an
+empty slot beside `decision:`, and `trace context review --reason` carries the same on the flag
+path, so a file and the equivalent flags still write identical rows.
+
+**The gate demands a sentence, not a particular answer.** A reviewer who writes "keep: the packet
+is the only source and the risk is acceptable" passes it, with that on the record. Nothing is
+corrected, removed, or re-labelled: `agent-design.md` section 8's rule is untouched, the
+validation node is unchanged, and the extractor's `documented` / `inferred` judgment stands as it
+made it. What changes is that the blanket pass is no longer expressible for these subjects.
+
+**An edit does not clear it.** An edit records a change to the subject's content; the gate is
+about whether the subject belongs in the model at all, which is what an approve-or-reject
+disposition records. A subject edited and then blanket-approved is still outstanding.
+
+Why:
+
+- **DEC-157 derived a reason that nothing acted on, and the run that argued for it proves the
+  gap.** In the doctored exchange run (`docs/eval/exchange.md`), three fabricated records entered
+  as `documented` claims and four objects — a component, an asset, a data flow, a trust boundary —
+  were built with one fabricated record as their only evidence. Checkpoint 2 approved no finding
+  about any of them and rejected all three proposed findings, and the rendered report still
+  describes a telemetry flow nobody built, because the renderer draws sections 4 and 5 from
+  approved *context*. The finding checkpoint held exactly as DEC-009 intends. The context
+  checkpoint is where the fabrication entered, and it entered through a decision file that
+  confirmed every subject as extracted.
+- **The smallest change that closes it is a condition on the gate that already exists.** DEC-157
+  rejected a blocking `Question` per subject on the ground that every subject already requires a
+  decision, which is true and was not enough: a decision can be blanket. Requiring the decision to
+  say why costs no new object, no new question kind, no second gate, and no change to the
+  validation node — and it is refused at the same place, with the same error, as an unanswered
+  blocking question.
+- **A stated reason is the only artefact that distinguishes a considered approval from a pass.**
+  The reviewer who keeps a packet-derived component may be right. What the record could not say
+  before is whether anyone looked.
+
+Alternatives Considered:
+
+- **Refusing the object outright: a subject whose sole evidence is report-kind is an extraction
+  error.** Rejected. It is the correction section 8 forbids in the place the corpus is most
+  careful about, it hides the claim rather than surfacing it, and it would make a legitimate
+  use — registering a scanner's output to see what it adds — impossible rather than deliberate.
+- **A validation error on a `documented` claim whose evidence is entirely report-kind, routed
+  back for a retry.** Left open, as DEC-157 left it. The extractor would reword the claim until it
+  passed, which is the failure `agent-design.md` section 26 names: a retry that invites the model
+  to produce the answer that stops the retrying. The two exchange runs are one sample per
+  condition, and the prompt stays untouched until there are more.
+- **A blanket acknowledgement — one flag on the file meaning "I saw the report-derived
+  subjects".** Rejected: it is the blanket pass with an extra step, and it records nothing about
+  any particular subject.
+- **Blocking only report-derived *objects*, not claims.** Rejected: the claim is what the analysis
+  phases reason over, and two of the doctored run's three fabrications produced claims and no
+  object. Holding only the objects would have let B.5 and B.6 through unremarked.
+
+Tradeoffs:
+
+- **A reviewer facing many report-derived subjects writes many sentences.** That is the intended
+  cost and the reason the reason is required only for this class. A registered scanner report with
+  two hundred findings would make checkpoint 1 expensive, which is an argument for registering
+  such a document deliberately, not for a cheaper gate.
+- **The gate is only as good as the registration (DEC-157's tradeoff, inherited).** A packet
+  registered without `--kind report` produces no reason and no blocker.
+- **A rationale is not a judgment.** "ok" clears the gate. The record then says a reviewer was
+  asked and wrote "ok", which is more than the blanket pass said and less than a review.
+
+Open Questions:
+
+- Should the same gate apply at checkpoint 2 to a finding whose evidence is entirely report-kind?
+  No finding in either exchange run cited the packet, so there is no case to reason from yet.
+- Should `trace context show` sort report-derived subjects first, rather than only marking them?
+- Does a reason that is verbatim identical across many subjects deserve a warning? It is the
+  blanket pass wearing a sentence, and detecting it is cheap; whether that is the application's
+  business or the reviewer's is not settled.
