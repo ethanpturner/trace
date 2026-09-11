@@ -1,0 +1,179 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 16162,
+    "output_tokens": 10579,
+    "cache_read_tokens": 17536,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1281845",
+    "duration_seconds": 126.88154416624457
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-model-provider-training-exclusion",
+        "name": "Model provider excludes assistant traffic from training",
+        "description": "The architecture overview states that the model provider's terms for Relay Answers traffic exclude training on submitted content, so prompts containing help-center passages and support-ticket text are not used to train the provider's models.",
+        "control_type": "inherited",
+        "provider_component_id": "cmp-005",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-005"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not state whether or for how long the model provider retains submitted prompts in logs, backups, or other storage, or whether they are used for any secondary purposes besides excluding them from training."
+        ]
+      },
+      {
+        "key": "ctrl-model-provider-tls",
+        "name": "Requests to model provider use TLS",
+        "description": "The architecture overview records that requests from the answer service to the external model provider are sent over TLS, encrypting help-center and support-ticket content in transit to the provider.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-005"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": []
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers sends customer support ticket content from the support platform, along with help-center documentation, to an external hosted model provider as part of each answer, so customer content is sent to an external model provider and the content includes non-public support data. Documentation describes what is sent (user question plus retrieved passages), that workspace and user identifiers are stripped, and that ticket email addresses are masked before export, but it does not explicitly justify why sending full ticket text and configuration snippets is necessary for the analysis.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [
+          "ctrl-model-provider-training-exclusion"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer support-ticket data and help-center content are sent to an external hosted model provider that processes prompts on Relay's behalf, so customer data leaves Relay's trust boundary for processing by an external provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "assumptions": [
+          "It is assumed, based on the architecture description, that the model provider processes prompts as a data processor for Relay rather than as an end user of the content, but the documentation does not describe the provider's retention period or all secondary uses beyond excluding training."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "ctrl-model-provider-tls"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Support ticket content is confidential customer data, and it is transmitted over a network to an external model provider outside Relay's control, so the requirement that sensitive data be encrypted in transit and at rest applies to this path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "assumptions": [
+          "Encryption in transit to the model provider is documented via TLS, but no statement is made about encryption at rest for prompts within the provider or for related storage inside Relay; the mapping treats encryption at rest as unverified rather than absent."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Model provider data retention and secondary usage for prompts are not documented",
+        "description": "The architecture overview and operations notes state that Relay sends help-center passages and resolved support-ticket content to an external model provider, that requests use TLS, and that the provider's terms exclude training on submitted content. They do not state whether or for how long the provider retains prompts (e.g., in logs or backups), what the maximum retention window is, or whether prompts may be used for any secondary purposes such as abuse detection, analytics, or service improvement beyond the explicit training exclusion. This prevents verifying full satisfaction of the requirement that external processor data handling (retention and usage) be documented for the support-ticket content involved in this threat.",
+        "importance": "Understanding how long the model provider retains submitted prompts and what secondary uses are permitted is essential to evaluating the exposure of customer support-ticket content if the provider is compromised or misuses stored data.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-005",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Documentation or contractual summary stating the model provider's retention period for prompts and related logs for Relay Answers traffic, and whether prompts may be used for any purposes beyond serving the request (such as abuse detection, analytics, backups, or service improvement)."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Justification and minimization of support-ticket content sent to the model provider are not fully documented",
+        "description": "The documentation explains that the answer service sends the user's question and retrieved passages from help-center articles and resolved support tickets to the external model provider, after stripping workspace and user identifiers and relying on the support platform to mask email addresses before export. It also notes that ticket text may include configuration snippets and other customer-provided details. However, the documentation does not state which parts of ticket content are considered necessary for answering questions, whether any additional minimization or redaction (beyond IDs and email masking) is applied before sending prompts, or the rationale for including configuration snippets and other potentially sensitive details in the provider-bound context.",
+        "importance": "For this threat, the risk depends on how much and what kind of support-ticket content reaches the external model provider. Without a documented justification of scope and any additional minimization, it is not possible to assess whether the data sent is minimized to what is necessary for the assistant's analysis.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-005",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Architecture or data-handling documentation that specifies which fields or portions of support tickets are included in prompts to the model provider, which are excluded or redacted beyond email masking and ID stripping, and why that scope is considered necessary for the assistant to answer questions.",
+          "Any design decision records evaluating alternative minimization strategies for support-ticket content prior to sending it to the model provider."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-023",
+          "evd-024"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "fdc41d3e5438ab5b3db74ec84c867bb390ed725eb6d069705194c954176df940"
+}

@@ -1,0 +1,263 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 16126,
+    "output_tokens": 14577,
+    "cache_read_tokens": 17536,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1681195",
+    "duration_seconds": 185.85307970829308
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctl-rag-write-path",
+        "name": "Governed ingestion pipeline writes the retrieval corpus",
+        "description": "The ingestion pipeline is documented as the only writer to the retrieval index, running nightly to read two named sources (the published help-center repository and the support platform's resolved-tickets export), chunk and embed their content, and record the source and timestamp on each indexed item.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-004",
+        "protected_component_ids": [
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not describe whether the source identifiers used in the index (such as source_ref or chunk identifiers) include workspace ownership or other tenancy scoping."
+        ]
+      },
+      {
+        "key": "ctl-index-network-segmentation",
+        "name": "Retrieval index reachable only from the answer service's network segment",
+        "description": "The retrieval index is a managed vector-database offering whose standard-tier instance is documented as reachable only from the answer service's network segment, limiting direct network access to the index.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "owner": null,
+        "limitations": [
+          "This control constrains network reachability of the index but does not describe any logical tenant separation within the index itself."
+        ]
+      },
+      {
+        "key": "ctl-support-platform-retention",
+        "name": "Support platform ticket masking and two-year retention",
+        "description": "The external support platform retains resolved support tickets for two years and then deletes them under a customer-agreed retention schedule, and applies email-address masking before tickets are exported for ingestion.",
+        "control_type": "inherited",
+        "provider_component_id": "cmp-006",
+        "protected_component_ids": [],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not describe how deletions and retention enforcement on the support platform propagate to the retrieval embeddings index."
+        ]
+      },
+      {
+        "key": "ctl-workspace-auth-token",
+        "name": "Workspace-scoped bearer token authentication for the Answers API",
+        "description": "The Relay Answers API is secured with an HTTP bearer token security scheme named workspaceToken, described as the signed-in user's workspace-scoped session token; the API description states that the workspace token identifies the caller's workspace, and this scheme is applied as the default security requirement for the answers endpoint.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028"
+        ],
+        "owner": null,
+        "limitations": [
+          "The documentation establishes that a workspace identity is available on each request, but does not state how that identity is applied to constrain reads and writes against the shared retrieval index."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [
+          "ctl-rag-write-path",
+          "ctl-support-platform-retention"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat concerns corruption of the shared retrieval corpus used to answer questions. The system retrieves stored help-center and support-ticket content into the model context at answer time (evd-002, evd-003), and that corpus accepts content from multiple sources (the help-center repository and the support platform's resolved-tickets export) via a nightly ingestion pipeline that is the only writer to the index (evd-002, evd-023), matching req-RAG-001's applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [
+          "ctl-workspace-auth-token"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index holds support-ticket content and help-center documentation for all workspaces in a single shared index (evd-002, evd-023), and answers are served to signed-in users within individual workspaces via the help panel and the workspace-token\u2013protected Answers API (evd-001, evd-002, evd-017, evd-025). Because the corpus contains workspace-scoped content and retrievals are served to more than one principal, req-RAG-002 about filtering retrieval results by the requester\u2019s authorization is engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [
+          "ctl-support-platform-retention",
+          "ctl-rag-write-path"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Resolved support tickets on the external support platform are deleted after two years under a documented retention schedule (evd-004), and that ticket content is ingested into the shared retrieval index by the nightly pipeline (evd-002, evd-023). Indexed content therefore derives from sources that can be deleted or corrected and that carry retention commitments, matching req-RAG-003's applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004",
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [
+          "ctl-workspace-auth-token"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers serves more than one customer workspace through the in-product help panel (evd-001, evd-002, evd-017, evd-025), and support-ticket data for those workspaces is held together in a single shared retrieval index (evd-002, evd-023, ast-003), so data belonging to distinct organizations is stored in shared infrastructure. This matches req-AUTHZ-001's conditions for tenant-aware authorization in a multi-tenant system.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [
+          "ctl-index-network-segmentation"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Embeddings and associated metadata for help-center articles and resolved support tickets from all workspaces are stored together in a single managed vector database used as the retrieval index (evd-002, evd-023, ast-003). These stored artifacts from multiple customers share a storage system, engaging req-DATA-003 about describing and enforcing tenant separation for stored artifacts.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Workspace scoping and identifier design for the shared retrieval index are not documented",
+        "description": "The architecture and operations documentation describe a single shared retrieval index serving all workspaces and note that the ingestion pipeline replaces changed chunks by a \"source reference\" (evd-002, evd-023). The Mantis packet raises candidate concerns that ticket source_ref and chunk_id may be derived only from ticket_id and position, without including workspace ownership, leading to potential cross-workspace replacement and deletion (evd-014, evd-015). However, none of the supplied documents defines the schema of source_ref or chunk identifiers, states whether they encode workspace or tenant information, or explains how workspace scoping is enforced in the index at write or retrieval time. As a result, the assessment cannot determine whether cross-workspace ticket corruption or leakage described in thr-002 is prevented by design or remains possible.",
+        "importance": "Without documentation of how identifiers and namespaces in the retrieval index incorporate workspace ownership and how retrieval enforces workspace scoping, it is not possible to verify tenant separation for support-ticket embeddings or to rule out cross-workspace overwrites and deletions in the shared index.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-003",
+          "cmp-004",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Design or schema documentation describing the structure of source_ref and chunk identifiers for ticket-derived content, including whether and how workspace or tenant identifiers are embedded.",
+          "Architecture or API documentation for the retrieval index and ingestion pipeline that explains how writes and deletes are scoped by workspace, and how conflicts between identical ticket identifiers in different workspaces are handled.",
+          "Documentation of any per-workspace namespaces, collections, or filters used by the RetrievalIndex APIs when serving queries from the Answers service."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-014",
+          "evd-015",
+          "evd-023"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Embedding index retention and deletion behavior is not described relative to source ticket lifecycle",
+        "description": "The data-handling documentation states that resolved support tickets on the external support platform are retained for two years and then deleted under an agreed retention schedule (evd-004). The operations notes state that the nightly ingestion run \"replaces changed chunks by source reference\" and that the index is the only copy of the embeddings (evd-023). The Mantis packet raises a candidate issue that partial or interrupted exports, or missing tombstones, could cause old chunks to remain indefinitely in the process-global index (evd-014, evd-015). However, the supplied documents do not describe how deletions or retention enforcement on the support platform propagate to the retrieval index and its embeddings, whether tombstones or generation markers are used, or what maximum lag is expected between source deletion and removal from the index. Consequently, the assessment cannot determine whether the retrieval index follows the sources' lifecycle as required by req-RAG-003.",
+        "importance": "Without a documented propagation mechanism and lag for deletions and corrections from the support platform to the embeddings index, it is unclear whether tickets removed or corrected at the source are reliably removed or updated in the retrieval corpus. This affects both data-protection commitments and the integrity of answers derived from ticket history for each workspace, and it interacts with cross-workspace corruption risks in thr-002.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-003",
+          "cmp-004",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Documentation of how deletions and retention enforcement on the support platform (including the two-year schedule) are propagated to the retrieval index and any derived embeddings, including the mechanisms used (for example, tombstones, full snapshots, reconciliation jobs).",
+          "An explicit statement of the maximum expected lag between a deletion or correction at the source and its reflection in the index and embeddings.",
+          "Any storage lifecycle or retention configuration applied to the managed vector database that bounds how long embeddings derived from deleted tickets are kept."
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-023",
+          "evd-014",
+          "evd-015"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "703e6adff151d513857a39b7cdb9f8063657ef505affdf96c8b95ad4a35e4fef"
+}

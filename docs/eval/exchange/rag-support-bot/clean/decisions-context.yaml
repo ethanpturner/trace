@@ -1,0 +1,748 @@
+# ForgeFlow context review
+#
+# Fill in `decision:` with `approve` or `reject`, edit any field listed under `editable:`, answer a
+# question by writing under `answer:`, and set `confirm: true` on a claim you can vouch for. Leave
+# anything you have no view on exactly as it is: an unchanged entry applies nothing.
+#
+# List evidence identifiers under an entry's `attach_evidence:` to link existing references to it.
+# Settle a contradiction by filling both `resolution:` and `rationale:` under `contradictions:`.
+# Add an object the extractor missed under `additions:`, as
+#   - type: components            # or actors, assets, data_flows, trust_boundaries
+#     fields: {name: ..., ...}    # the object's own fields; the identifier is allocated for you
+#
+# Identifiers, statuses, and timestamps are the application's and are shown for reference.
+# Changing one here has no effect.
+# Exchange reviewer policy (Phase 5-A, 2026-09-11): every extracted object and claim is approved as
+# extracted, unedited, so the pipeline's own downstream handling of the packet-derived claims is what
+# is measured; blocking questions are answered from the supplied documents only, restating what they
+# establish and naming the packet's records as unverified where the packet is the sole source.
+assessment_id: asm-001
+system_context_version: 1
+reviewer: exchange-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Relay Answers API
+    description: 'Declared in openapi.yaml: 2 operation(s).'
+    component_type: api_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - 'workspaceToken: http bearer'
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Help panel
+    description: In-product chat surface within Relay that signed-in workspace users use to ask questions and view
+      cited answers.
+    component_type: web_client
+    technology:
+    - web_ui
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Retrieval index
+    description: Managed vector database holding embeddings of help-center articles and resolved support tickets
+      for all workspaces from a single shared index.
+    component_type: vector_database
+    technology:
+    - managed_vector_db
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Ingestion pipeline
+    description: Nightly job that reads the published help-center repository and the support platform's resolved-tickets
+      export, chunks and embeds content, and is the only writer to the retrieval index.
+    component_type: batch_job
+    technology:
+    - batch_pipeline
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-005
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Model provider
+    description: Hosted large-language-model API invoked by the answer service with the user's question and retrieved
+      passages.
+    component_type: llm_api
+    technology:
+    - hosted_llm_api
+    ownership: null
+    deployment_zone: null
+    internet_accessible: true
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-006
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Support platform
+    description: External support platform that stores resolved support tickets, applies email masking before export,
+      and deletes tickets after two years under the agreed retention schedule.
+    component_type: support_platform
+    technology:
+    - saas_support_platform
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-007
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Help-center repository
+    description: Published help-center content repository that holds Relay's public documentation used as a retrieval
+      source for the assistant.
+    component_type: content_repository
+    technology:
+    - content_repo
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Relay signed-in workspace user
+    actor_type: end_user
+    trust_level: null
+    capabilities:
+    - ask_support_questions
+    authentication_method: null
+- id: act-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Support team reviewers
+    actor_type: internal_staff
+    trust_level: null
+    capabilities:
+    - answer_quality_review
+    authentication_method: null
+- id: act-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Documentation team
+    actor_type: internal_staff
+    trust_level: null
+    capabilities:
+    - publish_help_center_docs
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Help-center documentation content
+    asset_type: documentation
+    description: Published help-center documentation that the assistant uses as one of its retrieval sources.
+    confidentiality_impact: Content is intended to be public; compromise would not expose private customer data
+      but could affect guidance and trust in documentation.
+    integrity_impact: Tampering with help-center content could mislead users via both the documentation site and
+      the assistant's answers.
+    availability_impact: Loss of help-center content would reduce the assistant's ability to answer product questions
+      accurately.
+    data_classification: public
+    owner: documentation-team
+- id: ast-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Support ticket content
+    asset_type: customer_support_data
+    description: Resolved support ticket text from the support platform, used as a retrieval source after email
+      masking but potentially including configuration snippets and other customer-provided details.
+    confidentiality_impact: Exposure could reveal customers' support conversations and configuration details; email
+      addresses are masked but other sensitive text may remain.
+    integrity_impact: Corruption could affect support history and the accuracy of assistant answers derived from
+      tickets.
+    availability_impact: Loss could reduce support context available to the assistant and affect customer support
+      operations.
+    data_classification: customer_support
+    owner: support-team
+- id: ast-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Retrieval embeddings index
+    asset_type: derived_embeddings
+    description: Embeddings and associated metadata for help-center articles and resolved support tickets stored
+      in the managed vector database used for retrieval.
+    confidentiality_impact: Although derived, embeddings may encode information about underlying support content;
+      compromise could leak patterns or approximations of ticket data and public documentation.
+    integrity_impact: Corruption of embeddings or metadata could lead to incorrect or irrelevant passages being
+      retrieved and shown to users.
+    availability_impact: Loss or unavailability of the embeddings index would significantly degrade the assistant's
+      ability to retrieve relevant support information.
+    data_classification: derived_support_and_docs_embeddings
+    owner: null
+- id: ast-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Workspace bearer token
+    asset_type: credential
+    description: Bearer token representing the signed-in user's workspace-scoped session, used to authenticate calls
+      to the Relay Answers API.
+    confidentiality_impact: Leakage would allow impersonation of a workspace-scoped session when calling the Relay
+      Answers API.
+    integrity_impact: Use of a stolen token could allow an attacker to send forged queries as that workspace.
+    availability_impact: Revocation or invalid issuance of tokens would prevent legitimate users from accessing
+      the assistant.
+    data_classification: credential
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Help-center repository to ingestion pipeline
+    direction: one_way
+    protocol: null
+    data_types:
+    - help_center_docs
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-007
+    destination_component_id: cmp-004
+- id: df-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Resolved-tickets export to ingestion pipeline
+    direction: one_way
+    protocol: null
+    data_types:
+    - resolved_support_tickets_export
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-006
+    destination_component_id: cmp-004
+- id: df-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Ingestion pipeline writes embeddings to retrieval index
+    direction: one_way
+    protocol: null
+    data_types:
+    - embeddings
+    - metadata
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-004
+    destination_component_id: cmp-003
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Vector database network segment
+    boundary_type: network_segment
+    description: Network boundary around the managed vector database used for the retrieval index; operations notes
+      state the vector database is reachable only from the answer service's network segment.
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-027
+  editable:
+    predicate: declared_security_schemes
+    value: 'workspaceToken: http bearer'
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-026
+  editable:
+    predicate: operation_authentication
+    value: 'GET /v1/health declares `security: []` — the specification''s own affirmative statement that the operation
+      requires no authentication'
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: purpose
+    value: Relay Answers is the in-product support assistant for the Relay project-management platform; signed-in
+      users ask questions in the help panel and receive cited answers sourced from Relay documentation and the workspace's
+      support history.
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  editable:
+    predicate: role
+    value: In-product chat surface used by signed-in Relay users to ask questions and view cited answers.
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: user_scope
+    value: Available to every signed-in user of any workspace on any plan.
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: multi_tenancy
+    value: Single shared retrieval index serving all workspaces; each query returns the top eight passages ranked
+      by embedding similarity, and relevance alone selects the passages that reach the prompt.
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: writer_scope
+    value: The ingestion pipeline is the only writer to the retrieval index and runs nightly to update it.
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-023
+  editable:
+    predicate: data_sources
+    value:
+    - help-center-repo
+    - support-platform
+    rationale: null
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: metadata_recorded
+    value: For each indexed item, the ingestion pipeline records the source and timestamp.
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-004
+  editable:
+    predicate: content_nature
+    value: Published help-center repository containing Relay's public documentation, which is reviewed by the documentation
+      team before the ingestion pipeline sees it.
+    rationale: null
+- id: ctx-011
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: retention_policy
+    value: Resolved support tickets are retained on the support platform for two years and then deleted under the
+      retention schedule agreed with customers.
+    rationale: null
+- id: ctx-012
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-023
+  editable:
+    predicate: export_masking
+    value: In the resolved-tickets export used for ingestion, customer email addresses are masked by the support
+      platform before export.
+    rationale: null
+- id: ctx-013
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-024
+  editable:
+    predicate: content_characteristics
+    value: Ticket text sometimes quotes configuration snippets that customers pasted into support conversations,
+      and the masking step covers email addresses only.
+    rationale: null
+- id: ctx-014
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: service_role
+    value: Hosted large-language-model API that receives the user's question and retrieved passages from the answer
+      service, with workspace and user identifiers stripped from the request first.
+    rationale: null
+- id: ctx-015
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: training_terms
+    value: The model provider's terms for the assistant's traffic exclude training on submitted content.
+    rationale: null
+- id: ctx-016
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: transport_security
+    value: Requests to the model provider are sent over TLS.
+    rationale: null
+- id: ctx-017
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-023
+  editable:
+    predicate: network_access
+    value: The vector database backing the retrieval index is the managed offering's standard tier and is reachable
+      only from the answer service's network segment.
+    rationale: null
+- id: ctx-018
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-023
+  editable:
+    predicate: stored_data
+    value: The retrieval index holds embeddings of help-center articles and resolved support tickets, with source
+      and timestamp recorded for every indexed item; it is the only copy of the embeddings.
+    rationale: null
+- id: ctx-019
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-022
+  editable:
+    predicate: answering_mode
+    value: Each answer results in a single model call; there is no multi-step agent loop and the assistant takes
+      no actions beyond returning text.
+    rationale: null
+- id: ctx-020
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-022
+  editable:
+    predicate: quota_and_control
+    value: A per-workspace daily answer quota bounds spend, and the service can be disabled per workspace with a
+      feature flag.
+    rationale: null
+- id: ctx-021
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-018
+  - evd-020
+  - evd-019
+  editable:
+    predicate: api_surface
+    value: The Relay Answers API exposes POST /v1/answers to ask a question and receive a cited answer, and GET
+      /v1/health as a liveness probe; the global security scheme uses a workspace bearer token, while the health
+      endpoint explicitly sets an empty security requirement.
+    rationale: null
+- id: ctx-022
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-019
+  - evd-017
+  editable:
+    predicate: definition
+    value: HTTP bearer token representing the signed-in user's workspace-scoped session token, identifying the caller's
+      workspace to the Relay Answers API.
+    rationale: null
+- id: ctx-023
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: output_handling
+    value: The prompt places retrieved passages inside a delimited context block marked as reference material rather
+      than instructions; answers are returned with the source reference of each cited passage and rendered as plain
+      text in the help panel, which does not execute or interpret model output.
+    rationale: null
+- id: ctx-024
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-024
+  editable:
+    predicate: review_process
+    value: The support team performs a weekly manual review of a sample of twenty answers for quality.
+    rationale: null
+- id: ctx-025
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  - evd-014
+  - evd-015
+  editable:
+    predicate: mantis_campaign_summary
+    value: In a prior Mantis AI security review pass, no findings met the reporting quality predicate for verified
+      or reproducible vulnerabilities or exploit chains; eight active candidate records and four canonical low-priority
+      candidate issue classes were recorded, but all remained unverified candidates with missing reproduction and
+      patch evidence, so none were promoted to confirmed vulnerabilities.
+    rationale: null
+- id: ctx-026
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-015
+  editable:
+    predicate: source_identification
+    value: Mantis candidate record B.1 describes RetrievalIndex.replace_source and remove_source identifying objects
+      solely by source_ref derived from ticket_id, without including workspace ownership or source kind in the key,
+      implying potential cross-workspace collisions on duplicate ticket IDs.
+    rationale: The Mantis packet's candidate record B.1 (status PROVISIONALLY_VALID, unreproduced) provides a detailed
+      description of how retrieval-index methods derive and use source_ref; this is treated as a provisional account
+      of implementation details rather than a confirmed property.
+- id: ctx-027
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-015
+  editable:
+    predicate: search_scope
+    value: Mantis candidate record B.2 asserts that RetrievalIndex.search scores every chunk in a process-global
+      index without authorization scoping and that the answer endpoint uses the caller's workspace_id only for quota
+      charging, not for restricting search results by workspace.
+    rationale: The description comes from Mantis candidate record B.2, which is marked PROVISIONALLY_VALID and unreproduced;
+      it is included as a provisional characterization of how search is currently wired rather than a confirmed
+      vulnerability.
+- id: ctx-028
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-015
+  editable:
+    predicate: deletion_handling
+    value: Mantis candidate record B.3 describes run_nightly updating only rows present in the current export and
+      propagate_deletions removing content only for explicit tombstone rows, with no generation marker, complete-snapshot
+      contract, high-water mark, reconciliation against active source keys, or persistent deletion ledger, so partial
+      or interrupted exports could leave old chunks in the index indefinitely.
+    rationale: This behavior is described in Mantis candidate record B.3 (status PROVISIONALLY_VALID, unreproduced)
+      and is treated as provisional detail about how the ingestion pipeline handles deletions and partial exports.
+- id: ctx-029
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-015
+  editable:
+    predicate: default_configuration_risk
+    value: Mantis candidate record B.4 states that load_settings substitutes a hard-coded mapping containing dev-token-acme
+      and dev-token-globex whenever WORKSPACE_TOKENS is unset or an empty string, and that main.py calls load_settings
+      at import with no explicit development-mode gate or production startup validation, so a deployment missing
+      this environment variable could silently use predictable development workspace identities.
+    rationale: The behavior is described in Mantis candidate record B.4 (status PROVISIONALLY_VALID, unreproduced);
+      it is captured as a provisional account of configuration defaults rather than a confirmed vulnerability.
+- id: ctx-030
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence: []
+  editable:
+    predicate: retention_policy
+    value: null
+    rationale: The documentation specifies a two-year retention period for resolved support tickets on the source
+      support platform and describes nightly ingestion into a shared retrieval index, but does not state how long
+      embeddings remain in the index or how deletions and partial exports affect retention.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: Does the retrieval index enforce workspace scoping or other authorization filters inside the index before
+    similarity scoring and top-k selection for search queries?
+  priority: high
+  blocking: true
+  answer: Not established by the supplied documentation. The architecture overview states that all workspaces are
+    served from one shared index and that relevance alone selects the passages that reach the prompt; no workspace-level
+    filter on retrieval is described in the architecture overview, the operations notes, or the OpenAPI document.
+    Where the reviewer packet asserts the same absence about the code, that record is marked unverified by its own
+    authors.
+- id: qst-002
+  question: What is the retention and deletion policy for embeddings in the retrieval index, and how is it kept
+    consistent with the two-year retention schedule for resolved support tickets on the support platform?
+  priority: high
+  blocking: true
+  answer: 'Only the source side is documented: the support platform deletes resolved tickets after two years under
+    a schedule agreed with customers, and the operations notes describe replacement of changed chunks by source
+    reference. How, and whether, a deletion at the source reaches the index and its embeddings is not described
+    in any supplied document. Where the reviewer packet describes tombstone-only propagation in the code, that record
+    is marked unverified by its own authors.'
+- id: qst-003
+  question: In production deployments, how is the WORKSPACE_TOKENS configuration managed and validated, and is there
+    any fallback to hard-coded development tokens if it is unset or empty?
+  priority: high
+  blocking: true
+  answer: Not described in the supplied documentation. The only account of WORKSPACE_TOKENS handling is the reviewer
+    packet's candidate record, which its own authors mark unverified; the architecture and operations documents
+    do not describe how workspace tokens are provisioned or validated in production.
+- id: qst-004
+  question: Beyond masking customer email addresses, are any additional redaction or classification controls applied
+    to support ticket content before it is embedded and added to the retrieval index (for example for secrets, configuration
+    snippets, or other sensitive data)?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-005
+  question: No actor in the context is anonymous or external. If the system is reachable from outside, who reaches
+    it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-006
+  question: No actor in the context is administrative or privileged. Who operates and configures the system, and
+    through what?
+  priority: medium
+  blocking: false
+  answer: null

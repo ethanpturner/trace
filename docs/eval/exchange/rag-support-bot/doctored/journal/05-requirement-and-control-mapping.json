@@ -1,0 +1,113 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 17300,
+    "output_tokens": 12513,
+    "cache_read_tokens": 17408,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.148931",
+    "duration_seconds": 120.45566129172221
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applies because the retrieval index (cmp-004) is built from sources whose contents can be deleted or corrected \u2014 the support platform\u2019s resolved-ticket export and the help-center repository \u2014 and there is a documented two-year retention schedule and deletion for tickets on the source platform (evd-002, evd-004, evd-023). The threat scenario is specifically about embeddings for deleted or corrected tickets persisting in the index beyond the source lifecycle.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-015"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applies because the system retains derived working copies of customer support ticket text as embeddings in the managed retrieval index (ast-003 via cmp-003 and cmp-004) separate from the primary support platform store (ast-001), and tickets have a documented two-year retention period on the source platform (evd-002, evd-004, evd-023). The threat concerns those working copies outliving the expected retention.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-015"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applies because the system stores customer support ticket data in more than one place \u2014 on the external support platform and in the embeddings index used for retrieval (ast-001, ast-003; evd-001, evd-002, evd-023) \u2014 and the threat scenario begins with a customer deletion or correction request or scheduled expiry on the source platform and asks whether derived copies in the index are also removed.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-015"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Retrieval index deletion and retention behavior is undocumented",
+        "description": "The documentation states that resolved tickets on the support platform are retained for two years and then deleted under an agreed retention schedule (evd-004), and that a nightly ingestion job is the only writer to a managed retrieval index holding embeddings of help-center content and resolved support tickets (evd-002, evd-023). It also notes that the ingestion run replaces changed chunks by source reference (evd-023). However, the supplied material does not describe how deletions or corrections in the source ticket system \u2014 whether from customer deletion requests or expiry under the two-year schedule \u2014 are propagated to the retrieval index, nor whether the embeddings index has its own defined retention period. The Mantis candidate record B.3 (evd-015) suggests a possible implementation in which partial exports or missing tombstones could leave embeddings for deleted or corrected tickets in the index indefinitely, but this behavior is explicitly marked PROVISIONALLY_VALID and unverified. As a result, the assessment cannot determine from documentation whether the retrieval index follows the sources\u2019 lifecycle or whether derived embeddings are removed in line with customer expectations.",
+        "importance": "Without a documented deletion and retention path for the retrieval index, it is impossible to verify compliance with requirements on propagation of deletions from source systems and on retention of working copies of sensitive data, and the threat that embeddings for deleted or corrected tickets remain retrievable (thr-003) cannot be resolved from documentation alone.",
+        "related_object_ids": [
+          "thr-003",
+          "req-RAG-003",
+          "req-DATA-002",
+          "req-DATA-004",
+          "cmp-003",
+          "cmp-004",
+          "ast-001",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Design or operations documentation describing how deletions and corrections in the support platform\u2019s tickets are detected and propagated to the retrieval index, including any use of tombstones or generation markers.",
+          "A statement of whether nightly exports from the support platform are complete, consistent snapshots or may be partial/incremental, and how the ingestion pipeline reconciles this with the current set of active source keys.",
+          "Documentation of any retention policy or lifecycle configuration applied to the retrieval index and embeddings themselves, and how it relates to the two-year ticket retention on the source platform.",
+          "Implementation or configuration references (e.g., code excerpts, pipeline configuration) showing how propagate_deletions or equivalent mechanisms are intended to behave in production."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-015"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "47121ade12f8e982c42f7e37551ca8799c17043193d4fbf6863e1d99a8b54e00"
+}

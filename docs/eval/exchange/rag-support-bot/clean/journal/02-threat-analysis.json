@@ -1,0 +1,281 @@
+{
+  "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 18283,
+    "output_tokens": 18096,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.20381375",
+    "duration_seconds": 184.92042099963874
+  },
+  "response": {
+    "threats": [
+      {
+        "title": "Cross-workspace exposure of support tickets via shared retrieval index",
+        "description": "Scenario where, if similarity search in the shared retrieval index is not scoped by workspace, a user in one Relay workspace can obtain passages derived from other workspaces\u2019 resolved support tickets through the assistant\u2019s answers.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "authorization",
+          "multi_tenancy"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-001",
+          "cmp-003",
+          "cmp-006"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "All workspaces\u2019 support tickets are embedded into a single shared retrieval index that returns top-k passages ranked by embedding similarity (evd-002, evd-023).",
+          "Similarity search over the index is not filtered or partitioned by workspace ownership before ranking and top-k selection, as suggested but not confirmed by the candidate analysis of RetrievalIndex.search (evd-014, evd-015).",
+          "Any signed-in user can invoke the assistant for their workspace via the help panel and the Relay Answers API using a workspace bearer token (evd-001, evd-017, evd-018, evd-019, evd-020, evd-025, evd-026, evd-027, evd-028)."
+        ],
+        "attack_path": [
+          "A signed-in user in Workspace A asks crafted questions in the help panel intended to match concepts that may appear in other customers\u2019 support tickets (evd-001, evd-002).",
+          "The help panel calls POST /v1/answers on the Relay Answers API with the user\u2019s question and a workspace bearer token identifying Workspace A (evd-017, evd-018, evd-019, evd-020, evd-025, evd-026, evd-027, evd-028).",
+          "The answer service queries the shared retrieval index; if search is globally scoped as described in the candidate record, results can include chunks derived from other workspaces\u2019 resolved support tickets (evd-002, evd-014, evd-015, evd-023).",
+          "Those cross-workspace chunks are included as retrieved passages in the model prompt and are cited back in the assistant\u2019s answer shown in Workspace A\u2019s help panel (evd-002, evd-003).",
+          "The user reads text or paraphrases that reveal details of other customers\u2019 support interactions or configurations that should be isolated per workspace (evd-024)."
+        ],
+        "impact": "Disclosure of other workspaces\u2019 support ticket content and derived embeddings to an ordinary user in a different workspace, breaking tenant isolation and potentially exposing configuration snippets or other sensitive details contained in tickets (evd-014, evd-015, evd-024).",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-014",
+          "evd-015",
+          "evd-017",
+          "evd-018",
+          "evd-019",
+          "evd-020",
+          "evd-023",
+          "evd-024",
+          "evd-025",
+          "evd-026",
+          "evd-027",
+          "evd-028"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Cross-workspace ticket corruption via unscoped source identifiers in the retrieval index",
+        "description": "Scenario where, if the retrieval index identifies ticket-derived chunks solely by a source_ref built from ticket_id as described in candidate record B.1, tickets from one workspace can overwrite or delete embeddings belonging to another workspace, leading to cross-tenant data corruption and potential leakage through the assistant.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "information_disclosure",
+          "multi_tenancy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-004",
+          "cmp-003",
+          "cmp-001",
+          "cmp-002",
+          "cmp-006"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "Ingestion and retrieval logic identify ticket chunks only by a source_ref derived from ticket_id, without including workspace ownership or source kind, so identical ticket_id values across workspaces collide, as suggested but not confirmed by candidate record B.1 (evd-014, evd-015).",
+          "Exports from the support platform can contain duplicate ticket IDs across different workspaces, creating the possibility of such collisions (evd-014, evd-015).",
+          "The nightly ingestion run is the only writer to the retrieval index and updates embeddings by source reference (evd-002, evd-023)."
+        ],
+        "attack_path": [
+          "Workspace A has a resolved support ticket with some ID (for example, T-100); its content is embedded and stored in the shared retrieval index under a source_ref derived from that ID (evd-002, evd-023, evd-015).",
+          "Later, Workspace B\u2019s support platform export contains a different ticket that also uses the same ticket ID; because source_ref is derived only from the ID, ingestion treats it as the same object (evd-002, evd-023, evd-015).",
+          "The ingestion pipeline\u2019s replace_source or remove_source logic overwrites or deletes the existing chunks for that source_ref, so Workspace A\u2019s embeddings are silently replaced by B\u2019s content or removed altogether (evd-015).",
+          "When users in Workspace A query the assistant, retrieval returns B\u2019s ticket-derived content under citations that appear to belong to A, or fails to return A\u2019s ticket-derived content at all (evd-002, evd-003).",
+          "Users in Workspace A may see another customer\u2019s information presented as their own, or lose the ability to retrieve their own support history through the assistant (evd-024)."
+        ],
+        "impact": "Integrity of the retrieval index and support-ticket\u2013derived knowledge is compromised across tenants: one workspace\u2019s tickets can overwrite or delete another\u2019s embeddings, which can both leak another workspace\u2019s ticket content through answers and corrupt or erase a workspace\u2019s own support-history context (evd-014, evd-015, evd-024).",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-014",
+          "evd-015",
+          "evd-023",
+          "evd-024"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Embeddings retain deleted or corrected ticket data beyond support-platform retention",
+        "description": "Scenario where, if deletions and corrections in the support platform are propagated to the retrieval index only via explicit tombstone rows as described in candidate record B.3, partial or interrupted exports can leave outdated ticket-derived embeddings in the index indefinitely, so the assistant continues to surface data that has been deleted or corrected at the source.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "retention",
+          "privacy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-004",
+          "cmp-003",
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "Resolved support tickets are deleted from the support platform after two years under a customer-agreed retention schedule, and may also be corrected or removed earlier on request (evd-004).",
+          "Ingestion runs nightly, reading the resolved-tickets export, replacing changed chunks by source reference, and writing to a managed vector database that is the only copy of the embeddings (evd-002, evd-023).",
+          "Deletion or correction of tickets in the support platform is reflected in the export only via explicit tombstone rows, and the ingestion job does not reconcile against the full set of active keys, as suggested but not confirmed by candidate record B.3 (evd-014, evd-015).",
+          "Exports can be partial, interrupted, or omit some deleted or corrected tickets, so some tombstones may never reach the ingestion pipeline (evd-014, evd-015)."
+        ],
+        "attack_path": [
+          "A customer opens a support ticket that includes sensitive configuration details or other data they later request be removed; this ticket is ingested and embedded into the shared retrieval index (evd-002, evd-023, evd-024).",
+          "The support platform deletes or corrects the ticket in accordance with the agreed retention policy or a user request (evd-004).",
+          "Because of a partial or interrupted export, or missing tombstone rows for the deleted/corrected ticket, the nightly ingestion run does not remove or update the corresponding embeddings in the retrieval index (evd-023, evd-015).",
+          "Weeks or months later, a user in the same workspace asks the assistant a question that matches this historical ticket; the obsolete embeddings remain in the index and are retrieved into the model prompt (evd-002, evd-003).",
+          "The assistant surfaces details from the deleted or corrected ticket in its answer, effectively retaining and exposing data beyond the documented retention schedule on the support platform (evd-024)."
+        ],
+        "impact": "Support-ticket\u2013derived embeddings may preserve and expose sensitive or inaccurate information that has been deleted or corrected in the support platform, undermining retention and correction guarantees and potentially violating customer expectations or regulatory requirements about data lifetime (evd-004, evd-014, evd-015, evd-024).",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-014",
+          "evd-015",
+          "evd-023",
+          "evd-024"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Use of default development workspace tokens in production enables unauthorized assistant access",
+        "description": "Scenario where, if a production or otherwise externally reachable Relay Answers deployment starts with WORKSPACE_TOKENS unset or empty and falls back to hard-coded development workspace tokens as described in candidate record B.4, anyone who knows those public tokens could call the Answers API as those workspaces and retrieve whatever information the assistant can access.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "elevation_of_privilege",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-004",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "The Relay Answers API uses a workspace bearer token (workspaceToken security scheme) to identify the caller\u2019s workspace for POST /v1/answers (evd-017, evd-018, evd-019, evd-020, evd-025, evd-026, evd-027, evd-028).",
+          "At least one deployment of the service is reachable by untrusted clients (for example, via the internet or from a shared internal network), rather than being accessible only through the main Relay application.",
+          "In that deployment, WORKSPACE_TOKENS is unset or empty so that, if the implementation matches candidate record B.4, the process falls back to a hard-coded mapping containing dev-token-acme and dev-token-globex instead of failing startup (evd-014, evd-015).",
+          "The hard-coded development tokens are discoverable from source or documentation and are accepted by the deployment as valid workspace bearer tokens, allowing callers who possess them to impersonate those workspaces when invoking POST /v1/answers."
+        ],
+        "attack_path": [
+          "An attacker learns the development workspace bearer tokens from public source or documentation and discovers an accessible Relay Answers API deployment (evd-017, evd-025, evd-014).",
+          "Because WORKSPACE_TOKENS is unset or empty in that deployment, the service accepts the known development tokens as valid workspace bearer tokens for specific workspaces, as described in candidate record B.4 (evd-014, evd-015).",
+          "The attacker makes arbitrary POST /v1/answers calls using these tokens, causing the answer service to perform retrieval against the shared index and call the model provider (evd-002, evd-018, evd-023).",
+          "The attacker reads any ticket-derived or documentation-derived information that the assistant would surface for those workspaces, without authenticating through Relay\u2019s normal user flows (evd-001, evd-024)."
+        ],
+        "impact": "Predictable development workspace tokens become effectively public credentials granting access to whatever information the assistant exposes for those workspaces, bypassing normal Relay authentication and enabling unauthorized reading of support-ticket\u2013derived knowledge or other workspace-specific context (evd-014, evd-015, evd-024).",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-014",
+          "evd-015",
+          "evd-017",
+          "evd-018",
+          "evd-019",
+          "evd-020",
+          "evd-023",
+          "evd-024",
+          "evd-025",
+          "evd-026",
+          "evd-027",
+          "evd-028"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Exposure of support ticket content through compromise or misuse of the external model provider",
+        "description": "Scenario where compromise or misuse of the hosted LLM provider that receives user questions and retrieved passages would expose support-ticket and documentation content sent in prompts, despite transport encryption and contractual limits on training.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "third_party_risk"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-005",
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "The answer service sends each user\u2019s question together with retrieved passages from help-center documentation and resolved support tickets to a hosted large-language-model API operated by an external provider (evd-002, evd-003, evd-004).",
+          "Support tickets can include configuration snippets and other customer-provided details, with only email addresses masked before export (evd-023, evd-024).",
+          "Requests to the model provider are sent over TLS and the provider\u2019s terms for this traffic exclude training on submitted content, but the provider necessarily processes the content in cleartext and may log or store it internally (evd-004).",
+          "An attacker compromises the model provider\u2019s environment, or the provider\u2019s personnel or processes fail to keep the submitted content confidential."
+        ],
+        "attack_path": [
+          "A Relay user asks a question; the answer service retrieves relevant passages from help-center documentation and resolved support tickets and sends them, along with the user\u2019s question, to the external model provider (evd-001, evd-002, evd-003, evd-004).",
+          "Within the provider\u2019s infrastructure, the prompt payload containing this text is stored, logged, or otherwise accessible to internal systems or personnel.",
+          "An external attacker who has compromised the provider, or a malicious or careless insider at the provider, accesses these stored prompts and extracts support-ticket and documentation content.",
+          "The extracted content is exfiltrated or reused in ways outside Relay\u2019s control, potentially revealing customer support histories and configuration details (evd-024)."
+        ],
+        "impact": "Confidential support-ticket content and documentation snippets transmitted as model prompts could be exposed through the external model provider, beyond Relay\u2019s direct control and despite TLS in transit and contractual training exclusions (evd-002, evd-003, evd-004, evd-023, evd-024).",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "ca5a9a1a3e7db89a5a0f95d71cf99bd717184444ab16b43ca9bcdf71301ff4f2"
+}

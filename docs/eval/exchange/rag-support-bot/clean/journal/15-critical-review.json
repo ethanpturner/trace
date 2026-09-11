@@ -1,0 +1,68 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12955,
+    "output_tokens": 15003,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.16622375",
+    "duration_seconds": 156.90947070810944
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "critique_type": "unsupported_claim",
+        "description": "thr-003 treats early correction/removal of tickets on the support platform as a documented capability backed by evd-004, but evd-004 only states deletion after two years, so this part of the threat\u2019s preconditions is not evidenced and should be marked as an assumption or removed.",
+        "rationale": "Precondition 1 for thr-003 states that resolved support tickets \"may also be corrected or removed earlier on request (evd-004)\", and the impact and attack path repeatedly refer to tickets that have been \"deleted or corrected\" at the source. evd-004, however, only says that \"Resolved support tickets are retained on the support platform for two years and then deleted under the retention schedule agreed with customers\" and does not mention any capability for correction, on-request early deletion, or deletion before the two-year point. No other cited evidence (evd-014, evd-015) documents support-platform-level correction or early-deletion guarantees; evd-014\u2013015 describe an unverified ingestion/export design, not the support platform\u2019s user-facing lifecycle semantics. Under the evidence policy, the ability to correct or delete tickets early is therefore an assumption or inference, not a documented fact supported by evd-004, and should not be presented as if the passage establishes it.",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-053",
+        "critique_type": "unsupported_claim",
+        "description": "eas-053\u2019s rationale attributes to evd-004 a claim that tickets may be deleted or corrected earlier than two years, but evd-004 only documents deletion after two years; this overstates what the cited evidence supports.",
+        "rationale": "The rationale for eas-053 states that evd-004 says tickets are retained for two years and then deleted \"and that they may be deleted or corrected earlier\", using this to establish that ticket data at the source is subject to deletion and correction. The actual text of evd-004 is: \"Resolved support tickets are retained on the support platform for two years and then deleted under the retention schedule agreed with customers.\" It does not mention any mechanism for correction, any on-request early deletion, or deletion before the two-year point. By treating early deletion and correction as something evd-004 directly states, the assessment mischaracterizes the evidence. Any reliance on early deletion or correction should be explicitly marked as an assumption or an inference (potentially drawing context from evd-014/evd-015), not presented as a documented fact derived from evd-004.",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-045",
+        "critique_type": "unsupported_claim",
+        "description": "eas-045\u2019s rationale claims that evd-004 indicates tickets may be removed earlier under the retention schedule, implying broader lifecycle behaviour than the passage actually describes.",
+        "rationale": "In eas-045\u2019s rationale, evd-004 is summarized as stating that tickets are retained for two years and then deleted, \"and may also be removed earlier under the agreed retention schedule\", and this is used to support that ticket data at the source is subject to deletion and correction. evd-004 itself only states: \"Resolved support tickets are retained on the support platform for two years and then deleted under the retention schedule agreed with customers\", with no mention of removal or correction earlier than two years. Introducing early removal as something evd-004 says goes beyond the documented text and blends in an unstated assumption. Under the evidence policy, this lifecycle extension should either be explicitly marked as inferred/assumed with a rationale or omitted from the description of what evd-004 establishes.",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-004",
+        "critique_type": "missing_evidence",
+        "description": "gap-004 relies on a reviewer response to qst-002 as confirming that embedding-retention policy is undocumented, but no evidence reference for that exchange is provided, so this supporting claim is not evidenced.",
+        "rationale": "The description of gap-004 states that \"The reviewer\u2019s answer to qst-002 confirms that the retention and deletion policy for embeddings, and its consistency with the two-year ticket retention schedule, is not established by the current documentation.\" However, the only evidence identifiers attached to this gap are evd-002, evd-004, evd-023, and evd-024, none of which mention qst-002 or record the reviewer\u2019s answer. Within the provided evidence set, there is therefore no passage a reviewer can inspect to verify what was asked or how it was answered. While the underlying gap (lack of documented retention/deletion behaviour for embeddings) is well supported by what these documents do and do not say, the specific claim that a separate Q&A exchange confirms this remains uncited. Under the evidence policy, that conversational confirmation should either be recorded as its own evidence item and cited, or the gap description should be revised to rely only on the supplied documents.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "call_sha256": "846c5af9178dce7d3aae0eb7ca5ce7ff6a8e6c13041dabbabdf1ab121bfc6405"
+}

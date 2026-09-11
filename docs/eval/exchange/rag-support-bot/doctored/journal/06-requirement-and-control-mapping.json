@@ -1,0 +1,161 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 16407,
+    "output_tokens": 14882,
+    "cache_read_tokens": 17408,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.17150475",
+    "duration_seconds": 175.55467949993908
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "analytics_https",
+        "name": "Telemetry to analytics collector sent over HTTPS",
+        "description": "The provider wrapper posts answer telemetry, including request identifiers, retrieved chunk text, and generated answers, to the external analytics collector at analytics.relay-answers.example over HTTPS, providing encryption in transit between the answer service and the collector.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-007",
+          "cmp-009"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002",
+          "ast-005"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-015"
+        ],
+        "owner": "relay",
+        "limitations": []
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Support ticket text and generated answers (customer data) are sent as telemetry from the provider wrapper to an external analytics collector at analytics.relay-answers.example over HTTPS (cmp-007 \u2192 df-005 \u2192 cmp-009), so customer data leaves the primary system boundary to a second processor, matching req-TPI-001\u2019s applicable conditions about external providers processing customer data on the system\u2019s behalf (evd-015).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-015",
+          "evd-004"
+        ],
+        "assumptions": [
+          "The analytics integration described in Mantis candidate record B.7 (evd-015) is enabled for the assessed deployment, so telemetry is actually sent to the external analytics collector."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system handles restricted customer support data, including free-form ticket conversations and configuration snippets (evd-024), and forwards operational telemetry containing retrieved chunk text and generated answers to an external analytics collector managed outside the core system\u2019s trust boundary (evd-015). This matches req-LOG-001\u2019s conditions: handling restricted data and sending log-like records to a platform managed by another provider or team.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-015",
+          "evd-024"
+        ],
+        "assumptions": [
+          "Telemetry records sent to the analytics collector are treated as application log/observability data for the purposes of req-LOG-001.",
+          "The analytics integration described in Mantis candidate record B.7 (evd-015) is enabled for the assessed deployment."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "analytics_https"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Telemetry includes sensitive support ticket text and configuration snippets (evd-024) and is sent to an external analytics collector over HTTPS across an untrusted network (df-005, evd-015), so the system both stores/transmits confidential data and has that data crossing a network boundary it does not control, matching req-DATA-001\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-015",
+          "evd-004"
+        ],
+        "assumptions": [
+          "The analytics integration described in Mantis candidate record B.7 (evd-015) is enabled for the assessed deployment.",
+          "Use of HTTPS implies TLS-based encryption in transit for telemetry between the provider wrapper and the analytics collector, but the documentation does not describe encryption at rest for telemetry stored by the analytics collector or name which party provides it."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Answer analytics telemetry containing ticket-derived content is a by-product of processing user questions; it is sent to and stored by an external analytics collector over time (evd-015), so customer data is retained after processing completes and intermediate artifacts are written to persistent storage, matching req-DATA-002\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-015",
+          "evd-004"
+        ],
+        "assumptions": [
+          "The analytics collector persists telemetry records for some period beyond the immediate request, as described in the threat scenario and evd-015, but no retention period or deletion mechanism is documented for that store."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "External analytics collector data handling is not documented",
+        "description": "The only description of the analytics collector at analytics.relay-answers.example comes from the Mantis candidate record (evd-015), which states that provider.py sends telemetry containing request identifiers, retrieved chunk text (including ticket-derived snippets), and generated answers to this external processor, and that its data-handling terms are not described in the architecture or operations documents. Those same documents describe data handling and model-provider terms for the primary external processor but do not cover this analytics relationship (evd-004). As a result, the assessment cannot determine what exact fields are sent, whether any minimization or masking is applied beyond email-address masking at source, how long the analytics collector retains telemetry, or whether it may use the data for purposes beyond serving analytics, even though such details are required to evaluate req-TPI-001 and privacy obligations related to thr-004.",
+        "importance": "Without documentation of what telemetry is sent to the external analytics collector, how it is minimized, and the provider\u2019s retention and usage terms, reviewers cannot determine whether this second processor\u2019s handling of ticket-derived content is acceptable or aligned with documented customer commitments.",
+        "related_object_ids": [
+          "cmp-007",
+          "cmp-009",
+          "df-005",
+          "ast-001",
+          "ast-005"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing the analytics.relay-answers.example integration: what telemetry fields are sent (including whether ticket text and configuration snippets are included), any minimization or masking applied before transmission, the collector\u2019s retention period and deletion practices for this data, and whether the provider may use it for purposes beyond serving Relay Answers analytics."
+        ],
+        "evidence_ids": [
+          "evd-015",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Security controls for telemetry stored at the analytics collector are unknown",
+        "description": "Telemetry records containing support ticket text and generated answers are sent over HTTPS to an external analytics collector (evd-015), but the documentation does not describe how that telemetry is protected once stored at the collector: whether it is encrypted at rest, which party manages the keys, how access is controlled and audited, or whether tenant/workspace data is segregated within the analytics service. This prevents the assessment from determining how effectively thr-004 is mitigated with respect to compromise or insider misuse at the analytics provider and leaves req-DATA-001 and related data-protection expectations unassessable for this component.",
+        "importance": "Without information about at-rest protection, access control, and any tenant scoping for telemetry stored at the analytics collector, the assessment cannot evaluate how exposed ticket-derived content is if the analytics service is compromised or misused, nor whether platform-provided protections are being relied upon appropriately.",
+        "related_object_ids": [
+          "cmp-009",
+          "ast-005",
+          "df-005"
+        ],
+        "requested_evidence": [
+          "Configuration or provider documentation for analytics.relay-answers.example describing storage security controls for answer analytics telemetry, including whether data is encrypted at rest and by whom, how access to telemetry is authenticated and authorized (including any role-based access), and whether telemetry is partitioned or scoped per customer/workspace within the analytics platform."
+        ],
+        "evidence_ids": [
+          "evd-015"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "9af715bf4f8eb22ef330f5cd4db0e10b6fb8d95e7c73ead322c58dd635466392"
+}

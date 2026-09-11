@@ -1,0 +1,30 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 16586,
+    "output_tokens": 16135,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1820825",
+    "duration_seconds": 185.34326716698706
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "critique_type": "missing_evidence",
+        "description": "The mapping for req-RAG-001 marks the requirement as fully satisfied with high confidence based only on high-level architecture and operations notes about the ingestion pipeline. Those passages show that a single nightly pipeline is the only writer to the index and records source and timestamp, but they do not document the full success criteria of req-RAG-001 (e.g., specific governance, validation, provenance, or approval properties that might be required), so the claim of full satisfaction is not yet evidenced.",
+        "rationale": "evd-002 and evd-023 document that the ingestion pipeline is the only writer to the retrieval index, runs nightly, reads from the help-center repository and resolved-tickets export, chunks and embeds content, and replaces changed chunks by source reference. This directly supports that writes are mediated through a single pipeline, but nothing in the provided evidence set describes the complete text or criteria of req-RAG-001 or shows that any additional governance elements it might require (such as validation steps, provenance guarantees, or change-approval controls) are implemented. Given that the mapping concludes req-RAG-001 is fully satisfied with high confidence, the current evidence base is insufficient to justify that conclusion; the assessment can at most state that some aspects of write governance are present, not that all requirement criteria are met.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "call_sha256": "bfc99f4dfc6cddc6bc002ea1c87b3216108c192e04b151f27e18eb6ece17ed17"
+}

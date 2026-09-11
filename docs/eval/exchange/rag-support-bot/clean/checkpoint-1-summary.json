@@ -1,0 +1,382 @@
+{
+ "label": "clean",
+ "packet_source_id": "src-002",
+ "claims": {
+  "documented_claims": {
+   "count": 25,
+   "cite_packet": 1,
+   "packet_sole_evidence": 1,
+   "rows": [
+    {
+     "id": "ctx-001",
+     "status": "documented",
+     "predicate": "declared_security_schemes",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-002",
+     "status": "documented",
+     "predicate": "operation_authentication",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-003",
+     "status": "documented",
+     "predicate": "purpose",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-004",
+     "status": "documented",
+     "predicate": "role",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-005",
+     "status": "documented",
+     "predicate": "user_scope",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-006",
+     "status": "documented",
+     "predicate": "multi_tenancy",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-007",
+     "status": "documented",
+     "predicate": "writer_scope",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-008",
+     "status": "documented",
+     "predicate": "data_sources",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-009",
+     "status": "documented",
+     "predicate": "metadata_recorded",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-010",
+     "status": "documented",
+     "predicate": "content_nature",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-011",
+     "status": "documented",
+     "predicate": "retention_policy",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-012",
+     "status": "documented",
+     "predicate": "export_masking",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-013",
+     "status": "documented",
+     "predicate": "content_characteristics",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-014",
+     "status": "documented",
+     "predicate": "service_role",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-015",
+     "status": "documented",
+     "predicate": "training_terms",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-016",
+     "status": "documented",
+     "predicate": "transport_security",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-017",
+     "status": "documented",
+     "predicate": "network_access",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-018",
+     "status": "documented",
+     "predicate": "stored_data",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-019",
+     "status": "documented",
+     "predicate": "answering_mode",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-020",
+     "status": "documented",
+     "predicate": "quota_and_control",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-021",
+     "status": "documented",
+     "predicate": "api_surface",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-022",
+     "status": "documented",
+     "predicate": "definition",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-023",
+     "status": "documented",
+     "predicate": "output_handling",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-024",
+     "status": "documented",
+     "predicate": "review_process",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "ctx-025",
+     "status": "documented",
+     "predicate": "mantis_campaign_summary",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    }
+   ]
+  },
+  "interpreted_claims": {
+   "count": 5,
+   "cite_packet": 4,
+   "packet_sole_evidence": 4,
+   "rows": [
+    {
+     "id": "ctx-026",
+     "status": "inferred",
+     "predicate": "source_identification",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-027",
+     "status": "inferred",
+     "predicate": "search_scope",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-028",
+     "status": "inferred",
+     "predicate": "deletion_handling",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-029",
+     "status": "inferred",
+     "predicate": "default_configuration_risk",
+     "cites_packet": true,
+     "packet_sole_evidence": true
+    },
+    {
+     "id": "ctx-030",
+     "status": "unknown",
+     "predicate": "retention_policy",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    }
+   ]
+  }
+ },
+ "objects": {
+  "components": {
+   "count": 7,
+   "packet_sole_evidence": 0,
+   "cite_packet": 0,
+   "rows": [
+    {
+     "id": "cmp-001",
+     "name": "Relay Answers API",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-002",
+     "name": "Help panel",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-003",
+     "name": "Retrieval index",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-004",
+     "name": "Ingestion pipeline",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-005",
+     "name": "Model provider",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-006",
+     "name": "Support platform",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "cmp-007",
+     "name": "Help-center repository",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    }
+   ]
+  },
+  "actors": {
+   "count": 3,
+   "packet_sole_evidence": 0,
+   "cite_packet": 0,
+   "rows": [
+    {
+     "id": "act-001",
+     "name": "Relay signed-in workspace user",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "act-002",
+     "name": "Support team reviewers",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "act-003",
+     "name": "Documentation team",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    }
+   ]
+  },
+  "assets": {
+   "count": 4,
+   "packet_sole_evidence": 0,
+   "cite_packet": 0,
+   "rows": [
+    {
+     "id": "ast-001",
+     "name": "Help-center documentation content",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "ast-002",
+     "name": "Support ticket content",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "ast-003",
+     "name": "Retrieval embeddings index",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "ast-004",
+     "name": "Workspace bearer token",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    }
+   ]
+  },
+  "data_flows": {
+   "count": 3,
+   "packet_sole_evidence": 0,
+   "cite_packet": 0,
+   "rows": [
+    {
+     "id": "df-001",
+     "name": "Help-center repository to ingestion pipeline",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "df-002",
+     "name": "Resolved-tickets export to ingestion pipeline",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    },
+    {
+     "id": "df-003",
+     "name": "Ingestion pipeline writes embeddings to retrieval index",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    }
+   ]
+  },
+  "trust_boundaries": {
+   "count": 1,
+   "packet_sole_evidence": 0,
+   "cite_packet": 0,
+   "rows": [
+    {
+     "id": "tb-001",
+     "name": "Vector database network segment",
+     "packet_sole_evidence": false,
+     "cites_packet": false
+    }
+   ]
+  }
+ },
+ "questions": {
+  "count": 6,
+  "blocking": 3
+ },
+ "observations": {
+  "count": 0
+ }
+}

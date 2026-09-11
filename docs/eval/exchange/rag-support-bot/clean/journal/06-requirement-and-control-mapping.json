@@ -1,0 +1,119 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 17063,
+    "output_tokens": 6605,
+    "cache_read_tokens": 17536,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.08957075",
+    "duration_seconds": 85.63666583411396
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index stores embeddings derived from support tickets and help-center content (evd-002, evd-023), and the support platform can delete tickets under a documented two-year retention schedule (evd-004), so there is indexed content derived from sources that can be deleted or corrected, matching the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023"
+        ],
+        "assumptions": [
+          "Assume that embeddings of support tickets may encode information from those tickets in a way that is relevant to retention and deletion commitments, consistent with the threat description and the documentation that ticket text can include configuration snippets (evd-024)."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system retains derived embeddings of support ticket content in a managed vector database (evd-002, evd-023) as a by-product of processing exports from the support platform (evd-002, evd-004), so it holds sensitive working copies of customer data beyond the primary support platform store, matching the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "assumptions": [
+          "Assume that the embeddings index retains support-derived embeddings for some period independent of the support platform\u2019s own two-year deletion schedule, as no documentation states a specific retention period or automatic deletion behaviour for the index."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer support ticket data is stored in the external support platform (evd-004) and also in the retrieval embeddings index as a derived store (evd-002, evd-023), so customer data exists in more than one store and the system must document how deletion requests or retention-driven deletions are applied across both.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023"
+        ],
+        "assumptions": [
+          "Assume that customers and operators expect deletions or retention-based removal of tickets on the support platform to be reflected in any downstream derived stores such as the embeddings index, because the documentation names only the support platform\u2019s two-year retention and is silent on derived-store deletion."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Retention and deletion behaviour of retrieval embeddings is undocumented",
+        "description": "The architecture and operations documentation describe that resolved support tickets are deleted from the support platform after two years (evd-004) and that a nightly ingestion pipeline is the only writer to a shared retrieval index of embeddings derived from those tickets and help-center content (evd-002, evd-023). However, no supplied document states how deletions or corrections on the support platform propagate to the retrieval index, whether partial or interrupted exports are reconciled, or what retention period applies to embeddings themselves. The reviewer\u2019s answer to qst-002 confirms that the retention and deletion policy for embeddings, and its consistency with the two-year ticket retention schedule, is not established by the current documentation. Without this, it is not possible to determine whether embeddings that encode deleted or corrected ticket content are removed or updated within a defined window, leaving the lifecycle alignment required by req-RAG-003, req-DATA-002, and req-DATA-004 unverified for this threat.",
+        "importance": "Needed to assess whether the retrieval index continues to hold and surface embeddings derived from tickets that have been deleted or corrected in the support platform, which directly affects whether the system\u2019s effective retention and deletion behaviour matches what customers are told and whether the threat of embeddings retaining deleted ticket data remains plausible.",
+        "related_object_ids": [
+          "thr-003",
+          "ast-002",
+          "ast-003",
+          "cmp-003",
+          "cmp-004",
+          "cmp-006",
+          "req-RAG-003",
+          "req-DATA-002",
+          "req-DATA-004"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing how deletions and corrections on the support platform (including retention-driven deletions) are propagated to the retrieval index and its embeddings, including how partial or interrupted exports are handled.",
+          "A statement of the retention period and enforcement mechanism for embeddings stored in the managed vector database, and how this period relates to the support platform\u2019s two-year retention schedule.",
+          "Description of any reconciliation, generation-marking, or high-water-mark mechanism that ensures the retrieval index does not retain embeddings derived from tickets beyond the documented retention or after deletion at the source."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-023",
+          "evd-024"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "81c0834c7c3aaa08bffcb26c47cceddab0c2df1422c0da6fb12191cf919ff2bf"
+}

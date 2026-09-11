@@ -1,0 +1,71 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 17551,
+    "output_tokens": 8476,
+    "cache_read_tokens": 17408,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10887475",
+    "duration_seconds": 117.85634287493303
+  },
+  "response": {
+    "controls": [],
+    "mappings": [],
+    "documentation_gaps": [
+      {
+        "title": "Workspace token configuration and fallback behaviour are not documented",
+        "description": "OpenAPI describes a workspaceToken bearer scheme that identifies the caller's workspace (evd-017, evd-019, evd-020, evd-025, evd-027, evd-028), and asset ast-004 records workspace-scoped bearer tokens used by the Relay Answers API. However, no architecture or operations document explains how these tokens are issued, configured, rotated, or what the service does when the WORKSPACE_TOKENS configuration is missing or malformed. Mantis candidate record B.4 instead describes, with PROVISIONALLY_VALID status, a behaviour where load_settings substitutes a hard-coded mapping of development tokens (such as dev-token-acme and dev-token-globex) whenever WORKSPACE_TOKENS is unset or empty, and main.py calls load_settings at import without a production-mode gate (evd-015). Because this fallback, and any production guardrails around it, are not described in the primary documentation, the assessment cannot determine from the supplied material whether predictable development tokens could be active in a reachable deployment or how configuration failures are handled.",
+        "importance": "Clarifying how workspace tokens are configured, validated, and handled on misconfiguration is necessary to judge whether predictable development credentials can be activated in production, which is the core precondition of threat thr-008.",
+        "related_object_ids": [
+          "thr-008",
+          "cmp-001",
+          "ast-004"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing how workspace tokens are issued, configured, and rotated, including who can create or change them.",
+          "Documentation stating what happens on startup and at runtime when WORKSPACE_TOKENS is unset, empty, or syntactically invalid, including whether the service fails closed.",
+          "Current production configuration or configuration templates for WORKSPACE_TOKENS and any related settings, with a statement of how production differs from development and test environments.",
+          "If the development-token fallback described in Mantis candidate B.4 (evd-015) ever existed, documentation of when and how it is disabled or guarded in production deployments."
+        ],
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028",
+          "evd-015"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "Hard-coded development workspace tokens are used as a configuration fallback when WORKSPACE_TOKENS is unset or empty, activating predictable credentials in reachable deployments and allowing external callers who know those values to impersonate workspaces and query their assistant answers.",
+        "suggested_category": "authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 focuses on documenting how each request is constrained to the correct tenant and on deriving tenant context from server-side state rather than a client-supplied tenant identifier. It does not address the strength, randomness, or exposure of the credential used to establish that tenant context, nor the behaviour when the credential configuration is missing; a system could satisfy req-AUTHZ-001 while still enabling predictable hard-coded workspace tokens as a fallback."
+          },
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "req-AUTH-001 concerns documenting delegation of user authentication to an external identity provider, naming that provider, and stating its responsibility boundary. The threat here involves first-party workspace bearer tokens used by the Relay Answers API itself, not delegation to an external IdP, and the requirement does not speak to development fallbacks or predictability of those tokens."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 governs custody of long-lived signing keys and provider credentials that authenticate the system to external platforms, requiring they be held in a managed secret store. The development workspace tokens described in candidate B.4 (evd-015) are client-facing credentials used to authenticate callers to this service, not outbound provider credentials held by the system, so they fall outside the stated scope of req-SECRET-001."
+          }
+        ],
+        "evidence_ids": [
+          "evd-015",
+          "evd-017",
+          "evd-019",
+          "evd-020"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "e2af38c8e6da5aa349193cb32723edcb31c1a48c6b7fbe98eaba3f8fae556c22"
+}

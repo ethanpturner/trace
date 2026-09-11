@@ -1,0 +1,77 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 16529,
+    "output_tokens": 5560,
+    "cache_read_tokens": 17536,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.07845325",
+    "duration_seconds": 60.56672929087654
+  },
+  "response": {
+    "controls": [],
+    "mappings": [],
+    "documentation_gaps": [
+      {
+        "title": "Workspace token configuration and default development credentials not documented",
+        "description": "The Relay Answers API relies on a workspace bearer token (workspaceToken) as its primary authentication mechanism for POST /v1/answers, and the OpenAPI description states that this token identifies the caller\u2019s workspace (evd-017, evd-019, evd-020, evd-025, evd-027, evd-028). The threat under evaluation depends on how the WORKSPACE_TOKENS configuration is populated in production and what happens if it is unset or empty, including whether any hard-coded development tokens are accepted. The supplied architecture and operations documentation do not describe how workspace tokens are configured, validated at startup, or protected from fallback to development defaults in production deployments. A reviewer question (qst-003) confirms that this behavior is not established by the current documentation. As a result, we cannot determine from the material under review whether a production or otherwise externally reachable deployment could start with missing token configuration and still accept predictable development tokens instead of failing closed.",
+        "importance": "Understanding how WORKSPACE_TOKENS is managed and validated in production is essential to assess whether unauthorized callers could obtain assistant access by relying on default or development credentials, which would directly affect the likelihood of the documented threat scenario.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-001",
+          "ast-004"
+        ],
+        "requested_evidence": [
+          "Deployment or operations documentation describing how WORKSPACE_TOKENS is configured in production, including who manages it and how values are provisioned.",
+          "Startup behavior documentation or configuration showing what happens when WORKSPACE_TOKENS is unset, empty, or malformed in a production or externally reachable deployment (for example, whether the service refuses startup).",
+          "Any environment- or mode-specific safeguards that prevent hard-coded development workspace tokens from being accepted in production (such as explicit development-mode gates, feature flags, or configuration validation steps)."
+        ],
+        "evidence_ids": [
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The answer service\u2019s primary authentication for POST /v1/answers appears to depend on workspace bearer tokens, but if token configuration is missing or misconfigured, the process may fall back to predictable, hard-coded development workspace tokens instead of failing closed. This would allow any party who discovers those public development tokens to obtain unauthorized assistant access for the corresponding workspaces, bypassing the normal Relay authentication path. The current catalog has requirements for documenting delegated authentication (req-AUTH-001) and for storage and lifetime of outbound provider credentials (req-SECRET-001, req-SECRET-002), but none that specifically require fail-closed behavior or prohibit default development client credentials being accepted in production for first-party APIs.",
+        "suggested_category": "authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "req-AUTH-001 concerns documenting delegation of user authentication to an external identity provider and naming that provider\u2019s responsibility boundary. The threat here arises from the answer service itself accepting hard-coded development workspace tokens when its own configuration is missing, regardless of how end-user authentication is delegated upstream. Documenting the external IdP would not by itself prevent or detect acceptance of default development credentials at this internal API boundary."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 applies where the system holds credentials that authenticate it to external platforms (such as provider API keys or signing keys) and requires those to be stored in a managed secret store. The development workspace tokens here are client credentials used to authenticate callers to the Relay Answers API, not credentials the system uses to authenticate to an external platform, so the applicability conditions do not hold and the requirement does not directly address default development client credentials."
+          },
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "req-SECRET-002 addresses the lifetime and derivation of credentials used to reach customer resources on external platforms, preferring short-lived, per-use tokens. The development workspace tokens in this threat are long-lived bearer tokens for the system\u2019s own API and do not represent access from the system to an external platform, so this requirement does not apply even though both concern tokens."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 governs network placement of internal components such as data stores, queues, or internal services that should not be publicly reachable. The Relay Answers API is described as the in-product surface the help panel calls (evd-017, evd-025) and is therefore a public-facing interface by design, making this requirement inapplicable. It does not address how that public interface authenticates callers or handles default credentials."
+          }
+        ],
+        "evidence_ids": [
+          "evd-014",
+          "evd-015",
+          "evd-017",
+          "evd-019",
+          "evd-020",
+          "evd-025",
+          "evd-027",
+          "evd-028"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "7a90b8136b790517d9ca427aeec1a7d3bd01dfeff0a917b1df874dfe85fd09eb"
+}

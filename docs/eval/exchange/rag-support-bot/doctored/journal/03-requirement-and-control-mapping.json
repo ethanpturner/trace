@@ -1,0 +1,190 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 34184,
+    "output_tokens": 14064,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.18337",
+    "duration_seconds": 165.09133637463674
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "retrieval_corpus_governed",
+        "name": "Retrieval corpus write path governed",
+        "description": "A nightly ingestion pipeline is the only writer to the retrieval index, pulling from two named sources (the published help-center repository and the support platform's resolved-tickets export), chunking and embedding them, and recording source and timestamp on each indexed item; help-center content passes the documentation team's review before ingestion and ticket exports arrive with email addresses masked.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "owner": "relay",
+        "limitations": [
+          "Controls which sources can write into the corpus but does not itself enforce per-workspace read scoping within the shared index."
+        ]
+      },
+      {
+        "key": "retrieval_index_network_isolation",
+        "name": "Retrieval index network isolation",
+        "description": "The retrieval index is a managed vector database on the provider's standard tier that is reachable only from the answer service's network segment and is not internet-accessible, limiting access to internal workloads.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "owner": "relay",
+        "limitations": [
+          "Does not prevent cross-workspace access performed through the answer service, which is authorized to reach the index."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [
+          "retrieval_corpus_governed"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers retrieves stored help-center and support-ticket content from a retrieval index into the model\u2019s context at answer time, and the corpus accepts content from more than one source (help-center repository and support-platform export), so the requirement to govern the retrieval corpus\u2019s write path applies to this threat (retrieval index and ingestion pipeline).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index holds help-center content and resolved support tickets for all workspaces in a single shared index, and retrieval results are returned to signed-in users in individual workspaces through the help panel, so filtering retrieval results by the requesting workspace\u2019s authorization is directly relevant to preventing the cross-workspace ticket disclosure described in this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "assumptions": [
+          "RetrievalIndex.search behavior and any workspace or tenant filter are not described outside the Mantis candidate record B.2, which is marked provisionally valid and unverified; this mapping treats that candidate as insufficient to establish either the presence or absence of workspace scoping."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers serves many workspaces in a shared deployment, and resolved support tickets for different workspaces are stored together in a shared retrieval index, so tenant-aware authorization that constrains each answer request to its own workspace applies to this cross-workspace disclosure threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-017",
+          "evd-018",
+          "evd-020",
+          "evd-022"
+        ],
+        "assumptions": [
+          "OpenAPI documentation shows a workspace-scoped bearer token scheme, but the architecture and operations documents do not describe how the derived workspace identity is enforced across all data accesses, including retrieval from the shared index."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index stores embeddings derived from support-ticket text for multiple workspaces in a single managed vector database, so the requirement to describe how artifacts belonging to different customers are separated and how that separation is enforced on access applies to this threat of cross-workspace ticket disclosure.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "assumptions": [
+          "It is assumed that embeddings and their metadata are individually addressable within the vector database, as is typical for such services; the documentation does not describe the key or path structure explicitly."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "retrieval_index_network_isolation"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index is an internal managed vector database that holds data for more than one tenant and is not itself a public interface; its reachability is controlled via network placement, so the requirement that internal components be reachable only from the workloads that use them applies to this threat\u2019s use of the shared index.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Workspace scoping of retrieval index queries is undocumented",
+        "description": "Architecture and operations documents describe a single shared retrieval index serving all workspaces and state that queries return the top-k passages ranked by embedding similarity, with relevance alone selecting the passages that reach the prompt. They do not state whether RetrievalIndex.search scopes results by workspace or tenant, or how such scoping would be enforced inside the index. The Mantis candidate record B.2 in Appendix B describes an unscoped global search behavior but is explicitly marked PROVISIONALLY_VALID and unverified, and the reviewer\u2019s answer to qst-001 confirms that no authoritative documentation of retrieval scoping was supplied. As a result, it is not possible to determine from the material whether cross-workspace retrieval is prevented, which leaves the tenant-isolation aspects of this threat unassessed for requirements req-RAG-002, req-AUTHZ-001, and req-DATA-003.",
+        "importance": "Tenant isolation of support tickets is central to confidentiality; without documentation of how (or whether) retrieval queries are scoped by workspace, the assessment cannot determine whether a user in one workspace can retrieve or be shown ticket content from another workspace via the assistant.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-001",
+          "cmp-002",
+          "cmp-004",
+          "ast-001",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation for the retrieval layer that specifies how RetrievalIndex.search receives and applies workspace or tenant context (for example, per-tenant indexes, namespaces, or metadata filters) before similarity scoring and top-k selection.",
+          "Any tests, configuration, or code references that demonstrate the intended workspace scoping behavior of retrieval queries in production."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "9185f7da68192f8f9c58ae0bb4f6a9b3f3ff9c5f8fe9c3fc72b9e6b1eb84d127"
+}

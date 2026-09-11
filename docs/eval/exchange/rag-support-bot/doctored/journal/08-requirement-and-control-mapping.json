@@ -1,0 +1,81 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 16876,
+    "output_tokens": 6353,
+    "cache_read_tokens": 17408,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.086801",
+    "duration_seconds": 89.92201349977404
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Resolved support tickets (customer_support_data, ast-001) are exported from the external support platform (cmp-006) to the ingestion pipeline (cmp-003) over data flow df-002, which crosses trust boundary tb-001 and is documented as carrying resolved support tickets (evd-002, evd-023). This means the system transmits confidential data across a network boundary it does not control, matching req-DATA-001\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers retrieves stored content from a managed retrieval index into model prompts (evd-002), and the corpus is built from more than one source (help-center repository and resolved support tickets export, evd-002, evd-023). An attacker tampering with the export would be attempting to add or modify corpus content, so req-RAG-001, which governs who and what may write to the retrieval corpus, applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Transport protection for resolved-ticket export from support platform to ingestion pipeline is undocumented",
+        "description": "The architecture describes a nightly ingestion job that reads the support platform\u2019s resolved-tickets export and feeds the retrieval index (evd-002, evd-023), and data flow df-002 records this export crossing trust boundary tb-001 with `encryption_in_transit: unknown` and `authentication: unknown`. No supplied document states what protocol is used for this export, whether TLS or another encryption mechanism protects it in transit, or how the ingestion pipeline authenticates the support platform as the sender. Without this information, it is not possible to determine whether the interception and tampering threat on df-002 is mitigated or how req-DATA-001\u2019s expectations are met for this flow.",
+        "importance": "This gap directly affects assessment of threat thr-006: if the export is not strongly protected in transit, an attacker on the network path could read or alter sensitive support ticket content before it is embedded into the shared retrieval index, impacting both confidentiality of ast-001 and integrity of ast-003.",
+        "related_object_ids": [
+          "thr-006",
+          "df-002",
+          "cmp-003",
+          "cmp-006",
+          "ast-001",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Documentation or configuration describing how the resolved-ticket export is delivered from the support platform to the ingestion pipeline (e.g., SFTP, HTTPS API, managed transfer service).",
+          "A statement of whether TLS or another mechanism provides encryption and integrity protection for df-002, and which party provides it.",
+          "A description of how the ingestion pipeline authenticates the export\u2019s origin (e.g., API keys, mutual TLS, signed files) and how failures are handled."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-023"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  },
+  "call_sha256": "d91c91524a102950e8919deb9937e46dd60cb78ca40d83099bb73368f884ccef"
+}
