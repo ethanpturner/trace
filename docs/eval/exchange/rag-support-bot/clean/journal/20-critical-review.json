@@ -1,0 +1,34 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10516,
+    "output_tokens": 10029,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.113435",
+    "duration_seconds": 102.27310562506318
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "critique_type": "weak_attack_path",
+        "description": "thr-004\u2019s attack path and preconditions assume that at least one Relay Answers deployment is directly reachable by untrusted clients who can call /v1/answers, but the supplied documentation only establishes the service as an in-product backend for the help panel and does not document any internet- or shared-network\u2013exposed Answers API endpoint. The threat should treat this as an explicit assumption or split out a question about network exposure, rather than building it into the path as if documented.",
+        "rationale": "The threat\u2019s precondition 2 states that \u201cat least one deployment of the service is reachable by untrusted clients (for example, via the internet or from a shared internal network), rather than being accessible only through the main Relay application,\u201d and its attack path begins with an external attacker discovering an accessible Relay Answers API deployment. No cited evidence supports this network exposure. The architecture overview and API description present Relay Answers as an in-product assistant invoked from the help panel by signed-in users, with no mention of a public or semi-public Answers API surface (evd-001, evd-002, evd-017/evd-025). The OpenAPI spec defines /v1/answers and an unauthenticated /v1/health endpoint, with the latter described as a liveness probe for \u201cthe deployment beside the Relay API\u201d (evd-018/evd-026), which is consistent with an internal service but does not establish that /v1/answers is reachable from untrusted networks. Because the existence of a directly reachable deployment materially affects the plausibility and impact of the scenario, this condition should be represented as an explicit assumption or reviewer question rather than an unstated factual precondition in the attack path.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-017",
+          "evd-018",
+          "evd-025",
+          "evd-026"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  },
+  "call_sha256": "f869cc9274d2ef268e6844095b3e98eeb617cf0283c76a3ac7bc4f819aee244a"
+}

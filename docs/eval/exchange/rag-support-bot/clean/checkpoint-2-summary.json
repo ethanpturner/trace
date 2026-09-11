@@ -1,74 +1,160 @@
 {
  "label": "clean",
- "stopped_at": "critical_review: maximum_cost 3.0 reached after 14 model calls; the finding checkpoint was not reached",
- "provisional_findings": {
-  "count": 0,
-  "rows": []
+ "checkpoint_2": {
+  "provisional_findings": {
+   "count": 5,
+   "rows": [
+    {
+     "id": "fnd-001",
+     "severity_proposed": "unassigned",
+     "validation_status": "partially_supported",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "decision": "reject",
+     "severity_assigned": null
+    },
+    {
+     "id": "fnd-002",
+     "severity_proposed": "unassigned",
+     "validation_status": "partially_supported",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "decision": "approve",
+     "severity_assigned": "high"
+    },
+    {
+     "id": "fnd-003",
+     "severity_proposed": "unassigned",
+     "validation_status": "partially_supported",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "decision": "reject",
+     "severity_assigned": null
+    },
+    {
+     "id": "fnd-004",
+     "severity_proposed": "unassigned",
+     "validation_status": "partially_supported",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "decision": "reject",
+     "severity_assigned": null
+    },
+    {
+     "id": "fnd-005",
+     "severity_proposed": "unassigned",
+     "validation_status": "partially_supported",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "decision": "reject",
+     "severity_assigned": null
+    }
+   ]
+  },
+  "approved": 1,
+  "rejected": 4,
+  "documentation_gaps": {
+   "count": 12,
+   "cite_packet": 3,
+   "packet_sole_evidence": 0,
+   "statuses": [
+    "candidate"
+   ],
+   "rows": [
+    {
+     "id": "gap-001",
+     "status": "candidate",
+     "severity": "high",
+     "cites_packet": true,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-002",
+     "status": "candidate",
+     "severity": "high",
+     "cites_packet": true,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-003",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": true,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-004",
+     "status": "candidate",
+     "severity": "high",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-005",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-006",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-007",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-008",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-009",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-010",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-011",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    },
+    {
+     "id": "gap-012",
+     "status": "candidate",
+     "severity": "medium",
+     "cites_packet": false,
+     "packet_sole_evidence": false
+    }
+   ]
+  },
+  "open_questions": 7
  },
- "documentation_gaps": {
-  "count": 7,
-  "cite_packet": 3,
-  "packet_sole_evidence": 0,
-  "rows": [
-   {
-    "id": "gap-001",
-    "requirement_id": null,
-    "severity": "high",
-    "cites_packet": true,
-    "packet_sole_evidence": false,
-    "title": "Workspace-level scoping of retrieval index searches is not documented"
-   },
-   {
-    "id": "gap-002",
-    "requirement_id": null,
-    "severity": "high",
-    "cites_packet": true,
-    "packet_sole_evidence": false,
-    "title": "Workspace scoping and identifier design for the shared retrieval index are not documented"
-   },
-   {
-    "id": "gap-003",
-    "requirement_id": null,
-    "severity": "medium",
-    "cites_packet": true,
-    "packet_sole_evidence": false,
-    "title": "Embedding index retention and deletion behavior is not described relative to source ticket lifecycle"
-   },
-   {
-    "id": "gap-004",
-    "requirement_id": null,
-    "severity": "high",
-    "cites_packet": false,
-    "packet_sole_evidence": false,
-    "title": "Retention and deletion behaviour of retrieval embeddings is undocumented"
-   },
-   {
-    "id": "gap-005",
-    "requirement_id": null,
-    "severity": "medium",
-    "cites_packet": false,
-    "packet_sole_evidence": false,
-    "title": "Workspace token configuration and default development credentials not documented"
-   },
-   {
-    "id": "gap-006",
-    "requirement_id": null,
-    "severity": "medium",
-    "cites_packet": false,
-    "packet_sole_evidence": false,
-    "title": "Model provider data retention and secondary usage for prompts are not documented"
-   },
-   {
-    "id": "gap-007",
-    "requirement_id": null,
-    "severity": "medium",
-    "cites_packet": false,
-    "packet_sole_evidence": false,
-    "title": "Justification and minimization of support-ticket content sent to the model provider are not fully documented"
-   }
-  ]
+ "report": {
+  "approved_findings": 1,
+  "documentation_gaps_rendered": 0,
+  "assumption_rows": 4,
+  "open_questions_rendered": 7
  },
- "open_questions": {
-  "count": 3
- }
+ "ledger_total_usd": 3.33927025,
+ "model_calls": 20
 }

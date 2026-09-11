@@ -1,0 +1,32 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 13627,
+    "output_tokens": 16527,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.18230375",
+    "duration_seconds": 204.25882104132324
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-001",
+        "critique_type": "unsupported_claim",
+        "description": "gap-001\u2019s description relies on a reviewer response (\u201cthe reviewer\u2019s answer to qst-001 confirms that no authoritative documentation of retrieval scoping was supplied\u201d) that is not backed by any cited evidence and is not present in the provided source material.",
+        "rationale": "The documentation gap correctly notes, based on evd-001, evd-002, and evd-023, that the architecture and operations documents describe a single shared retrieval index and top-k similarity-based retrieval, but do not explain any workspace/tenant scoping. evd-015 shows candidate record B.2 describing unscoped global search and explicitly marking it PROVISIONALLY_VALID and unverified. None of these excerpts mention qst-001 or any reviewer response, so the specific claim that \u201cthe reviewer\u2019s answer to qst-001 confirms that no authoritative documentation of retrieval scoping was supplied\u201d is not documented by the cited evidence. The core gap (missing documentation of retrieval scoping) is well supported without this process-level assertion, so that sentence should be removed or rephrased to rely only on the evidenced documents.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-023",
+          "evd-015"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  },
+  "call_sha256": "f508fd6a32b5d7258437ff6bad16cf59a9f1d058baf9f3db05120517b88dc5f4"
+}

@@ -106,34 +106,98 @@ def test_both_runs_commit_their_decision_files_and_packets() -> None:
     assert doctored.count("\n### B.") - clean.count("\n### B.") == 3
 
 
-def test_page_states_the_persisted_counts_at_each_stop() -> None:
-    def cp2(run: str) -> dict[str, object]:
-        return _load(EXCHANGE / run / "checkpoint-2-summary.json")
+FIRST_STOP = {
+    "clean": {"findings": 0, "gaps": 7, "cite": 3, "sole": 0, "questions": 3},
+    "doctored": {"findings": 0, "gaps": 11, "cite": 8, "sole": 1, "questions": 4},
+}
 
-    summaries = {run: cp2(run) for run in RUNS}
 
-    def count(run: str, section: str, field: str = "count") -> int:
-        block = summaries[run][section]
-        assert isinstance(block, dict)
-        return int(block[field])
+def _final(run: str) -> dict[str, object]:
+    return _load(EXCHANGE / run / "checkpoint-2-summary.json")
 
-    findings = [count(r, "provisional_findings") for r in RUNS]
-    gaps = [count(r, "documentation_gaps") for r in RUNS]
-    citing = [count(r, "documentation_gaps", "cite_packet") for r in RUNS]
-    sole = [count(r, "documentation_gaps", "packet_sole_evidence") for r in RUNS]
-    questions = [count(r, "open_questions") for r in RUNS]
 
-    def cells(label: str) -> list[int]:
-        row = _table_row(label, after="### After checkpoint 1")[1:]
-        return [int(re.match(r"\d+", c).group()) for c in row]  # type: ignore[union-attr]
+def _cells(label: str, after: str) -> list[int]:
+    row = _table_row(label, after=after)
+    if row and not re.match(r"^\d", row[0]):
+        row = row[1:]
+    return [int(re.match(r"\d+", cell).group()) for cell in row]  # type: ignore[union-attr]
 
-    assert cells("Provisional findings proposed") == findings == [0, 0]
-    assert cells("Documentation gaps") == gaps
-    assert cells("… citing the packet among their evidence") == citing
-    assert cells("… with the packet as sole evidence") == sole
-    assert cells("Open questions") == questions
+
+def test_page_states_the_counts_at_the_first_stop() -> None:
+    after = "### After checkpoint 1"
+    assert _cells("Provisional findings proposed", after)[1:] == [
+        FIRST_STOP[run]["findings"] for run in RUNS
+    ]
+    assert _cells("Documentation gaps", after)[1:] == [FIRST_STOP[run]["gaps"] for run in RUNS]
+    assert _cells("… citing the packet among their evidence", after) == [
+        FIRST_STOP[run]["cite"] for run in RUNS
+    ]
+    assert _cells("… with the packet as sole evidence", after) == [
+        FIRST_STOP[run]["sole"] for run in RUNS
+    ]
+    assert _cells("Open questions", after)[1:] == [FIRST_STOP[run]["questions"] for run in RUNS]
+
+
+def test_page_states_the_checkpoint_two_counts_the_summaries_hold() -> None:
+    after = "### Checkpoint 2, and the reports"
+    finals = {run: _final(run) for run in RUNS}
+
+    def cp2(run: str, *path: str) -> int:
+        node: object = finals[run]["checkpoint_2"]
+        for key in path:
+            assert isinstance(node, dict)
+            node = node[key]
+        assert isinstance(node, int)
+        return node
+
+    def rep(run: str, key: str) -> int:
+        node = finals[run]["report"]
+        assert isinstance(node, dict)
+        return int(node[key])
+
+    assert _cells("Provisional findings at checkpoint 2", after) == [
+        cp2(r, "provisional_findings", "count") for r in RUNS
+    ]
+    assert _cells("… approved / rejected", after) == [cp2(r, "approved") for r in RUNS]
+    assert _cells("Documentation gaps in the package (candidate)", after) == [
+        cp2(r, "documentation_gaps", "count") for r in RUNS
+    ]
+    assert _cells("Gaps citing the packet", after) == [
+        cp2(r, "documentation_gaps", "cite_packet") for r in RUNS
+    ]
+    assert _cells("Open questions", after) == [cp2(r, "open_questions") for r in RUNS]
+    assert _cells("Report: approved findings", after) == [rep(r, "approved_findings") for r in RUNS]
+    assert _cells("Report: assumption rows", after) == [rep(r, "assumption_rows") for r in RUNS]
+    assert _cells("Report: open questions", after) == [
+        rep(r, "open_questions_rendered") for r in RUNS
+    ]
     for run in RUNS:
-        assert (EXCHANGE / run / "ledger.txt").is_file()
+        assert rep(run, "documentation_gaps_rendered") == 0
+        assert cp2(run, "documentation_gaps", "count") > 0
+
+
+def test_no_provisional_finding_cited_the_packet_and_the_page_says_so() -> None:
+    for run in RUNS:
+        rows = _final(run)["checkpoint_2"]
+        assert isinstance(rows, dict)
+        findings = rows["provisional_findings"]
+        assert isinstance(findings, dict)
+        for row in findings["rows"]:
+            assert row["cites_packet"] is False, row
+    assert "No provisional finding in either run cited the packet" in PAGE.read_text()
+
+
+def test_each_run_commits_its_report_decisions_and_recordings() -> None:
+    for run in RUNS:
+        for name in (
+            "report.md",
+            "ledger.txt",
+            "decisions-findings.yaml",
+            "decisions-context.yaml",
+        ):
+            assert (EXCHANGE / run / name).is_file(), (run, name)
         assert (EXCHANGE / run / "journal").is_dir()
-        stopped = summaries[run]["stopped_at"]
-        assert isinstance(stopped, str) and stopped
+        final = _final(run)
+        assert isinstance(final["ledger_total_usd"], float)
+        calls = final["model_calls"]
+        assert isinstance(calls, int) and calls > 0

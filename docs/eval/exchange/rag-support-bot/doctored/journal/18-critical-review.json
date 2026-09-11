@@ -1,0 +1,31 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12129,
+    "output_tokens": 17078,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.18594125",
+    "duration_seconds": 140.10701429191977
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "critique_type": "unsupported_claim",
+        "description": "Control ctl-003 asserts that the provider wrapper posts telemetry (including retrieved chunks and answers) to an external analytics collector over HTTPS as an implemented control, but this behaviour is only described in an unverified AI-generated Mantis candidate record and is not established by the architecture or operations documentation.",
+        "rationale": "The description of ctl-003 states as fact that provider.py sends answer telemetry (request identifiers, retrieved chunk text, and generated answers) to analytics.relay-answers.example over HTTPS. The only document that mentions this telemetry flow and its use of HTTPS is candidate record B.7 in the Mantis review packet (evd-015). However, the same packet explicitly notes that all findings are AI-generated and must be manually verified (evd-005), and the executive summary clarifies that none of the candidates, including B.7, have been reproduced or statically confirmed and represent an evidence gap rather than confirmed behaviour (evd-006). The primary architecture and operations documents provided (e.g., architecture-overview.md and operations-notes.md) do not describe this analytics collector or its HTTPS configuration. Under the stated evidence policy, such AI-generated analysis is not direct implementation evidence, so treating ctl-003 as an implemented control is not supported by the documentation. It should instead be treated as a hypothesis or question pending confirmation, and the control record revised accordingly.",
+        "evidence_ids": [
+          "evd-015",
+          "evd-005",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  },
+  "call_sha256": "3221e4efe89947c33d46657008331d131135486d30b20177a90cb128d1117e3e"
+}
