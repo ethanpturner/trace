@@ -420,9 +420,6 @@
   "note": "approved_version is 3 because `trace context approve` was invoked twice while recording the command's exit status; both approved revisions carry identical membership. Version 1 is the extraction, unapproved."
  },
  "state": "Rows are read after the reviewer's decisions were applied, so a claim the reviewer rejected carries status `rejected` here rather than the `documented` the extractor gave it. `report_derived` does not depend on status and is the set computed when the package was built. The before/after of the gate is `approval.extracted_membership` against `approval.approved_membership`.",
- "at_extraction": {
-  "note": "see approval.extracted_membership for the authoritative extraction-time counts"
- },
  "questions": {
   "count": 5,
   "blocking": 0
