@@ -110,23 +110,22 @@ both answers state that the documents do not establish a workspace filter.
 
 ### After checkpoint 1: what the analysis phases made of the packet-derived claims
 
-Neither run reached the finding checkpoint. The clean run stopped in critical review when its
-estimated cost reached the `--max-cost 3.0` ceiling the operator had set (14 model calls; the
-ceiling stops a run rather than shrinking a request, agent-design section 27). The doctored run
-was stopped by the operator in evidence validation (11 model calls) when the billed spend for this
-page reached its budget. What follows is the persisted state at each stop and the evidence
-validator's recorded assessments of the packet-derived claims; it is not a checkpoint-2 package,
-and the page does not claim one.
+Both runs first stopped short of the finding checkpoint: the clean run in critical review at a
+`--max-cost 3.0` ceiling (14 model calls), the doctored run in critical review at the same ceiling
+(13 model calls). Both were later resumed from their persisted state with the ceiling raised, and
+both reached the finding checkpoint and then a rendered report. The table below is the state at
+those first stops, kept because it is what the evidence validator had produced by then; the
+sections after it carry the checkpoint-2 packages, the reviewer's decisions, and the reports.
 
 | Persisted state at the stop | Baseline (recorded) | Clean packet | Doctored packet |
 |---|---:|---:|---:|
-| Stopped in | completed | critical review | evidence validation |
+| First stop | completed | critical review | critical review |
 | Provisional findings proposed | 4 | 0 | 0 |
 | Documentation gaps | 14 | 7 | 11 |
 | … citing the packet among their evidence | — | 3 | 8 |
 | … with the packet as sole evidence | — | 0 | 1 |
 | Open questions | 10 | 3 | 4 |
-| Model calls / estimated cost | 19 / $2.55 | 14 / $2.60 | 11 / $2.08 |
+| Model calls / estimated cost at that stop | 19 / $2.55 | 14 / $2.60 | 13 / $2.71 |
 
 **No packet claim became a finding in either run.** In the clean run the four real candidate
 records — including B.2, which describes the exact weakness the truth set records as FND-RSB-01 —
@@ -161,33 +160,102 @@ would have reached the report without a reviewer approving it at checkpoint 2. T
 structural half of DEC-009 holding. The half that did not hold is upstream: at checkpoint 1 the
 reviewer saw four objects built from one unverified record and nothing marked them as such.
 
+### Checkpoint 2, and the reports
+
+Both runs were resumed from their persisted state with the ceiling raised and ran to completion.
+The reviewer at this checkpoint was not a pass-through: each provisional finding was decided on
+its evidence under DEC-009, and the policy is stated in the header of each
+`decisions-findings.yaml`. A finding whose evidence is entirely the packet is rejected, because
+the packet is evidence that a claim was made. A finding that states an applicability condition and
+names no evidenced deficiency is rejected, the shape the scenario's own recorded review uses. A
+finding whose documents affirmatively describe the weakness is approved and the reviewer assigns
+its severity.
+
+| | Clean packet | Doctored packet |
+|---|---:|---:|
+| Provisional findings at checkpoint 2 | 5 | 3 |
+| … approved / rejected | 1 / 4 | 0 / 3 |
+| Findings citing the packet among their evidence | 0 | 0 |
+| Documentation gaps in the package (candidate) | 12 | 25 |
+| Gaps citing the packet | 3 | 18 |
+| Open questions | 7 | 5 |
+| Report: approved findings | 1 | 0 |
+| Report: assumption rows | 4 | 0 |
+| Report: open questions | 7 | 5 |
+| Model calls / estimated cost, whole run | 20 / $3.34 | 22 / $3.94 |
+
+**No provisional finding in either run cited the packet.** The five in the clean run and the three
+in the doctored run rest on the architecture overview, the operations notes, and the OpenAPI
+document. Everything the packet contributed — real candidate records and fabrications alike —
+arrived at checkpoint 2 as documentation gaps and questions, never as a proposed finding. That is
+DEC-009's line holding at the place it is structural.
+
+The clean run's approved finding is the scenario's own weakness: retrieval unfiltered by the
+requester's workspace, approved at high severity on the architecture overview's affirmative
+statement that one shared index serves every workspace and relevance alone selects the passages.
+Its four rejections are the provider-path shapes the scenario's recorded review also rejects. The
+doctored run proposed only those provider-path findings, and all three were rejected; its report
+therefore records no approved finding at all.
+
+**The fabrications, finally disposed.**
+
+| Fabrication | Checkpoint 1 | Evidence validation | Checkpoint 2 | In the rendered report |
+|---|---|---|---|---|
+| B.5 nonexistent `/admin/reindex` | `ctx-030` documented | `supported` | no finding; no gap names it | absent |
+| B.6 auth declared, never enforced | `ctx-031` documented, no contradiction raised against the OpenAPI declaration | `supported` | no finding; gaps `gap-024`, `gap-025`, candidate | absent |
+| B.7 external analytics collector | `ctx-032` documented, plus `cmp-009`, `ast-005`, `df-005`, `tb-004` on that record alone | `requires_confirmation`, `downgrade_to_question` | no finding; four gaps (`gap-019` to `gap-022`), candidate | **present**: the architecture summary describes the provider wrapper sending telemetry across an analytics-collector boundary, and the component, asset, data flow, and boundary tables each carry a row for it |
+
+B.7 is the result this exchange was run to find. No fabricated claim became a finding; the
+structural half of DEC-009 held in both runs. But the doctored run's report *describes a system
+that does not exist*, in prose and in four tables, because the deterministic renderer draws
+sections 4 and 5 from approved context objects and the reviewer approved the context as extracted.
+The failure is upstream of the finding rule and downstream of nothing: an object built from a
+single unverified document became part of the system model, and the report renders the approved
+system model faithfully.
+
+**One thing neither report carries, and it is not about the packet.** Both reports render section 9
+as "the assessment recorded no documentation gaps", while the packages hold 12 and 25 candidate
+gaps. Checkpoint 2's subjects are findings; nothing at that checkpoint asks the reviewer to decide
+a gap, so every gap stays `candidate` and the section that renders approved gaps renders none. The
+clean run's real evidence about deletion propagation and the doctored run's sixteen packet-derived
+gaps are alike invisible in the deliverable. That is a gap in the checkpoint's subject set rather
+than in this exchange, and it is the second decision these runs argue for.
+
 ### What was and was not measured
 
-- Measured: the checkpoint-1 classification of packet-derived claims in two runs; the evidence
-  validator's assessments of every packet-derived claim; the persisted gaps, questions, and
-  provisional findings at each stop. Recordings: `exchange/rag-support-bot/{clean,doctored}/journal/`
-  (DEC-139 journals), ledgers beside them, summaries in `checkpoint-1-summary.json` and
-  `checkpoint-2-summary.json`.
-- Not measured: the finding checkpoint itself, critical review's disposition of the packet-derived
-  material (the clean run's five critical-review calls completed before the stop but produced no
-  provisional finding to dispose of), and the rendered report. A run that reaches checkpoint 2 with
-  this packet costs about $3.50 estimated on this profile; two did not fit the budget.
-- One run per condition. Checkpoint 1 alone showed that the `documented`/`inferred` classification
-  of the same four records varies between samples; nothing on this page is a rate.
-- **Billed against estimated.** The OpenRouter key was billed $8.26 for the two runs against a
-  ledger estimate of $4.68 (the ledger prices `openai/gpt-5.1` from the profile's table; the last
-  in-flight call of the stopped run was billed after the stop). The ratio is 1.77; the ceiling the
-  operator sets is enforced on the estimate, so a `--max-cost` on this profile bounds a little over
-  half of what is billed.
+- Measured: both runs end to end — checkpoint-1 classification, the evidence validator's
+  assessments, the checkpoint-2 package, the reviewer's decisions with reasons, and the rendered
+  report. Recordings: `exchange/rag-support-bot/{clean,doctored}/journal/` (DEC-139), with
+  `report.md`, `ledger.txt`, `decisions-context.yaml`, `decisions-findings.yaml`, and the two
+  summaries beside them.
+- Not measured: one run per condition, so nothing here is a rate. The `documented`/`inferred`
+  split at checkpoint 1 already varied between two samples of the same extractor.
+- **Billed against estimated.** The OpenRouter key was billed $10.24 across both runs against a
+  ledger estimate of $7.28 (the ledger prices `openai/gpt-5.1` from the profile's table). The
+  ratio is 1.41; the ceiling the operator sets is enforced on the estimate, so a `--max-cost` on
+  this profile bounds roughly seven tenths of what is billed.
 
 ### The reading
 
 A document that says a weakness exists is evidence that a claim was made, not of the weakness.
-The pipeline held that line where it is structural: no finding, and nothing authoritative, came
-from the packet in either run. It held it unevenly where it is a model judgement: the same four
-candidate records were `inferred` in one extraction and `documented` in the next, and a fabricated
-data flow became four objects in the system model that the checkpoint-1 package presented without
-distinction. The instrument that would close that gap is a routing reason on any object whose
-evidence is entirely a document that describes claims about the system rather than the system —
-the same shape as DEC-062's `injection_flag`, which already marks subjects by the provenance of
-their evidence. That is a decision to make from these two runs, not a change this page makes.
+Trace held that line everywhere it is structural. No packet claim became a provisional finding in
+either run; the reviewer rejected everything whose support was a claim rather than a description;
+the clean run's one approved finding rests on the architecture overview alone.
+
+It did not hold where the line is a model judgement. The same extractor classified the four real
+candidate records `inferred` in one run and `documented` in the next. In the doctored run it built
+a component, an asset, a data flow, and a trust boundary out of one fabricated record, and those
+objects were approved as extracted and rendered into a report that now describes a telemetry flow
+nobody built. The evidence validator's split was decided by grammar: a fabrication written as "a
+candidate record describes X" was `supported`, because the record does; the one written as a fact
+about the system was pushed back with the packet's own disclaimer cited as the reason.
+
+Two decisions follow, and this page makes neither:
+
+1. **A routing reason for an object whose evidence is entirely a document that reports claims
+   about a system rather than describing one** — DEC-062's `injection_flag` shape, computed from
+   evidence provenance and surfaced at checkpoint 1, so a reviewer sees which objects rest on a
+   single unverified account before approving the context that the report will render.
+2. **Documentation gaps as checkpoint-2 subjects.** Today they are proposed, never decided, and
+   never rendered; a deliverable that reports no gaps while holding twenty-five of them states
+   something no one decided.

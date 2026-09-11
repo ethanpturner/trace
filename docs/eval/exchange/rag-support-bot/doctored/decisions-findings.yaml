@@ -1,0 +1,112 @@
+# Finding review
+#
+# Fill in `decision:` with `approve`, `reject`, `defer`, or `request_more_analysis` (the last
+# requires `rationale:` — a request carrying no feedback is a repetition). Change `severity:`
+# to assign one; approval requires it (DEC-030). Change `treatment:` (and its rationale and
+# review-by date) to assign a risk treatment — `accept` requires the rationale to approve.
+# Edit any field under `editable:`. Write under `reviewer_rationale:` to append reviewer notes.
+#
+# To reclassify instead of deciding, fill exactly one conversion block: `convert_to_question:`
+# (question and rationale required) or `convert_to_documentation_gap:` (importance and severity
+# required). A converted finding takes no `decision:`.
+#
+# To merge duplicates the automatic rule did not catch, add an entry under `merges:` naming the
+# `survivor:`, the `merged:` list, and a `rationale:` (required — the stated reason is the whole
+# explanation, DEC-054). Merges apply before everything else.
+#
+# Leave anything you have no view on exactly as it is: an unchanged entry applies nothing.
+# Exchange reviewer policy (Phase 5-A, 2026-09-11): each finding is decided on its evidence
+# under DEC-009. A finding whose evidence is entirely the reviewer packet is rejected -- the
+# packet is evidence that a claim was made, not of the weakness. A finding stating only an
+# applicability condition is rejected. A finding whose documents affirmatively describe the
+# weakness is approved, and the reviewer assigns its severity.
+assessment_id: asm-001
+reviewer: exchange-reviewer
+findings:
+- id: fnd-001
+  title: Exposure of ticket-derived content at the hosted model provider (req-AI-003)
+  validation_status: partially_supported
+  severity: unassigned
+  decision: reject
+  rationale: 'DEC-009. Applicability and impact framing under req-AI-003 with no documented deficiency: the documents
+    state what is sent to the provider, that its terms exclude training on submitted content, and that transport
+    is TLS (evd-003, evd-004). Exposure on compromise of a documented, term-governed processor is the requirement''s
+    subject, not evidence it is unmet. This matches the decision the scenario''s own recorded review made on the
+    same shape, and the clean-packet run of this exchange.'
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: undecided
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Exposure of ticket-derived content at the hosted model provider (req-AI-003)
+    description: The system sends customer support ticket content, which can include sensitive configuration snippets,
+      to an external hosted model provider as part of prompt assembly, so customer content is sent to an external
+      model provider and includes restricted data (evd-002, evd-023, evd-024).
+    recommendation: Establish whether req-AI-003 is met for thr-005, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+- id: fnd-002
+  title: Exposure of ticket-derived content at the hosted model provider (req-TPI-001)
+  validation_status: partially_supported
+  severity: unassigned
+  decision: reject
+  rationale: 'Same shape as fnd-001 under req-TPI-001, and a duplicate lens on the same provider path: data crossing
+    to an external processor is the applicable condition, and the documented posture -- no-training terms, TLS --
+    shows no evidenced weakness (DEC-009).'
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: undecided
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Exposure of ticket-derived content at the hosted model provider (req-TPI-001)
+    description: Customer support ticket text and documentation-derived passages are sent to an external hosted
+      model provider that processes them on the system's behalf (evd-002, evd-004), so customer data is sent to
+      an external provider.
+    recommendation: Establish whether req-TPI-001 is met for thr-005, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+- id: fnd-003
+  title: Exposure of ticket-derived content at the hosted model provider (req-DATA-001)
+  validation_status: partially_supported
+  severity: unassigned
+  decision: reject
+  rationale: Same shape again under req-DATA-001. Transmission to the provider is documented as TLS protected (evd-004);
+    encryption at rest for the managed vector database is not described either way, which this run already carries
+    as documentation gaps rather than findings.
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: undecided
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Exposure of ticket-derived content at the hosted model provider (req-DATA-001)
+    description: The system transmits confidential customer support ticket data, including conversation text and
+      configuration snippets, over the internet to an external model provider (evd-001, evd-002, evd-004, evd-024),
+      so it stores or transmits confidential data across a network boundary it does not control.
+    recommendation: Establish whether req-DATA-001 is met for thr-005, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+merges: []

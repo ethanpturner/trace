@@ -1,7 +1,9 @@
-run run-001  status: running  model calls: 1
+run run-001  status: completed  model calls: 22
   node                         calls     input  cache-read  cache-write   output  seconds  cost
   context-extraction               1     18052           -            -    27344    341.4  0.296005
   threat-analysis                  1     19904           -            -    20851    235.1  0.23339
   requirement-and-control-mapping     8    152960      121600            -    90740   1085.0  1.11380000
-  evidence-validation              1     14665       16512            -    41630    407.6  0.43669525
-  total                           11    205581      138112            -   180565   2069.1  0.296005
+  evidence-validation              2     32792       34176            -   102110    955.4  1.06636200
+  critical-review                  9     94780           -            -   106672   1113.4  1.18519500
+  report-generation                1      4130           -            -     3800     40.9  0.0431625
+  total                           22    322618      155776            -   351517   3771.1  3.93791450

@@ -1,0 +1,16 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12135,
+    "output_tokens": 9116,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10632875",
+    "duration_seconds": 73.3592427498661
+  },
+  "response": {
+    "critiques": []
+  },
+  "call_sha256": "b69bd5784b6ec6d65b1da673aacbffcfe3e91c548147b64d8ed34403f3dc5e51"
+}

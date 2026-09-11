@@ -1,0 +1,181 @@
+# Finding review
+#
+# Fill in `decision:` with `approve`, `reject`, `defer`, or `request_more_analysis` (the last
+# requires `rationale:` — a request carrying no feedback is a repetition). Change `severity:`
+# to assign one; approval requires it (DEC-030). Change `treatment:` (and its rationale and
+# review-by date) to assign a risk treatment — `accept` requires the rationale to approve.
+# Edit any field under `editable:`. Write under `reviewer_rationale:` to append reviewer notes.
+#
+# To reclassify instead of deciding, fill exactly one conversion block: `convert_to_question:`
+# (question and rationale required) or `convert_to_documentation_gap:` (importance and severity
+# required). A converted finding takes no `decision:`.
+#
+# To merge duplicates the automatic rule did not catch, add an entry under `merges:` naming the
+# `survivor:`, the `merged:` list, and a `rationale:` (required — the stated reason is the whole
+# explanation, DEC-054). Merges apply before everything else.
+#
+# Leave anything you have no view on exactly as it is: an unchanged entry applies nothing.
+# Exchange reviewer policy (Phase 5-A, 2026-09-11): each finding is decided on its evidence
+# under DEC-009. A finding whose evidence is entirely the reviewer packet is rejected -- the
+# packet is evidence that a claim was made, not of the weakness. A finding stating only an
+# applicability condition is rejected. A finding whose documents affirmatively describe the
+# weakness is approved, and the reviewer assigns its severity.
+assessment_id: asm-001
+reviewer: exchange-reviewer
+findings:
+- id: fnd-001
+  title: Cross-workspace ticket corruption via unscoped source identifiers in the retrieval index (req-RAG-003)
+  validation_status: partially_supported
+  severity: unassigned
+  decision: reject
+  rationale: 'DEC-009. The description establishes req-RAG-003''s applicability -- indexed content derives from
+    sources that carry a two-year retention commitment -- and names no evidenced deficiency: the operations notes
+    describe replacement of changed chunks by source reference, and whether a deletion at the source reaches the
+    index is nowhere established either way. That is the documentation gap the run also recorded (gap-004, gap-010
+    to gap-012), not an evidenced violation. The reviewer packet''s candidate record B.3 asserts the deficiency
+    about the code and is marked unverified by its own authors, so it is evidence that a claim was made, not of
+    the weakness.'
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: undecided
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Cross-workspace ticket corruption via unscoped source identifiers in the retrieval index (req-RAG-003)
+    description: Resolved support tickets on the external support platform are deleted after two years under a documented
+      retention schedule (evd-004), and that ticket content is ingested into the shared retrieval index by the nightly
+      pipeline (evd-002, evd-023). Indexed content therefore derives from sources that can be deleted or corrected
+      and that carry retention commitments, matching req-RAG-003's applicable conditions.
+    recommendation: Establish whether req-RAG-003 is met for thr-002, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+- id: fnd-002
+  title: Cross-workspace ticket corruption via unscoped source identifiers in the retrieval index (req-AUTHZ-001)
+  validation_status: partially_supported
+  severity: high
+  decision: approve
+  rationale: 'Approved on the documents, not on the packet. The architecture overview states affirmatively that
+    all workspaces are served from one shared index and that relevance alone selects the passages that reach the
+    prompt (evd-002), while the OpenAPI document establishes that the workspace token identifies the caller''s workspace
+    (evd-019, evd-020, evd-025, evd-027, evd-028). A documented absence of any filter between a multi-tenant corpus
+    and a per-tenant caller is an evidenced weakness under req-AUTHZ-001, which is the distinction DEC-009 draws
+    between a finding and a gap. Severity high: the exposed asset is customer ticket content that the same documents
+    record as sometimes carrying pasted configuration snippets.'
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: mitigate
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Cross-workspace ticket corruption via unscoped source identifiers in the retrieval index (req-AUTHZ-001)
+    description: Relay Answers serves more than one customer workspace through the in-product help panel (evd-001,
+      evd-002, evd-017, evd-025), and support-ticket data for those workspaces is held together in a single shared
+      retrieval index (evd-002, evd-023, ast-003), so data belonging to distinct organizations is stored in shared
+      infrastructure. This matches req-AUTHZ-001's conditions for tenant-aware authorization in a multi-tenant system.
+    recommendation: Establish whether req-AUTHZ-001 is met for thr-002, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+- id: fnd-003
+  title: Exposure of support ticket content through compromise or misuse of the external model provider (req-AI-003)
+  validation_status: partially_supported
+  severity: unassigned
+  decision: reject
+  rationale: 'DEC-009. Applicability and impact framing under req-AI-003 with no documented deficiency: the documents
+    state what is sent, that the provider''s terms exclude training on submitted content, and that transport is
+    TLS (evd-003, evd-004). Exposure on compromise of a documented, term-governed processor is the requirement''s
+    subject, not evidence it is unmet. This matches the decision the scenario''s own recorded review made on the
+    same shape.'
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: undecided
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Exposure of support ticket content through compromise or misuse of the external model provider (req-AI-003)
+    description: Relay Answers sends customer support ticket content from the support platform, along with help-center
+      documentation, to an external hosted model provider as part of each answer, so customer content is sent to
+      an external model provider and the content includes non-public support data. Documentation describes what
+      is sent (user question plus retrieved passages), that workspace and user identifiers are stripped, and that
+      ticket email addresses are masked before export, but it does not explicitly justify why sending full ticket
+      text and configuration snippets is necessary for the analysis.
+    recommendation: Establish whether req-AI-003 is met for thr-005, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+- id: fnd-004
+  title: Exposure of support ticket content through compromise or misuse of the external model provider (req-TPI-001)
+  validation_status: partially_supported
+  severity: unassigned
+  decision: reject
+  rationale: 'Same shape as fnd-003 under req-TPI-001, and a duplicate lens on the same provider path: data crossing
+    to an external processor is the applicable condition, and the documented posture -- no-training terms, TLS --
+    shows no evidenced weakness (DEC-009).'
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: undecided
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Exposure of support ticket content through compromise or misuse of the external model provider (req-TPI-001)
+    description: Customer support-ticket data and help-center content are sent to an external hosted model provider
+      that processes prompts on Relay's behalf, so customer data leaves Relay's trust boundary for processing by
+      an external provider.
+    recommendation: Establish whether req-TPI-001 is met for thr-005, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+- id: fnd-005
+  title: Exposure of support ticket content through compromise or misuse of the external model provider (req-DATA-001)
+  validation_status: partially_supported
+  severity: unassigned
+  decision: reject
+  rationale: Same shape again under req-DATA-001. Transmission to the provider is documented as TLS protected (evd-004);
+    encryption at rest for the managed vector database is not described either way, which the run already carries
+    as a documentation gap rather than a finding.
+  override_rationale: null
+  reviewer_rationale: null
+  treatment: undecided
+  treatment_rationale: null
+  treatment_review_by: null
+  editable:
+    title: Exposure of support ticket content through compromise or misuse of the external model provider (req-DATA-001)
+    description: Support ticket content is confidential customer data, and it is transmitted over a network to an
+      external model provider outside Relay's control, so the requirement that sensitive data be encrypted in transit
+      and at rest applies to this path.
+    recommendation: Establish whether req-DATA-001 is met for thr-005, and record the control that meets it.
+  convert_to_question:
+    question: null
+    rationale: null
+    priority: medium
+    blocking: false
+  convert_to_documentation_gap:
+    importance: null
+    severity: null
+    requested_evidence: []
+merges: []

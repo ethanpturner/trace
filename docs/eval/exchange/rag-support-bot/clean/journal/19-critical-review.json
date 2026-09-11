@@ -1,0 +1,29 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12955,
+    "output_tokens": 11936,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.13555375",
+    "duration_seconds": 132.0842045424506
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "critique_type": "unsupported_claim",
+        "description": "thr-003 treats user-initiated deletion/correction of support tickets as documented platform behaviour and cites evd-004 for it, but evd-004 describes only time-based deletion under a two-year retention schedule.",
+        "rationale": "In thr-003, precondition 1 and attack-path step 2 state that resolved support tickets \"may also be corrected or removed earlier on request\" and that the platform deletes or corrects tickets \"in accordance with the agreed retention policy or a user request,\" citing evd-004. evd-004, however, states only that resolved support tickets are retained on the support platform for two years and then deleted under the customer-agreed retention schedule; it does not mention user-initiated early deletion or correction. Those behaviours may be reasonable assumptions or regulatory expectations, but they are not documented in the cited passage. Under the evidence policy, they should be clearly marked as assumptions or inferences rather than presented as documented facts supported by evd-004.",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  },
+  "call_sha256": "846c5af9178dce7d3aae0eb7ca5ce7ff6a8e6c13041dabbabdf1ab121bfc6405"
+}
