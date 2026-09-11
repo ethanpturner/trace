@@ -489,7 +489,8 @@ report. Otherwise exits 0 on a scored run, 1 on a refusal or error.
 
 ```
 trace capture scenario {extract,reason,report,baseline-generic,baseline-structured}
-              [--from-recorded] [--model-profile MODEL_PROFILE]
+              [--condition CONDITION] [--from-recorded]
+              [--model-profile MODEL_PROFILE]
               [--rehearse] [--response PATH]...
 ```
 
@@ -513,6 +514,14 @@ The three stages pause where a person authors checkpoint decisions:
 Decisions are authored per capture, against the run's own objects; a previous capture's committed
 decision files answer its replay, not a new live run. `--from-recorded` resumes an interrupted
 capture: staged recordings answer the calls they cover, and only unanswered calls go live.
+
+`--condition` selects the documents the capture runs against (default: `clean`). A named
+condition reads the scenario's `conditions/<name>/input` overlay and stages into
+`capture-<condition>/` with its own data root, so an adversarial capture cannot resume a clean
+one's recordings (DEC-075, DEC-152). The clean condition keeps the unsuffixed paths. A condition
+the scenario does not declare is refused by name rather than silently falling back to the clean
+documents, and `--condition` is refused with a baseline stage: a baseline is a single call over
+the clean documents (DEC-074), so there is no defense there to test.
 
 Each stage refuses to run twice — a re-run would re-spend it — and the refusal exits 3. The
 offline profile is refused (exit 1) before any side effect. The capture uses its own data root,

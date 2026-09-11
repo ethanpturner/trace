@@ -428,3 +428,54 @@ def test_the_single_pass_baseline_stage_captures_its_own_schema(tmp_path: Path) 
             profile_name=PROFILE,
             response=BaselineAssessment(),
         )
+
+
+def test_a_condition_stages_into_its_own_directory_and_data_root(tmp_path: Path) -> None:
+    """DEC-152's plumbing: a clean capture and an adversarial one cannot share staging.
+
+    Sharing would let the second resume the first's recordings, which is the failure the
+    per-condition directory exists to prevent. The clean condition keeps the unsuffixed name so
+    no existing staging path moves.
+    """
+    scenario = Scenario(slug="cond-test", name="Cond", path=tmp_path, status="authored")
+    assert capture_dir(scenario).name == "capture"
+    assert capture_dir(scenario, condition="adversarial").name == "capture-adversarial"
+    assert capture_data_root(scenario).name == "capture-cond-test"
+    assert (
+        capture_data_root(scenario, condition="adversarial").name == "capture-adversarial-cond-test"
+    )
+
+
+def test_a_rehearsal_keeps_its_own_directory_under_a_condition(tmp_path: Path) -> None:
+    """The rehearsal marker and the condition suffix compose rather than one shadowing the other."""
+    scenario = Scenario(slug="cond-test", name="Cond", path=tmp_path, status="authored")
+    assert capture_dir(scenario, rehearsal=True).name == "capture-rehearsal"
+    assert (
+        capture_dir(scenario, rehearsal=True, condition="adversarial").name
+        == "capture-rehearsal-adversarial"
+    )
+
+
+def test_a_condition_capture_loads_the_overlaid_documents(tmp_path: Path) -> None:
+    """The whole point: the run under a condition sees the condition's documents.
+
+    Without this the capture path would stage a clean run under an adversarial label, which is
+    exactly the confusion DEC-152 says made the adversarial corpus authored rather than captured.
+    """
+    root = tmp_path / "scenario"
+    shutil.copytree(FORGEFLOW / "input", root / "input")
+    overlay = root / "conditions" / "adversarial" / "input"
+    overlay.mkdir(parents=True)
+    (overlay / "poisoned.md").write_text("# Extra document\n", encoding="utf-8")
+    scenario = Scenario(
+        slug="capture-cond",
+        name="ForgeFlow",
+        path=root,
+        status="authored",
+        conditions=("adversarial",),
+    )
+
+    clean = {path.name for path in scenario.input_documents()}
+    attacked = {path.name for path in scenario.input_documents("adversarial")}
+    assert "poisoned.md" not in clean
+    assert attacked == clean | {"poisoned.md"}
