@@ -1,0 +1,47 @@
+# DEC-155 external feed: hand-mapped; identifiers and locators only, no tool prose.
+# Condition: Mantis's workspace/kb/ was pre-seeded with Trace's approved system context for this scenario
+# (components, actors, assets, flows, the one trust boundary, the documented no-signature-check statement,
+# and the approved documentation-gap wording for replay) before the architecture stage ran. No truth-set
+# material (findings, gaps as answers, rejections) was seeded. See docs/eval/reviewer-arms.md, "Seeded knowledge base".
+feed_version: '1'
+arm: mantis-seeded-kb
+scenario: unsigned-webhooks
+run: 1
+tool:
+  name: google/mantis
+  version: d13c93fb8e9779801711daea0d65fffa133c3b2d
+models:
+- gpt-5.6-sol
+snapshot_sha: c5b0590320fc0c3d54523ec290b3fa47c69862e8
+provenance: captured
+mapped_by: 'hand-mapped under the DEC-056 rule (requirement + component name), reasoning per row; mapper:
+  the session coordinator''s exchange fork; date: 2026-09-11. Condition seeded-kb: the knowledge base was
+  pre-seeded from Trace''s approved context; the architect read all six seeded files and rebuilt them from
+  code. Every row carried status PROVISIONALLY_VALID (as-emitted view; the tool-validated view is empty).'
+findings:
+- raw_signature: 9de3d72c9bed5820
+  requirement_id: req-WEBHOOK-001
+  component: Event Receiver
+  evidence_locator: deploy_notifier/main.py:33
+  mapper_reasoning: the receiver dispatches without verifying delivery authenticity (req-WEBHOOK-001);
+    realises FND-UW-01
+- raw_signature: f278d12ac58bcb24
+  requirement_id: req-WEBHOOK-002
+  component: Event Receiver
+  evidence_locator: deploy_notifier/replay.py:15
+  mapper_reasoning: asserts the process-local bounded ledger is inadequate replay protection (req-WEBHOOK-002);
+    the truth set records replay as undetermined (REJ-UW-01)
+- raw_signature: 27a10a78a7fb7e71
+  requirement_id: req-SECRET-001
+  component: Chat Notifier
+  evidence_locator: deploy_notifier/notifier.py:45
+  mapper_reasoning: claims the bearer credential can be disclosed to an operator-configured chat destination;
+    the nearest catalogue requirement is credential handling (req-SECRET-001); no truth-set item
+unverified: []
+spurious:
+- raw_signature: 89df3208315bc6c9
+  reason: 'names no catalogue requirement: a lost-notification reliability defect (ledger committed before
+    the notification succeeds), not a security requirement in catalog 0.1'
+- raw_signature: 4d60d6b48d91e04e
+  reason: 'names no catalogue requirement: a silent configuration fallback (no chat token routes messages
+    to an in-memory outbox) is an operability defect, not a security requirement in catalog 0.1'
