@@ -1,0 +1,826 @@
+{
+  "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 337,
+    "output_tokens": 16972,
+    "cache_read_tokens": 17920,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.17238125",
+    "duration_seconds": 150.66787200002
+  },
+  "response": {
+    "system": {
+      "system_name": "Relay Answers",
+      "system_purpose": "In-product support assistant for the Relay project-management platform, answering signed-in users' questions in the help panel from help-center documentation and the workspace's support history, with cited passages.",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": [
+        "public",
+        "customer_support_data"
+      ],
+      "access_model": "unknown"
+    },
+    "claims": [
+      {
+        "key": "clm-system-name-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Relay Answers is the in-product support assistant for the Relay project-management platform, answering signed-in users' questions in the help panel from Relay documentation and workspace support history with citations.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "clm-help-panel-availability",
+        "subject_type": "component",
+        "subject_key": "help-panel",
+        "predicate": "availability_scope",
+        "value": "Available to every signed-in user of any workspace on any plan.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-retrieval-index-shared",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "multi_tenant_scope",
+        "value": "All workspaces are served from one shared retrieval index.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-ingestion-only-writer",
+        "subject_type": "component",
+        "subject_key": "ingestion-pipeline",
+        "predicate": "writer_scope",
+        "value": "Ingestion pipeline is the only writer to the retrieval index.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-ingestion-sources",
+        "subject_type": "component",
+        "subject_key": "ingestion-pipeline",
+        "predicate": "data_sources",
+        "value": [
+          "help-center-repository",
+          "resolved-tickets-export"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-help-center-public",
+        "subject_type": "asset",
+        "subject_key": "help-center-docs",
+        "predicate": "classification",
+        "value": "public_documentation",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-tickets-retention",
+        "subject_type": "asset",
+        "subject_key": "support-tickets",
+        "predicate": "retention",
+        "value": "Resolved support tickets are retained on the support platform for two years and then deleted under the agreed retention schedule.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-ticket-email-masking",
+        "subject_type": "asset",
+        "subject_key": "support-tickets",
+        "predicate": "pseudonymization",
+        "value": "Customer email addresses are masked by the support platform before tickets enter the resolved-tickets export used for ingestion.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-vector-db-network-segment",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "network_access",
+        "value": "The managed vector database is reachable only from the answer service's network segment.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-model-provider-no-training-and-tls",
+        "subject_type": "component",
+        "subject_key": "model-provider",
+        "predicate": "data_handling_terms",
+        "value": "Model provider's terms for the assistant's traffic exclude training on submitted content, and requests to the provider are sent over TLS.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-answer-service-deployment",
+        "subject_type": "component",
+        "subject_key": "relay-api",
+        "predicate": "answer_service_deployment",
+        "value": "The answer service for Relay Answers runs as a single deployment beside the main Relay API.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-answer-service-model-call-single",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "llm_call_pattern",
+        "value": "Each answer makes exactly one model call; there is no multi-step agent loop.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-answer-service-no-agent-loop",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "agent_capabilities",
+        "value": "The assistant takes no actions beyond returning text; it does not execute or interpret model output.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-answer-quota",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "per_workspace_quota",
+        "value": "A per-workspace daily answer quota bounds spend.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-feature-flag-disable",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "feature_flag_control",
+        "value": "The assistant service can be disabled per workspace with a feature flag.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-workspace-token-bearer",
+        "subject_type": "asset",
+        "subject_key": "workspace-session-token",
+        "predicate": "authentication_scheme",
+        "value": "HTTP bearer workspaceToken representing the signed-in user's workspace-scoped session token.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-025",
+          "evd-027"
+        ]
+      },
+      {
+        "key": "clm-api-bearer-doc",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "api_authentication_documented",
+        "value": "OpenAPI describes a workspaceToken HTTP bearer security scheme applied as the default security requirement, with /v1/health explicitly overriding it to have no security.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-026",
+          "evd-028"
+        ]
+      },
+      {
+        "key": "clm-mantis-review-evidence-gap",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "mantis_review_status",
+        "value": "The Mantis AI review packet reports no findings meeting its reporting-quality predicate; it characterizes the result as an evidence gap with missing reproduction and patch evidence for all active candidates.",
+        "status": "documented",
+        "confidence": "medium",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-015",
+          "evd-016"
+        ]
+      },
+      {
+        "key": "clm-mantis-canonical-candidates-overview",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "mantis_candidate_issue_classes",
+        "value": [
+          "Global vector search may disclose support tickets across workspaces.",
+          "Unscoped source identifiers may allow cross-workspace replacement and deletion.",
+          "Missing token configuration may activate public development credentials.",
+          "Partial exports may retain deleted or corrected ticket data indefinitely."
+        ],
+        "status": "documented",
+        "confidence": "medium",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-023",
+          "evd-024"
+        ]
+      },
+      {
+        "key": "clm-tenant-isolation-unknown",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "tenant_isolation_in_retrieval",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "Documentation describes a shared index and relevance-based retrieval but does not state whether retrieval results are filtered by workspace or other authorization scope before or after similarity search.",
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-bearer-unenforced-candidate",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "api_authentication_candidate_description",
+        "value": "Mantis candidate record B.6 asserts that the answer endpoint declares bearer authentication but does not enforce it, treating requests without a valid Authorization header as the default workspace and noting that the OpenAPI security requirement is documentation only.",
+        "status": "documented",
+        "confidence": "low",
+        "rationale": "The statement comes from an AI-generated Mantis candidate record marked PROVISIONALLY_VALID and unverified.",
+        "evidence_ids": [
+          "evd-024"
+        ]
+      },
+      {
+        "key": "clm-telemetry-collector-candidate",
+        "subject_type": "component",
+        "subject_key": "analytics-collector",
+        "predicate": "data_collected_candidate_description",
+        "value": "Mantis candidate record B.7 asserts that after each answer, retrieved chunk text and generated answers are posted to an external analytics collector as telemetry using a shared collector token, creating a second processor for ticket text not covered in the primary architecture or operations documents.",
+        "status": "documented",
+        "confidence": "low",
+        "rationale": "The description is taken from an AI-generated, PROVISIONALLY_VALID Mantis candidate record and has not been independently verified.",
+        "evidence_ids": [
+          "evd-024"
+        ]
+      },
+      {
+        "key": "clm-embeddings-only-in-index",
+        "subject_type": "asset",
+        "subject_key": "retrieval-embeddings",
+        "predicate": "storage_location",
+        "value": "The retrieval index is the only copy of the embeddings used by the assistant.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-012"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "help-panel",
+        "name": "Help panel",
+        "component_type": "ui_component",
+        "description": "In-product chat surface where signed-in Relay users ask the assistant questions.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "chat_interface"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "retrieval-index",
+        "name": "Retrieval index",
+        "component_type": "database",
+        "description": "Managed vector database holding embeddings of help-center articles and resolved support tickets, with source and timestamp metadata.",
+        "technology": [
+          "vector_database",
+          "managed_service_standard_tier"
+        ],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": true,
+        "entry_point_types": [],
+        "data_classifications": [
+          "customer_support_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "ingestion-pipeline",
+        "name": "Ingestion pipeline",
+        "component_type": "batch_job",
+        "description": "Nightly pipeline that reads the help-center repository and resolved-tickets export, chunks and embeds content, and writes embeddings into the retrieval index.",
+        "technology": [
+          "batch_pipeline"
+        ],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [
+          "customer_support_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "help-center-repo",
+        "name": "Help-center repository",
+        "component_type": "content_repository",
+        "description": "Repository of published help-center documentation used as one source for the retrieval corpus.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [
+          "public"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "support-platform",
+        "name": "Support platform",
+        "component_type": "saas",
+        "description": "External support platform that stores resolved support tickets and provides a resolved-tickets export used by the ingestion pipeline.",
+        "technology": [
+          "ticketing_platform"
+        ],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": true,
+        "entry_point_types": [],
+        "data_classifications": [
+          "customer_support_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-012",
+          "evd-013"
+        ]
+      },
+      {
+        "key": "model-provider",
+        "name": "Model provider",
+        "component_type": "external_api",
+        "description": "Hosted large-language-model API called by the assistant with user questions and retrieved passages.",
+        "technology": [
+          "llm_api"
+        ],
+        "ownership": null,
+        "deployment_zone": "external",
+        "internet_accessible": true,
+        "externally_managed": true,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [
+          "customer_support_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "relay-api",
+        "name": "Relay API",
+        "component_type": "service",
+        "description": "Main Relay project-management platform API; the answer service runs as a deployment beside this API.",
+        "technology": [
+          "web_service"
+        ],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-011"
+        ]
+      },
+      {
+        "key": "analytics-collector",
+        "name": "Analytics collector (candidate)",
+        "component_type": "analytics_service",
+        "description": "Telemetry collector at analytics.relay-answers.example that Mantis candidate B.7 describes as receiving request identifiers, retrieved chunk text, and generated answers as analytics events.",
+        "technology": [
+          "telemetry_service"
+        ],
+        "ownership": null,
+        "deployment_zone": "external",
+        "internet_accessible": true,
+        "externally_managed": true,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [
+          "customer_support_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-024"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "relay-user",
+        "name": "Relay signed-in end user",
+        "actor_type": "end_user",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": "authenticated",
+        "capabilities": [
+          "ask_support_question"
+        ],
+        "authentication_method": "workspace_token",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-008",
+          "evd-025",
+          "evd-027"
+        ]
+      },
+      {
+        "key": "support-team",
+        "name": "Support team reviewer",
+        "actor_type": "internal_user",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": "privileged",
+        "capabilities": [
+          "review_answers",
+          "operate_support_platform"
+        ],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-013"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "support-tickets",
+        "name": "Resolved support tickets",
+        "asset_type": "data",
+        "description": "Customer support ticket content stored in the support platform and exported as resolved-tickets for use in the assistant's retrieval corpus.",
+        "confidentiality_impact": "Exposure could reveal customer communications and configuration snippets quoted in tickets.",
+        "integrity_impact": "Corruption could mislead support staff and the assistant about prior investigations or customer state.",
+        "availability_impact": "Loss could reduce historical context for support and assistant answers.",
+        "data_classification": "customer_support_data",
+        "owner": null,
+        "component_keys": [
+          "support-platform",
+          "ingestion-pipeline"
+        ],
+        "stored_in_component_keys": [
+          "support-platform"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-012",
+          "evd-013"
+        ]
+      },
+      {
+        "key": "help-center-docs",
+        "name": "Help-center documentation",
+        "asset_type": "documentation",
+        "description": "Published help-center articles used as part of the assistant's retrieval corpus.",
+        "confidentiality_impact": "Low, because the content is public documentation.",
+        "integrity_impact": "Incorrect or outdated documentation can cause inaccurate assistant answers.",
+        "availability_impact": "Loss or unavailability would reduce the assistant's ability to answer product questions from official docs.",
+        "data_classification": "public",
+        "owner": null,
+        "component_keys": [
+          "help-center-repo",
+          "ingestion-pipeline"
+        ],
+        "stored_in_component_keys": [
+          "help-center-repo"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "retrieval-embeddings",
+        "name": "Retrieval index embeddings",
+        "asset_type": "data",
+        "description": "Embeddings of help-center content and resolved support tickets stored in the shared managed vector database, with source and timestamp metadata.",
+        "confidentiality_impact": "Embeddings may encode information derived from customer support tickets and public documentation.",
+        "integrity_impact": "Corrupted embeddings could degrade retrieval relevance and answer quality.",
+        "availability_impact": "Loss of embeddings would prevent the assistant from retrieving relevant context efficiently.",
+        "data_classification": "customer_support_data",
+        "owner": null,
+        "component_keys": [
+          "retrieval-index"
+        ],
+        "stored_in_component_keys": [
+          "retrieval-index"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "workspace-session-token",
+        "name": "Workspace session token",
+        "asset_type": "credential",
+        "description": "HTTP bearer token identifying the signed-in user's workspace when calling the Relay Answers API.",
+        "confidentiality_impact": "Disclosure would allow impersonation of a workspace's authenticated user context for assistant requests.",
+        "integrity_impact": "Token forgery or tampering could allow unauthorized workspaces to be treated as another tenant.",
+        "availability_impact": "If tokens cannot be issued or validated, signed-in users cannot use the assistant.",
+        "data_classification": "authentication_token",
+        "owner": null,
+        "component_keys": [
+          "relay-api"
+        ],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-025",
+          "evd-027"
+        ]
+      },
+      {
+        "key": "answer-telemetry",
+        "name": "Answer telemetry (candidate)",
+        "asset_type": "data",
+        "description": "Request identifiers, retrieved chunk text, and generated answers that Mantis candidate B.7 reports as being sent to an external analytics collector.",
+        "confidentiality_impact": "If present, this telemetry could expose support ticket text and answers to a second processor not covered by the documented data-handling terms.",
+        "integrity_impact": "Tampering with telemetry could distort any analytics derived from assistant behavior.",
+        "availability_impact": "Loss of telemetry would mainly affect analytics rather than core assistant functionality.",
+        "data_classification": "customer_support_data",
+        "owner": null,
+        "component_keys": [
+          "analytics-collector"
+        ],
+        "stored_in_component_keys": [
+          "analytics-collector"
+        ],
+        "evidence_ids": [
+          "evd-024"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "df-help-center-to-ingestion",
+        "name": "Help-center repository to ingestion pipeline",
+        "source_component_key": "help-center-repo",
+        "destination_component_key": "ingestion-pipeline",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "help_center_content"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "tb-deployment-vs-external"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "df-support-platform-to-ingestion",
+        "name": "Support platform export to ingestion pipeline",
+        "source_component_key": "support-platform",
+        "destination_component_key": "ingestion-pipeline",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "resolved_tickets_export"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "tb-deployment-vs-external"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "df-ingestion-to-retrieval-index",
+        "name": "Ingestion pipeline to retrieval index",
+        "source_component_key": "ingestion-pipeline",
+        "destination_component_key": "retrieval-index",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "embeddings"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "tb-deployment-vs-external",
+        "name": "Relay Answers deployment vs external services",
+        "boundary_type": "network",
+        "description": "Boundary between the Relay-controlled deployment (including ingestion pipeline and retrieval index) and external or separately managed services such as the support platform, help-center repository, model provider, and analytics collector described in the Mantis packet.",
+        "inside_component_keys": [
+          "ingestion-pipeline",
+          "retrieval-index",
+          "relay-api"
+        ],
+        "outside_component_keys": [
+          "help-center-repo",
+          "support-platform",
+          "model-provider",
+          "analytics-collector"
+        ],
+        "controls": [
+          "tls_to_model_provider"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-012",
+          "evd-024"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "key": "q-retrieval-tenant-scope",
+        "question": "Is retrieval from the shared vector index scoped or filtered by workspace or another authorization context before or during similarity search and top-k selection?",
+        "rationale": "The documentation describes a single shared index serving all workspaces and relevance-based retrieval but does not state whether results are filtered per workspace. This directly affects cross-tenant data exposure risk and how to interpret the Mantis candidate issue about global vector search.",
+        "related_object_key": "retrieval-index",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-bearer-auth-enforcement",
+        "question": "In the current Relay Answers deployment, is workspaceToken bearer authentication actually enforced on the /v1/answers endpoint as specified in openapi.yaml, and how is enforcement wired in the implementation?",
+        "rationale": "OpenAPI declares a workspaceToken bearer security requirement, while the Mantis candidate B.6 describes an implementation where bearer authentication is declared but not enforced. Clarifying actual behavior is critical to understanding who can call the assistant and whether unauthenticated requests are possible.",
+        "related_object_key": null,
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-admin-reindex-endpoint",
+        "question": "Does a POST /admin/reindex endpoint exist in any Relay Answers deployment, and if so, what authentication and authorization controls protect it?",
+        "rationale": "Mantis candidate B.5 describes an unauthenticated /admin/reindex route that triggers a full corpus rebuild and is not declared in openapi.yaml. Knowing whether this endpoint exists and how it is protected changes the trust model around ingestion control and potential denial-of-service or data-tampering avenues.",
+        "related_object_key": null,
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-analytics-collector-usage",
+        "question": "Is there an external analytics or telemetry collector receiving retrieved chunk text and generated answers from Relay Answers, and what contractual and technical data-handling controls apply if it exists?",
+        "rationale": "Mantis candidate B.7 introduces an analytics collector processing ticket-derived text that is not mentioned in the primary architecture or operations documents. Confirming whether this processor exists and its controls affects the system's data-flow map and the set of parties handling customer support data.",
+        "related_object_key": "analytics-collector",
+        "priority": "medium",
+        "blocking": false
+      }
+    ],
+    "observations": [
+      {
+        "key": "obs-bearer-doc-vs-candidate",
+        "kind": "contradiction",
+        "summary": "OpenAPI documentation declares workspaceToken bearer authentication as the security requirement for the answers API, while a Mantis candidate record asserts that bearer authentication is declared but not enforced on the answer endpoint, treating requests without a valid Authorization header as the default workspace.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-026",
+          "evd-028",
+          "evd-024"
+        ],
+        "subject_claim_keys": [
+          "clm-api-bearer-doc",
+          "clm-bearer-unenforced-candidate"
+        ]
+      }
+    ]
+  },
+  "call_sha256": "8554393fc674889d75952ce3e4f39aff7ec68b1cfbda1426fa2e1c5f1d4910de"
+}

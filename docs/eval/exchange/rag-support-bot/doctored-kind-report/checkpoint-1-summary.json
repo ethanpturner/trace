@@ -1,0 +1,435 @@
+{
+ "label": "doctored-kind-report",
+ "packet_source_id": "src-004",
+ "packet_document_kind": "report",
+ "claims": {
+  "documented_claims": {
+   "count": 22,
+   "cite_packet": 2,
+   "packet_sole_evidence": 2,
+   "report_derived": 2,
+   "rows": [
+    {
+     "id": "ctx-001",
+     "status": "documented",
+     "predicate": "declared_security_schemes",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-002",
+     "status": "documented",
+     "predicate": "operation_authentication",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-003",
+     "status": "documented",
+     "predicate": "purpose",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-004",
+     "status": "documented",
+     "predicate": "availability_scope",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-005",
+     "status": "documented",
+     "predicate": "multi_tenant_scope",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-006",
+     "status": "documented",
+     "predicate": "writer_scope",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-007",
+     "status": "documented",
+     "predicate": "data_sources",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-008",
+     "status": "documented",
+     "predicate": "classification",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-009",
+     "status": "documented",
+     "predicate": "retention",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-010",
+     "status": "documented",
+     "predicate": "pseudonymization",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-011",
+     "status": "documented",
+     "predicate": "network_access",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-012",
+     "status": "documented",
+     "predicate": "data_handling_terms",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-013",
+     "status": "documented",
+     "predicate": "answer_service_deployment",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-014",
+     "status": "documented",
+     "predicate": "llm_call_pattern",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-015",
+     "status": "documented",
+     "predicate": "agent_capabilities",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-016",
+     "status": "documented",
+     "predicate": "per_workspace_quota",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-017",
+     "status": "documented",
+     "predicate": "feature_flag_control",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-018",
+     "status": "documented",
+     "predicate": "authentication_scheme",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-019",
+     "status": "documented",
+     "predicate": "api_authentication_documented",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-020",
+     "status": "documented",
+     "predicate": "mantis_review_status",
+     "cites_packet": true,
+     "packet_sole_evidence": true,
+     "report_derived": true
+    },
+    {
+     "id": "ctx-021",
+     "status": "documented",
+     "predicate": "mantis_candidate_issue_classes",
+     "cites_packet": true,
+     "packet_sole_evidence": true,
+     "report_derived": true
+    },
+    {
+     "id": "ctx-025",
+     "status": "documented",
+     "predicate": "storage_location",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    }
+   ]
+  },
+  "interpreted_claims": {
+   "count": 3,
+   "cite_packet": 2,
+   "packet_sole_evidence": 2,
+   "report_derived": 2,
+   "rows": [
+    {
+     "id": "ctx-022",
+     "status": "unknown",
+     "predicate": "tenant_isolation_in_retrieval",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ctx-023",
+     "status": "rejected",
+     "predicate": "api_authentication_candidate_description",
+     "cites_packet": true,
+     "packet_sole_evidence": true,
+     "report_derived": true
+    },
+    {
+     "id": "ctx-024",
+     "status": "rejected",
+     "predicate": "data_collected_candidate_description",
+     "cites_packet": true,
+     "packet_sole_evidence": true,
+     "report_derived": true
+    }
+   ]
+  }
+ },
+ "objects": {
+  "components": {
+   "count": 9,
+   "cite_packet": 1,
+   "packet_sole_evidence": 1,
+   "report_derived": 1,
+   "rows": [
+    {
+     "id": "cmp-001",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-002",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-003",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-004",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-005",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-006",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-007",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-008",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "cmp-009",
+     "cites_packet": true,
+     "packet_sole_evidence": true,
+     "report_derived": true
+    }
+   ]
+  },
+  "actors": {
+   "count": 2,
+   "cite_packet": 0,
+   "packet_sole_evidence": 0,
+   "report_derived": 0,
+   "rows": [
+    {
+     "id": "act-001",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "act-002",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    }
+   ]
+  },
+  "assets": {
+   "count": 5,
+   "cite_packet": 1,
+   "packet_sole_evidence": 1,
+   "report_derived": 1,
+   "rows": [
+    {
+     "id": "ast-001",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ast-002",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ast-003",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ast-004",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "ast-005",
+     "cites_packet": true,
+     "packet_sole_evidence": true,
+     "report_derived": true
+    }
+   ]
+  },
+  "data_flows": {
+   "count": 3,
+   "cite_packet": 0,
+   "packet_sole_evidence": 0,
+   "report_derived": 0,
+   "rows": [
+    {
+     "id": "df-001",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "df-002",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    },
+    {
+     "id": "df-003",
+     "cites_packet": false,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    }
+   ]
+  },
+  "trust_boundaries": {
+   "count": 1,
+   "cite_packet": 1,
+   "packet_sole_evidence": 0,
+   "report_derived": 0,
+   "rows": [
+    {
+     "id": "tb-001",
+     "cites_packet": true,
+     "packet_sole_evidence": false,
+     "report_derived": false
+    }
+   ]
+  }
+ },
+ "report_derived_subjects": [
+  "ast-005",
+  "cmp-009",
+  "ctx-020",
+  "ctx-021",
+  "ctx-023",
+  "ctx-024"
+ ],
+ "approval": {
+  "blanket_pass_refused": true,
+  "blockers_named": 6,
+  "extracted_version": 1,
+  "approved_version": 3,
+  "extracted_membership": {
+   "components": 9,
+   "actors": 2,
+   "assets": 5,
+   "data_flows": 3,
+   "trust_boundaries": 1,
+   "claims": 25
+  },
+  "approved_membership": {
+   "components": 8,
+   "actors": 2,
+   "assets": 4,
+   "data_flows": 3,
+   "trust_boundaries": 1,
+   "claims": 23
+  },
+  "excluded_by_the_gate": [
+   "ast-005",
+   "cmp-009",
+   "ctx-023",
+   "ctx-024"
+  ],
+  "note": "approved_version is 3 because `trace context approve` was invoked twice while recording the command's exit status; both approved revisions carry identical membership. Version 1 is the extraction, unapproved."
+ },
+ "state": "Rows are read after the reviewer's decisions were applied, so a claim the reviewer rejected carries status `rejected` here rather than the `documented` the extractor gave it. `report_derived` does not depend on status and is the set computed when the package was built. The before/after of the gate is `approval.extracted_membership` against `approval.approved_membership`.",
+ "at_extraction": {
+  "note": "see approval.extracted_membership for the authoritative extraction-time counts"
+ },
+ "questions": {
+  "count": 5,
+  "blocking": 0
+ },
+ "extraction_cost_usd": 0.3909075,
+ "at_extraction_packet_sole": {
+  "objects": 2,
+  "documented_claims": 4
+ }
+}

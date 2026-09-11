@@ -253,13 +253,72 @@ about the system was pushed back with the packet's own disclaimer cited as the r
 Two decisions follow. The first was taken while these runs were finishing; the second is open:
 
 1. **A routing reason for an object whose evidence is entirely a document that reports claims
-   about a system rather than describing one.** Decided as DEC-157: a document is registered with
-   a `document_kind`, and every checkpoint-1 subject whose evidence rests entirely on `report`-kind
-   documents carries the `report_derived` reason, so a reviewer sees which objects rest on a single
-   unverified account before approving the context that the report will render. The runs on this
-   page predate the decision and were registered before the kind existed, so nothing here carries
-   the reason; `tests/unit/test_report_derived.py` pins that the doctored run's four packet-sole
-   objects and seven packet-sole claims, the three fabrications among them, would.
+   about a system rather than describing one.** Decided as DEC-157, and given a consequence by
+   DEC-158. A document is registered with a `document_kind`; every checkpoint-1 subject whose
+   evidence rests entirely on `report`-kind documents carries the `report_derived` reason; and
+   approval is refused until each such subject's decision says why. The two runs above predate
+   both decisions and were registered before the kind existed, so nothing in them carries the
+   reason. `tests/unit/test_report_derived.py` pins that the doctored run's four packet-sole
+   objects and seven packet-sole claims, the three fabrications among them, would have; the
+   section below is a third live run that registers the same doctored packet as a report.
 2. **Documentation gaps as checkpoint-2 subjects.** Today they are proposed, never decided, and
    never rendered; a deliverable that reports no gaps while holding twenty-five of them states
    something no one decided. Open, filed as an issue.
+
+## What `--kind report` changes
+
+The doctored packet was fed to Trace a second time, byte-identical, alongside the same three design
+documents and on the same profile. The one difference is the registration: `trace source add
+--kind report` instead of the default. This run is `doctored-kind-report/`, captured 2026-09-11.
+
+### The refusal
+
+The extraction built two objects whose only evidence is the fabricated analytics record — a
+component and an asset — and four `documented` claims resting on the packet alone. The package had
+**no blocking questions and no validation errors**, so before DEC-158 it was approvable exactly as
+it stood.
+
+A decision file approving all 45 subjects as extracted, with no reasons — the pass the original
+doctored run made — was applied, recording 50 decisions. `trace context approve` then exited 3:
+
+```
+the context was not approved:
+  ast-005 rests on a report-kind document alone (report_derived) and its decision says nothing:
+    approve or reject it with a rationale
+  cmp-009 …  ctx-020 …  ctx-021 …  ctx-023 …  ctx-024 …
+```
+
+That file is kept as `decisions-context-blanket-refused.yaml`. The six were then decided
+individually with written reasons (`decisions-context.yaml`): the fabricated component and asset
+rejected because no supplied document describes them; the two fabrication claims rejected, one of
+them because `openapi.yaml` declares the security requirement the packet says is absent; and the
+two claims *about the packet's own status* approved, because the packet does say that about itself
+and the claim is accurate. Approval then succeeded.
+
+### Before and after
+
+| | Doctored, default kind | Doctored, `--kind report` |
+|---|---:|---:|
+| Packet-sole objects at extraction | 4 | 2 |
+| Packet-sole `documented` claims at extraction | 7 | 4 |
+| Subjects carrying `report_derived` | 0 (the kind did not exist) | 6 |
+| Blocking questions / validation errors | 2 / 0 | 0 / 0 |
+| Blanket approval | accepted | **refused, exit 3, all six named** |
+| Objects in the approved context | every extracted object | `cmp-009`, `ast-005` excluded |
+| Fabrication claims in the approved context | both retained | `ctx-023`, `ctx-024` excluded |
+| Checkpoint-1 cost | $0.30 | $0.39 |
+
+The approved revision holds 8 components and 4 assets against the extraction's 9 and 5, and 23
+claims against 25. The renderer draws sections 4 and 5 from approved objects, which is how the
+first doctored report came to describe a telemetry collector nobody built; the four identifiers in
+`approval.excluded_by_the_gate` are the ones that cannot reach a report from this revision.
+
+### What this does not establish
+
+One run, one model, one packet, and one reviewer — the same person who wrote the gate. It shows
+that the refusal fires on a live extraction and that a reviewer who answers it can keep a
+fabrication out of the approved context. It does not show that a reviewer under time pressure
+writes a considered reason rather than "ok", which the gate accepts; DEC-158 records that as its
+own tradeoff. The two extractions are not comparable object-for-object either: this run produced 20
+objects to the first doctored run's 25, and built no fabricated data flow or trust boundary, which
+is ordinary run-to-run variance on the same model and not an effect of the flag.
