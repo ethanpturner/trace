@@ -1,0 +1,89 @@
+_note: 'Self-review feed (docs/eval/self-review.md). Same shape as a DEC-155 feed but NOT a sweep input: it sits
+  in a subdirectory the feed discovery does not descend into, because trace itself has no expected/ truth set; requirement_id
+  is replaced by the threat-model classification.'
+feed_version: '1'
+arm: mantis
+scenario: trace-self
+run: 1
+tool:
+  name: google/mantis
+  version: d13c93fb8e9779801711daea0d65fffa133c3b2d
+models:
+- gpt-5.6-sol
+snapshot_sha: 3e325f66d3f43e60e32b220cc5faa51c844bde11
+provenance: captured
+mapped_by: self-review fork, 2026-09-11; each finding read against docs/architecture/threat-model.md and the cited
+  code; classification a=covered by a row, b=excluded by a stated non-goal, c=not covered and plausibly real (issue
+  filed), d=not covered and judged not real (reason given)
+emitted_rows: 14
+duplicate_rows: 7
+findings:
+- raw_signature: 0693b0aaaf895d60
+  title: Repository access token is exposed in the git process command line
+  tool_status: PROVISIONALLY_VALID
+  tool_severity: HIGH
+  cwe: CWE-532
+  evidence_locator: src/trace_ai/services/ingestion/repository.py:87-105
+  classification: a
+  reasoning: 'threat-model.md §3 repository rows: "reaches only the subprocess clone URL" states the argv exposure
+    as the accepted design; the row does not name the process table, and could. Another local process reading argv
+    is outside DEC-004.'
+- raw_signature: 554663ce481927b9
+  title: Budget accounting omits separators between included evidence blocks
+  tool_status: PROVISIONALLY_VALID
+  tool_severity: MEDIUM
+  cwe: CWE-20
+  evidence_locator: src/trace_ai/services/budget.py:84-86,124-130
+  classification: c
+  reasoning: 'verified: used += len(block) while untrusted joins with two newlines; the emitted region can exceed
+    the residual by 2*(N-1) characters and the recorded count understates it. Not covered by a threat-model row;
+    DEC-070 relies on this accounting. Issue #676.'
+- raw_signature: 5fc07cf751a99174
+  title: Predictable temporary files enable symlink-following overwrite and concurrent corruption
+  tool_status: PROVISIONALLY_VALID
+  tool_severity: HIGH
+  cwe: CWE-367
+  evidence_locator: src/trace_ai/infrastructure/filesystem/atomic.py:27; src/trace_ai/infrastructure/filesystem/artifact_store.py:151
+  classification: b
+  reasoning: 'threat-model.md §6 "Another local user reads assessment data" and §8 "The machine itself": another
+    local process writing into the assessment directory is outside DEC-004''s single-user model; the same-process
+    collision needs two concurrent writers to one path, and the pipeline is sequential. The O_EXCL hygiene is cheap
+    and noted, not filed.'
+- raw_signature: 98c7ea1bf78c4f9d
+  title: Frozen domain models expose mutable metadata that bypasses validation
+  tool_status: PROVISIONALLY_VALID
+  tool_severity: HIGH
+  cwe: CWE-20
+  evidence_locator: src/trace_ai/domain/base.py:81; src/trace_ai/domain/source_document.py:145; src/trace_ai/domain/evidence.py:115
+  classification: c
+  reasoning: 'verified: frozen=True with dict[str, Any] metadata fields; in-place mutation skips validation. Reachable
+    by application code only; the docstring''s immutability claim is broader than the type enforces. Issue #677.'
+- raw_signature: bf8ca401e4d08778
+  title: File validation and reading race permits unintended file disclosure and size-limit bypass
+  tool_status: PROVISIONALLY_VALID
+  tool_severity: HIGH
+  cwe: CWE-367
+  evidence_locator: src/trace_ai/services/ingestion/loader.py:284-305
+  classification: b
+  reasoning: a TOCTOU between is_file/stat and read_bytes needs a local writer racing the reviewer's own process
+    on the reviewer's own directory; excluded by DEC-004 (threat-model.md §2, §8).
+- raw_signature: c5ddefa80da1157a
+  title: Duplicate structured keys create ambiguous evidence addresses
+  tool_status: PROVISIONALLY_VALID
+  tool_severity: MEDIUM
+  cwe: CWE-20
+  evidence_locator: src/trace_ai/services/ingestion/loader.py:380-382; src/trace_ai/services/ingestion/segment.py:161-188
+  classification: d
+  reasoning: duplicate mapping keys do yield two segments with one JSON pointer (segment.py:161-188), but an EvidenceReference
+    is verified by line range and quotation hash (DEC-015, threat-model.md §7 last row), not by pointer; the pointer
+    is a label. Robustness note, not a security gap.
+- raw_signature: d8fccfbbb7345be3
+  title: Document-controlled metadata is promoted into the trusted model region
+  tool_status: PROVISIONALLY_VALID
+  tool_severity: HIGH
+  cwe: CWE-116
+  evidence_locator: src/trace_ai/services/context/input_package.py:143-224
+  classification: c
+  reasoning: 'verified: filenames, section titles, and structured_input are serialised into the trusted region;
+    only excerpt bodies are fenced. threat-model.md §3 row 1 names the fence as Enforced and is silent about the
+    manifest. Issue #675.'
