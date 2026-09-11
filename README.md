@@ -543,6 +543,11 @@ uv run trace run asm-001 --model-profile offline-fake \
     --response demo/forgeflow/recorded/extraction
 ```
 
+A document that reports claims about the system rather than describing it — a code reviewer's
+packet, a scanner's output — is registered with `trace source add --kind report`; every context
+subject resting on such documents alone then carries the `report_derived` routing reason at
+checkpoint 1 (DEC-157).
+
 The run stops at checkpoint 1, because the checkpoint is a phase in the transition table rather
 than a conditional something could skip. Review and approve the context — the exported
 `review.yaml` is edited in place and applied back with `--apply review.yaml`:

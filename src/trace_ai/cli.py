@@ -52,7 +52,12 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.review_session import ReviewCheckpoint
-from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
+from trace_ai.domain.source_document import (
+    DocumentKind,
+    IngestionStatus,
+    SourceDocument,
+    TrustLevel,
+)
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
@@ -365,6 +370,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-index",
         action="store_true",
         help="register without normalizing and indexing",
+    )
+    added.add_argument(
+        "--kind",
+        choices=[kind.value for kind in DocumentKind],
+        default=DocumentKind.SYSTEM.value,
+        help=(
+            "what the document is about: 'system' (default) describes the reviewed system; "
+            "'report' reports claims made about it by a third party or a tool, and every "
+            "context subject resting on report-kind evidence alone carries the report_derived "
+            "routing reason at checkpoint 1 (DEC-157)"
+        ),
     )
 
     add_repo = source_commands.add_parser(
@@ -2181,10 +2197,14 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
     handle = service.handle(args.assessment_id)
     loader = DocumentLoader(handle)
     before = {document.id for document in handle.objects.list(SourceDocument)}
+    kind = DocumentKind(args.kind)
 
     if args.path.is_dir():
         documents = loader.load_directory(
-            args.path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
+            args.path,
+            origin=SourceOrigin.UPLOADED_DOCUMENT,
+            trust_level=TrustLevel.UNTRUSTED,
+            document_kind=kind,
         )
     else:
         documents = [
@@ -2192,6 +2212,7 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
                 args.path,
                 origin=SourceOrigin.UPLOADED_DOCUMENT,
                 trust_level=TrustLevel.UNTRUSTED,
+                document_kind=kind,
             )
         ]
     skipped = [document for document in documents if document.id in before]
