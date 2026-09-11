@@ -1275,11 +1275,16 @@ requirements/
 org-controls/
 demo/
 benchmarks/
+results/
 schemas/
 scripts/
 journal/
 triage/
 ```
+
+`results/<arm>/` holds the hand-authored feeds of an external code reviewer's findings (DEC-155), one file
+per scenario and run, scored by the sweep as a non-authoritative arm; it is distinct from the gitignored
+`benchmarks/results/` tree the harness writes derived feeds into.
 
 Beside the packages, `trace_ai` holds `cli.py` (the command surface), `config.py`, and
 `observability.py` (structured logging; named so because `logging.py` shadows the standard

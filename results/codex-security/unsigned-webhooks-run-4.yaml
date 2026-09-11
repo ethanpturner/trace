@@ -1,0 +1,38 @@
+# DEC-155 external feed: hand-mapped; identifiers and locators only, no tool prose.
+feed_version: '1'
+arm: codex-security
+scenario: unsigned-webhooks
+run: 4
+tool:
+  name: openai/codex-security
+  version: 0.1.26
+models:
+- gpt-5.6-sol
+snapshot_sha: c5b0590320fc0c3d54523ec290b3fa47c69862e8
+provenance: captured
+mapped_by: 'hand-mapped under the DEC-056 rule (requirement + component name), reasoning per row; mapper:
+  the session coordinator''s scoring fork; date: 2026-09-11. Codex Security emits no binary validation
+  status; every finding carries a validation block with a stated method, and all three are taken as the
+  tool''s claimed set.'
+findings:
+- raw_signature: codex-security/v1:sha256:e525edb75540d725e5dec7b87c7adda96d548ee29a379fa5f96f080b264c118d
+  requirement_id: req-WEBHOOK-001
+  component: Event Receiver
+  evidence_locator: deploy_notifier/main.py:31-49
+  mapper_reasoning: the receiver dispatches without verifying delivery authenticity (req-WEBHOOK-001);
+    realises FND-UW-01; the tool's validation block names the unused HMAC helper as the expected control
+- raw_signature: codex-security/v1:sha256:e2d2d96f8580e1d2a05187e86f35938cbe0f27af30440c52058dfada75ee35e8
+  requirement_id: req-TPI-002
+  component: Event Receiver
+  evidence_locator: deploy_notifier/main.py:38-40
+  mapper_reasoning: 'bounded work triggered by an external event (req-TPI-002): unbounded buffering or
+    retention reachable from the public endpoint (request body buffered before size checks)'
+- raw_signature: codex-security/v1:sha256:c3f50930b027ef728b53536d7f2df0f35f07d7fa73b330f436609ee89abb95a9
+  requirement_id: req-TPI-002
+  component: Chat Notifier
+  evidence_locator: deploy_notifier/notifier.py:12-16
+  mapper_reasoning: 'bounded work triggered by an external event (req-TPI-002): unbounded buffering or
+    retention reachable from the public endpoint (tokenless outbox grows without bound; the tool rated
+    it low)'
+unverified: []
+spurious: []

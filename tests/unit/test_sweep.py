@@ -43,3 +43,33 @@ def test_load_rejects_a_non_list_document(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="feed list"):
         load_feeds(path)
+
+
+def test_an_external_feed_is_scored_against_the_scenarios_committed_code(tmp_path: Path) -> None:
+    """DEC-155 feeds cite `path:line`; the sweep resolves them in the scenario's `code/` (DEC-156)."""
+    from trace_ai.services.evaluation.sweep import _reviewed_code
+
+    def _write(slug: str) -> Path:
+        path = tmp_path / f"{slug}-run-1.yaml"
+        path.write_text(
+            "\n".join(
+                [
+                    'feed_version: "1"',
+                    "arm: mantis",
+                    f"scenario: {slug}",
+                    "run: 1",
+                    "tool: {name: google/mantis, version: deadbeef}",
+                    "models: []",
+                    "snapshot_sha: 0123456789abcdef0123456789abcdef01234567",
+                    "provenance: captured",
+                    "mapped_by: test",
+                    "findings: []",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return path
+
+    with_code = _reviewed_code(_write("unsigned-webhooks"))
+    assert with_code is not None and with_code.name == "code" and with_code.is_dir()
+    assert _reviewed_code(_write("forgeflow")) is None
