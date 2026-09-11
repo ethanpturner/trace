@@ -1,0 +1,37 @@
+# DEC-155 external feed: hand-mapped; identifiers and locators only, no tool prose.
+feed_version: '1'
+arm: codex-security
+scenario: rag-support-bot
+run: 4
+tool:
+  name: openai/codex-security
+  version: 0.1.26
+models:
+- gpt-5.6-sol
+snapshot_sha: c5b0590320fc0c3d54523ec290b3fa47c69862e8
+provenance: captured
+mapped_by: 'hand-mapped under the DEC-056 rule (requirement + component name), reasoning per row; mapper:
+  the session coordinator''s scoring fork; date: 2026-09-11. Codex Security stopped at its own $10 cost
+  limit after 620 s with findings.json written; the three findings are the capped partial and are scored
+  as the tool''s claimed set with that caveat.'
+findings:
+- raw_signature: codex-security/v1:sha256:bc8744bde3930bf08d9df59bd65ec96c1b80ea0bf1dba418e57a0a77d4c9966c
+  requirement_id: req-RAG-002
+  component: Retrieval index
+  evidence_locator: relay_answers/index.py:60-67
+  mapper_reasoning: retrieval selects passages by relevance alone from the shared index, unfiltered by
+    the requester's workspace (req-RAG-002); realises FND-RSB-01; the tool names search as the root control
+- raw_signature: codex-security/v1:sha256:b393a225c22a180dcc2ab18438dc44fa85a6038ba4cc4719e0b443506330d74e
+  requirement_id: req-SECRET-001
+  component: Configuration
+  evidence_locator: relay_answers/config.py:24-33
+  mapper_reasoning: asserts a repository-known development bearer credential is accepted when production
+    token configuration is absent (nearest requirement req-SECRET-001, credential handling); no truth-set
+    item
+- raw_signature: codex-security/v1:sha256:f6a4edde128b924a64ffe67838259d09b151eaa66f2c7b1c391afcce73619755
+  requirement_id: req-TPI-002
+  component: Answer API
+  evidence_locator: relay_answers/main.py:23-29
+  mapper_reasoning: unbounded request body parsed before authentication (req-TPI-002); no truth-set item
+unverified: []
+spurious: []
