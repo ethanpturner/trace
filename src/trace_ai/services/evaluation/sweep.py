@@ -14,6 +14,7 @@ import json
 from typing import TYPE_CHECKING
 
 from trace_ai.services.evaluation.baselines import BASELINES, run_baseline
+from trace_ai.services.evaluation.external_feed import discover_feeds, score_feed
 from trace_ai.services.evaluation.harness import run_scenario
 from trace_ai.services.evaluation.registry import load_registry
 
@@ -28,8 +29,15 @@ def _baseline_response(scenario_path: Path, condition: str) -> Path | None:
     return recording if recording.is_file() else None
 
 
-def collect_feeds(results_root: Path) -> list[dict[str, object]]:
-    """Run every recorded scenario and baseline into `results_root`, and return their feeds."""
+def collect_feeds(
+    results_root: Path, *, external_root: Path | None = None
+) -> list[dict[str, object]]:
+    """Run every recorded scenario and baseline into `results_root`, and return their feeds.
+
+    Committed external feeds (DEC-155, `results/<arm>/`) are scored into the same tree so the
+    pages read them by the path they read everything else. An absent or empty directory adds
+    nothing, so a corpus with no external arm renders exactly as it did before the arm existed.
+    """
     feeds: list[dict[str, object]] = []
 
     for entry in load_registry():
@@ -66,6 +74,11 @@ def collect_feeds(results_root: Path) -> list[dict[str, object]]:
             )
             if baseline.feed_path is not None:
                 feeds.append(json.loads(baseline.feed_path.read_text(encoding="utf-8")))
+
+    for path in discover_feeds(external_root):
+        external = score_feed(path, results_root=results_root / "feeds")
+        if external.feed_path is not None:
+            feeds.append(json.loads(external.feed_path.read_text(encoding="utf-8")))
 
     return feeds
 

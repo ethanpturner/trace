@@ -10348,3 +10348,115 @@ concentrate in `no_evidence` (4 of 22, against 1 for each structured baseline), 
 resolving to an assertion — the DEC-009 failure in its purest form. Two of those four are
 `crypto-wallet`, a scenario whose truth set expects no findings at all. That is a real weakness, it
 is the metric working, and it is what the metric was built to surface.
+
+## DEC-155: An external tool's findings are scored as a hand-mapped, non-authoritative arm, by the same matcher — never as a proposal
+
+Date: 2026-09-10
+
+Status: Accepted
+
+Amends: DEC-074 (which kept the external comparable in the portfolio write-up because a wrapper
+would measure the wrapper; this entry scores the *output* without wrapping the tool)
+
+Decision:
+
+**A tool that cannot run through the seam may still be scored, as an external arm.** Its validated
+findings are mapped by a person to a catalogue requirement and a component name under the DEC-056
+rule, recorded with the mapper's reasoning in a committed feed at
+`results/<arm>/<scenario>-run-<N>.yaml`, and scored by `score_produced` — the baseline scorer,
+exposed for the purpose — and by nothing else. Matched, missed, divergent (DEC-148),
+conditional-unreached (DEC-133), spurious, and the DEC-154 rejection breaches are therefore
+classified under the rule every other arm is classified under, with ties resolved in the external
+tool's favour (DEC-074's fairness direction, unchanged).
+
+**The feed carries what the arm's honesty depends on, and refuses everything else.** `models:` for
+DEC-136 attribution, since no recording envelope exists to read it from; `provenance:` as
+`captured` or `authored`, because DEC-152 applies to any zero the row shows; `snapshot_sha`, the
+code the tool reviewed; `tool.name` and `tool.version` (a commit, where the tool has no releases);
+`unverified:`, the findings the tool itself left unproven — `failed_to_reproduce`, `not_attempted`
+— which enter no metric, are carried as identifiers, and are neither a miss nor a match; and
+`spurious:`, the findings that name no catalogue requirement and are spurious by definition. A row
+carries a `raw_signature` (the tool's own finding identity), a requirement, a component, a
+`path:line` locator, and reasoning. A key the schema does not admit — a title, a description, a
+severity, a confidence — is a validation failure, so a tool's prose cannot enter the feed by
+accident. The reasoning stays in the feed file and reaches no rendered page (DEC-076).
+
+**Citation fidelity is ported to code (DEC-151).** Given the worktree at `snapshot_sha`, each
+locator resolves — the path is relative, stays inside the worktree, names a file, and any line range
+lies within it — or does not. The resolvable fraction is emitted as `locator_resolvability` with its
+sample size only when a worktree is supplied and at least one row exists; otherwise the metric is
+absent (DEC-150: unmeasured, never zero). The comparison shows it as counts, with a percentage only
+over five or more locators.
+
+**The row is non-authoritative, labelled, and keyed `external-<arm>`.** The comparison table orders
+it after the baselines and before Trace, labels it `<arm> (external, non-authoritative)`, states
+its provenance and model attribution inline, and carries a footnote naming the tool, its version,
+its run and scenario counts. Rejection breaches on an external row are shown as counts, with a rate
+only over five or more scoreable rejections. No committed feed means no row and no footnote: the
+sweep scores `results/` if it holds anything and the page is otherwise byte-identical.
+
+**An external tool's output never enters an assessment as a proposal.** Not as a seventh agent
+(DEC-030 refused one with more claim to the seat), not as a DEC-070 parser promoting a model's
+conclusion to a `documented` claim (DEC-118, DEC-140), not as a checkpoint decision. The one path
+by which it may reach the pipeline is as an untrusted source document (DEC-021), inside the fence,
+where Evidence Validation must still test what it says — and that path is an experiment on Trace,
+not a feature of the arm.
+
+Why:
+
+- **Google's Mantis and OpenAI's Codex Security publish no false-positive rate**, and the plan to
+  measure one runs both on the same model, over code written from two scenarios' truth sets, five
+  times each. The harness had no way to score what either produces: `run_baseline` drives a seam
+  call, and neither tool is a seam call. DEC-074's reasoning against wrapping them still holds —
+  a harness the tool was not built for measures the harness — and scoring the *output* is a
+  different act from running the tool. What is measured is stated: how a person's mapping of the
+  tool's findings fares against an authored truth set, not how the tool would fare under Trace's
+  scaffolding.
+- **A second scorer would be a second matcher waiting to drift.** DEC-148 and DEC-154 were each a
+  change to one function that every arm read; an external path with its own matching logic would
+  have needed both changes re-derived and would eventually have disagreed with the pipeline's
+  numbers on the same feed.
+- **The unverified list is the tool's own rule, stated back to it.** Mantis's README: a failure to
+  reproduce "does not definitively mean it is a false positive." Scoring a non-reproduction as a miss
+  would penalise the tool for abstaining; scoring it as a match would credit a claim nobody
+  established. DEC-009 has one answer for that shape and the feed carries it.
+
+Alternatives Considered:
+
+- A Mantis skill or Codex Security post-processor emitting `domain/proposals/` objects (rejected:
+  a seventh agent by another name, and the `test_agent_cap.py` pin would have to move).
+- A DEC-070 parser reading a reviewer's finding JSON as a structured input into `documented`
+  context claims (rejected: DEC-070's parsers quote what an artifact states — a port, a route — and
+  a finding is a conclusion; promoting it is the fabrication DEC-118 and DEC-140 refused).
+- Scoring the tool's own `requirement`-like fields (a CWE, a rule id) through a CWE-to-catalogue
+  table instead of a hand mapping (rejected for now: the table would be the one place in the
+  harness where a lookup decides a score, and a wrong row would be invisible; a hand mapping with
+  reasoning per row is disputable line by line. Revisit once a mapping exists to check a table
+  against.)
+- Free-text similarity between the tool's title and an expected finding's subject (rejected:
+  DEC-056's matcher never reads prose, and DEC-154 refused a threshold for the same reason).
+- Rendering the row inside the baseline group (rejected: a baseline saw the same documents and
+  the same catalogue; an external arm saw code and neither. The label and the position say so).
+
+Tradeoffs:
+
+- The mapping is a person's judgement and is the arm's weakest link. It is recorded per row with
+  reasoning so that it can be disputed, and it errs, where it errs, in the external tool's favour
+  by construction: a row is mapped to a requirement only when the mapper can say why.
+- The arm measures the tool on the code-facing half of a scenario; inherited controls,
+  organizational controls, and documentation gaps are reachable only from the documents, and a
+  code reviewer that never sees them is scored as missing what it could not have found. The
+  comparison footnote says so; the per-scenario detail is where the split is visible.
+- `results/` at the repository root sits beside the gitignored `benchmarks/results/` and the two
+  names are close. The committed one is hand-authored input; the ignored one is derived output.
+  `EXTERNAL_FEEDS_ROOT` and `RESULTS_ROOT` name them apart in code, and a test asserts one is not
+  inside the other.
+
+Open Questions:
+
+- The mapping protocol: one mapper or two, and how a disputed row is recorded. The first real
+  feed will teach more than a paragraph written before one exists.
+- Whether a tool's own severity, once mapped, should reach the DEC-030 severity-concordance
+  metric. Today it does not: the feed admits no severity field.
+- Whether an external run's cost belongs on the row. The tools report it differently (Codex
+  Security caps it; Mantis records none) and a column with one populated cell would mislead.
