@@ -10988,3 +10988,112 @@ Open questions:
   and that sentence now refers to a block inside the fence. Authoritative data is still data, and
   the boundary block says so, but whether a model reliably holds both ideas at once is a question
   for a capture rather than for a decision entry.
+
+## DEC-161: Product development is frozen; the harness, the corpus, and the measurements continue
+
+Date: 2026-09-11
+
+Status: Accepted
+
+Decision:
+
+**Trace stops being developed as a product.** It continues as two things it demonstrably is: the
+evaluation harness that produced this repository's measurements, and the upstream from which a new
+tool, `docket`, harvests mechanisms that were built here and proved here.
+
+**What continues.** The evaluation harness and everything under `services/evaluation/` — the
+structural matcher, the negative-set instrument (DEC-154), the external-arm scorer (DEC-155), the
+stability protocol (DEC-077), the scorecard and comparison generators. The benchmark corpus,
+including the code layer (DEC-156). New measurement, including captures, ablations, and external
+arms. Bug fixes that keep a replay honest, a figure accurate, or a documented boundary real — the
+three landed on 2026-09-11 (DEC-158, DEC-159, DEC-160) are the shape of what still lands. Security
+fixes without qualification.
+
+**What stops.** New pipeline capability. A seventh agent was already refused (DEC-030) and the
+question does not reopen. New phases, new domain objects, new report sections, new output formats,
+and the Stage 6 product work in the roadmap — the narrated demo, the packaging, the adoption
+surface. An issue proposing one of those is closed with a pointer here rather than triaged.
+
+**What `docket` harvests, and on what terms.** `docket` records a disposition for an inbound
+security finding — exploitable, not exploitable, or undetermined — with the evidence that supports
+it. Four mechanisms here were built for that job before it had a name, and it takes them by
+reimplementation under the same reasoning, not by dependency:
+
+- **The evidence model.** A conclusion cites a passage, by identifier, with a hash and a line range
+  that is re-verified on read. This is what makes a disposition checkable rather than asserted.
+- **The untrusted-document handling of DEC-157, DEC-158 and DEC-160.** An inbound bug-bounty report
+  or scanner output is exactly a document that reports claims about a system: `document_kind`
+  registers it as one, `report_derived` marks every subject resting on it alone, a decision on such
+  a subject must state why, and none of its text reaches the trusted region. That is the core
+  mechanic of the disposition job, and it exists here already.
+- **The citation-fidelity check (DEC-151).** Does a cited path and line exist at the pinned commit.
+  Against an external arm it resolved 26 of 36 locators; as a front door it is a filter that needs
+  no model call at all.
+- **The recorded-response seam.** A disposition that cannot be re-derived offline is a claim, which
+  is the thing this series exists to refuse.
+
+The sibling rule holds unchanged: each project declares its own vocabulary and imports nothing.
+`docket` is a fifth repository, not a package split, and no dependency runs in either direction.
+
+Why:
+
+Two measurements decided this, both published in this directory and neither comfortable.
+
+The first is accuracy. Pooled over fifteen authoritative rows the pipeline reaches 17% precision
+(2/12) and 13% recall (2/15); on the current workflow shape, 50% (2/4) and 17% (2/12). Live
+per-scenario recall is 2 of 5 and 3 of 5. A control that misses most of what it looks for is not a
+primary control, and continuing to add capability to it is adding capability to the wrong layer.
+
+The second is the comparison. Two agentic code reviewers, scored by this repository's own matcher
+against implementations of two of its own scenarios, matched the documented weakness in 12 of 12
+completed runs. On systems that have code, an off-the-shelf reviewer finds what this pipeline
+often does not. The gap this pipeline was built for — a system that exists only as documentation —
+is narrower than the design assumed.
+
+What held up is the apparatus. It produced a recall figure its author did not want, a
+rejection-breach table in which two simpler baselines beat the pipeline pooled, and an external
+comparison that went against it. Instruments that only confirm are not instruments. The right
+response to an instrument this honest is to keep running it and to stop mistaking the thing it
+measures for the product.
+
+`docs/eval/what-this-measures.md` states the figures in one place rather than leaving them
+distributed across six pages, each of which had a narrower question to answer.
+
+Alternatives considered:
+
+**Keep developing the product and improve recall.** The measured failure is not a tuning problem.
+DEC-153 already published a 60-point gap between authored and live recordings as a construct-validity
+finding about the corpus, and the reviewer comparison says the documentation-only premise is the
+constraint. More capability against a 13% recall is effort spent where the evidence says the
+ceiling is.
+
+**Retire it, as `whence` is being retired.** Rejected, and the distinction matters. `whence`'s
+answer had stopped being asked — nothing consumes an AI bill of materials, and weight
+fingerprinting now answers the lineage question directly. Trace's apparatus is the opposite: it is
+in active use, it produced every external measurement in this repository, and three sibling efforts
+depend on its corpus and its matcher. Freezing the product preserves that; archiving would discard
+it.
+
+**Fold the harness into `docket` and archive the rest.** Rejected. The corpus is fifteen scenarios
+with authored truth sets, a negative set of fifty rejections, and 381 recorded responses that
+replay offline. It is the asset, it is bound to this repository's layout and tests, and moving it
+to serve a tool that does not exist yet would put both at risk for no measured gain.
+
+Tradeoffs:
+
+A frozen product decays against its dependencies, and the live captures will drift as providers
+move models behind stable names — the failure DEC-136 attribution exists to surface. The mitigation
+is that the recorded corpus replays with no provider at all, so the reproducible half survives
+regardless.
+
+The freeze also makes this repository harder to read as a portfolio piece: a reader arriving at a
+pipeline that runs end to end will find a decision saying it is not the product. That is the honest
+reading and the page in `docs/eval/` is where it is made legible rather than buried.
+
+Open questions:
+
+- Whether the corpus should be published as a standalone package once `docket` needs it. It is
+  already versioned and digested (`benchmarks/manifest.yaml`, `trace-benchmark-corpus` v1.1), so
+  the question is distribution and licence rather than construction.
+- Whether the harness should score a disposition record the way it scores a finding. The matcher is
+  structural and never reads prose, so the shape may transfer; nothing has tested it.
