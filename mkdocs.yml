@@ -69,6 +69,7 @@ nav:
       - product/ablation-narrative.md
       - product/interview-package.md
   - Evaluation:
+      - eval/what-this-measures.md
       - eval/comparison.md
       - eval/ablation.md
       - eval/reviewer-arms.md

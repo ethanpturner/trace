@@ -4,6 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
+**Product development is frozen (DEC-161).** The evaluation harness, the corpus, measurement work,
+and fixes that keep a replay honest or a documented boundary real still land. New pipeline
+capability — phases, agents, domain objects, report sections, Stage 6 product work — does not; an
+issue proposing one is closed with a pointer to DEC-161. `docket`, a separate repository, harvests
+the evidence model, the untrusted-document handling of DEC-157/158/160, the citation-fidelity check
+and the recorded-response seam by reimplementation, not dependency. Read DEC-161 and
+`docs/eval/what-this-measures.md` before proposing work here.
+
 Trace is a context-aware security architecture analysis system. **The pipeline is built and runs
 end to end, the demonstration surface exists, and the debt milestones are closed; what remains
 open is the Stage 6 portfolio material.** All six

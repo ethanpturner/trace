@@ -11,6 +11,17 @@ Trace is a system for producing security architecture assessments in which every
 traceable back to a specific passage in a specific source document — and in which missing
 documentation is treated as a question to ask, not a vulnerability to report.
 
+> **Product development is frozen (DEC-161).** Trace continues as two things: the evaluation
+> harness that produced this repository's measurements, and the upstream from which `docket` — a
+> tool that records a disposition for an inbound security finding — takes mechanisms built and
+> proved here. Measurement, captures, and fixes that keep a replay honest still land; new pipeline
+> capability does not. The reason is measured rather than felt: pooled recall is 13% (2 of 15) and
+> precision 17% (2 of 12), and two off-the-shelf code reviewers matched the same authored findings
+> in 12 of 12 completed runs against this pipeline's live 2 of 5 and 3 of 5. The figures are
+> collected in [docs/eval/what-this-measures.md](docs/eval/what-this-measures.md), which is the
+> page to read before any other. What held up is the apparatus that produced numbers its author did
+> not want.
+
 > **Project status: the pipeline runs end to end and measures itself offline.** All six agents
 > are built, all fourteen phases run under the orchestrator, both structural human checkpoints
 > hold, and the evaluation harness replays registered benchmark scenarios against authored truth
