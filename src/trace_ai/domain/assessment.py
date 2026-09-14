@@ -23,7 +23,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from enum import StrEnum
 from typing import Final, Self
 
 from pydantic import Field, field_validator, model_validator
@@ -39,7 +38,6 @@ __all__ = [
     "WORKFLOW_VERSION",
     "Assessment",
     "AssessmentConfiguration",
-    "EvidenceThreshold",
     "default_configuration",
     "new_assessment",
 ]
@@ -53,18 +51,6 @@ WORKFLOW_VERSION: Final = "0.2"
 
 # agent-design.md section 26. Two retries, not zero and not unbounded.
 DEFAULT_MAXIMUM_RETRIES_PER_NODE: Final = 2
-
-
-class EvidenceThreshold(StrEnum):
-    """The minimum evidence policy a finding must satisfy (DEC-013).
-
-    Declared here rather than in `domain/enums.py` because section 6 defines the vocabulary on the
-    field rather than in section 4's shared types, the same way `ContextClaim` carries its own
-    status values.
-    """
-
-    DIRECT_OR_CONFIRMED = "direct-or-confirmed"
-    PERMISSIVE = "permissive"
 
 
 class AssessmentConfiguration(DomainModel):
@@ -116,7 +102,6 @@ class AssessmentConfiguration(DomainModel):
     maximum_retries_per_node: int = Field(ge=0)
     retain_debug_artifacts: bool
     enable_external_tracing: bool
-    evidence_threshold: EvidenceThreshold
 
     evidence_age_threshold_days: int | None = Field(default=None, gt=0)
     """Days after which a cited evidence capture is flagged as stale (DEC-118).
@@ -179,7 +164,6 @@ def default_configuration(
     """A configuration carrying the defaults the corpus states, for the fields that have one.
 
     `maximum_retries_per_node` is 2, from `agent-design.md` section 26's retry policy.
-    `evidence_threshold` is `direct-or-confirmed`, the stricter of DEC-013's two.
     `enable_external_tracing` is off, because `current-architecture.md` section 5.17 makes sending
     prompt content and source data to an external provider a decision rather than a default.
     `retain_debug_artifacts` is off, because those artifacts are copies of material under review.
@@ -195,7 +179,6 @@ def default_configuration(
             "maximum_retries_per_node": DEFAULT_MAXIMUM_RETRIES_PER_NODE,
             "retain_debug_artifacts": False,
             "enable_external_tracing": False,
-            "evidence_threshold": EvidenceThreshold.DIRECT_OR_CONFIRMED,
         }
         | overrides
     )

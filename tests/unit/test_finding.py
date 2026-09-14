@@ -31,7 +31,13 @@ from trace_ai.domain.base import now
 from trace_ai.domain.control_mapping import SatisfactionStatus
 from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus, Severity, ValidationStatus
 from trace_ai.domain.finding import DuplicateChainError, Finding, canonical_finding_id
-from trace_ai.domain.outcomes import FINDING_VALIDATION_STATUSES, Outcome, outcome_for
+from trace_ai.domain.outcomes import (
+    APPLIED_EVIDENCE_POLICY,
+    FINDING_VALIDATION_STATUSES,
+    Outcome,
+    evidence_policy_name,
+    outcome_for,
+)
 
 
 def a_finding(**changes: Any) -> dict[str, Any]:
@@ -93,6 +99,32 @@ def test_no_cell_produces_a_finding_from_silence() -> None:
             outcome_for(SatisfactionStatus.UNVERIFIED, validation)
             is not Outcome.PROVISIONAL_FINDING
         )
+
+
+def test_the_applied_evidence_policy_is_read_off_the_table() -> None:
+    """DEC-165. The report's provenance block states this, and it has to be what ran.
+
+    It was a required configuration field that nothing consulted, printed into every report, so
+    the one document that exists to carry provenance asserted a policy selected by nobody.
+    """
+    assert APPLIED_EVIDENCE_POLICY == "direct-or-confirmed"
+    assert evidence_policy_name(outcome_for) == APPLIED_EVIDENCE_POLICY
+
+
+def test_evidence_policy_name_reads_permissive_off_a_relaxed_table() -> None:
+    """The negative half, and the reason the name is derived rather than written down.
+
+    A table that lets silence reach a finding is DEC-013's `permissive`, and the name follows the
+    cells without anyone editing a string. Without this case the constant above could not come
+    out any other way, which is the defect it replaced.
+    """
+
+    def relaxed(satisfaction: SatisfactionStatus, validation: ValidationStatus) -> Outcome:
+        if satisfaction is SatisfactionStatus.UNVERIFIED:
+            return Outcome.PROVISIONAL_FINDING
+        return outcome_for(satisfaction, validation)
+
+    assert evidence_policy_name(relaxed) == "permissive"
 
 
 def test_an_evaluated_unverified_mapping_becomes_a_gap_or_a_question() -> None:

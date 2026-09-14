@@ -172,7 +172,7 @@ def test_the_package_contains_no_configuration_object(loaded: AssessmentHandle) 
     reason about its own limits."""
     built = package(loaded)
     whole = built.trusted + built.untrusted
-    for marker in ("model_profile", "maximum_model_calls", "maximum_cost", "evidence_threshold"):
+    for marker in ("model_profile", "maximum_model_calls", "maximum_cost"):
         assert marker not in whole
 
 
