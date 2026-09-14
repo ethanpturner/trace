@@ -114,8 +114,14 @@ def _counts(feed: dict[str, Any]) -> tuple[int, int, int]:
 
 
 def _metric(feed: dict[str, Any], name: str) -> float | None:
+    """A feed's metric value, or `None` when the feed does not carry one.
+
+    A present entry whose `value` is null is also `None`: since DEC-164 a metric may record that it
+    was not measurable rather than be absent, and the two mean the same thing to a reader — no
+    number was established — so the page renders neither.
+    """
     entry = (feed.get("metrics") or {}).get(name)
-    if entry is None:
+    if entry is None or entry.get("value") is None:
         return None
     return float(entry["value"])
 

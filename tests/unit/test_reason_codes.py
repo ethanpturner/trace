@@ -275,3 +275,47 @@ def test_an_assumed_claim_is_revisit_due_only_after_it_has_been_decided(tmp_path
         assert claim.id in revisit_due_claims(handle), "a decided, still-assumed claim is due"
     finally:
         store_cm.__exit__(None, None, None)
+
+
+def test_contradicted_flags_a_contradicted_claim_and_nothing_else(tmp_path: Path) -> None:
+    """DEC-164: the code DEC-062 named and the implementing change never derived.
+
+    `ReasonCode.CONTRADICTED` sat in the closed vocabulary with nothing appending it, so a reviewer
+    never saw the one reason DEC-062's own rationale quotes as the example worth stating. The
+    negative half is the half that matters: a claim of another status must not carry the code, or
+    the reason says nothing.
+    """
+    from trace_ai.domain.base import now
+    from trace_ai.domain.context_claim import ClaimStatus, ContextClaim
+    from trace_ai.domain.enums import ConfidenceLevel, SourceOrigin
+    from trace_ai.workflow.reason_codes import contradicted_subjects
+
+    store_cm, _service, handle = _handle(tmp_path)
+    try:
+        assumed = _assumed_claim(handle, "ctx-001")
+        stamp = now()
+        contradicted = ContextClaim.model_validate(
+            {
+                "id": "ctx-002",
+                "assessment_id": handle.assessment_id,
+                "subject_type": "component",
+                "predicate": "authentication",
+                "value": "two passages disagree about the mechanism",
+                "status": ClaimStatus.CONTRADICTED,
+                "confidence": ConfidenceLevel.HIGH,
+                "source_origin": SourceOrigin.SYSTEM_GENERATED,
+                "rationale": "One document says the receiver verifies a signature; another says it does not.",
+                "created_at": stamp,
+                "updated_at": stamp,
+            }
+        )
+        with handle.objects.transaction():
+            handle.objects.save(contradicted)
+
+        subjects = contradicted_subjects(handle)
+        assert contradicted.id in subjects
+        assert assumed.id not in subjects, (
+            "a claim of another status carries no contradicted reason"
+        )
+    finally:
+        store_cm.__exit__(None, None, None)
