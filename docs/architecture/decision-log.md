@@ -671,7 +671,7 @@ Open Questions:
 - Should a DocumentationGap on a high-impact requirement itself be reportable as a finding of a different kind, which is DEC-009's second open question and is deliberately not answered here?
 - Where is evidence strength recorded, given that `EvidenceStrength` is defined but carried by no object and EvidenceAssessment holds only a list of evidence identifiers?
 - Should the downgrade from `unmet` to `unverified` be visible to the reviewer as a distinct event, rather than only as a recorded reason on the mapping?
-- Does `permissive` belong on the assessment configuration at all, or should it be a harness parameter like the checkpoint ablation in DEC-012?
+- ~~Does `permissive` belong on the assessment configuration at all, or should it be a harness parameter like the checkpoint ablation in DEC-012?~~ Answered by DEC-165: neither. The field selected nothing and is removed; the rules below are what runs, and the report now derives the policy's name from the table rather than from a setting. `permissive` is unimplemented, and the name follows the cells if a relaxed table is ever added.
 
 ## DEC-014: Keep the model interface provider-agnostic, with Anthropic as the default
 
@@ -11287,3 +11287,48 @@ Open Questions:
 
 - Whether the control should be pinned to a specific label rather than the most recent clean feed,
   so a stale control cannot silently score a new attack.
+
+## DEC-165: The report states the evidence policy the table implements, and the configuration field is removed
+
+Date: 2026-09-14
+
+Status: Accepted
+
+Decision:
+
+**`AssessmentConfiguration.evidence_threshold` is removed, and `EvidenceThreshold` with it.** Section 6 of `data-model.md` loses the row and the example line.
+
+**The report's provenance block states the policy that ran**, derived from DEC-013's outcome table by `evidence_policy_name` in `domain/outcomes.py`: a table under which `unverified` can reach a provisional finding is `permissive`, and one under which it cannot is `direct-or-confirmed`. `APPLIED_EVIDENCE_POLICY` is that derivation applied to `outcome_for`, and the scope block renders it.
+
+**`permissive` is not a configuration value, and is not implemented.** DEC-013's fourth open question — whether it belongs on the configuration or is a harness parameter like DEC-012's checkpoint ablation — is answered: neither, until something relaxes the table. When something does, the name follows the cells with no field to set, and an ablation is where it would be selected.
+
+Why:
+
+The field selected nothing. DEC-013's rules are enforced, thoroughly and unconditionally — `outcome_for` is total over all thirty cells, DEC-046 splits conditions 1 and 4 into Mapping Validation and 2 and 3 into Finding Consolidation, and `Finding` refuses a validation status no cell would produce a finding from. What none of that reads is the field. Every run applied `direct-or-confirmed` whatever the configuration said, and `report_rendering.py` printed the configuration.
+
+So the rendered claim was true only by the accident that the default matched the one implemented branch. Set the field to `permissive` — a value the model accepted — and the report would have said `permissive` while the pipeline applied the strict table. The one document that exists to carry provenance would have named a policy that did not run.
+
+The comment already sitting above that line says exactly this about the model profile: "The run's profile, not the configured default ... A report claiming a profile nobody used is a provenance error in the one document that exists to carry provenance." The next line down did the thing the comment warns against. The fix is to apply the comment one line further.
+
+Deriving the name rather than restating it follows this module's own idiom. `FINDING_VALIDATION_STATUSES` is computed from the table with the note that "a hardcoded set here would be the second opinion this module exists to prevent". A policy name written down beside the table is the same second opinion, and it is what drifted.
+
+`permissive` is dropped rather than implemented because nothing wants it. Its stated purpose was to measure "what a review without an evidence threshold would report, which is the baseline the evaluation plan's sections 13 and 14 compare against". The baselines that were actually built are prompt-shaped arms — generic, structured single-pass, whole-assessment — scored in `comparison.md`, and `permissive` appears in no evaluation page. Building the relaxation now would mean constructing the path by which a low-confidence finding rests on absence, which is the output DEC-009 exists to suppress, to serve a comparison that was met another way.
+
+Alternatives Considered:
+
+- Implement the relaxation so the field selects, which builds DEC-009's failure mode on request for a baseline already served
+- Remove the line as well as the field, which loses real provenance a report reader wants
+- Keep the field and gate on it, deferring the question of what `permissive` means
+- Leave the line and document that it is advisory, which is the unfalsifiable claim restated
+
+Tradeoffs:
+
+- The rendered value cannot vary today, because one table is implemented. It is falsifiable rather than variable: `evidence_policy_name` returns the other name for a table that reaches a finding from `unverified`, and a test passes it one.
+- Removing a required field is a schema change with no migration, which is safe only because no stored payload carried it; the field was constructed at runtime by `default_configuration`.
+- An operator can no longer state an intended policy distinct from the implemented one. That was the defect, not a capability.
+- DEC-013's text still describes two thresholds. It is amended by reference rather than rewritten, because its rules are what runs and only the selector is gone.
+
+Open Questions:
+
+- Should the scope block name the decision that fixes the policy, rather than the policy alone, so a reader can reach the rules from the report?
+- If a second table is ever implemented, does the non-authoritative marker DEC-012 puts in the header suffice, or does a relaxed evidence policy need its own?

@@ -26,14 +26,19 @@ turn an unfinished run into a passing one.
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from trace_ai.domain.control_mapping import SatisfactionStatus
 from trace_ai.domain.enums import ValidationStatus
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 __all__ = [
+    "APPLIED_EVIDENCE_POLICY",
     "FINDING_VALIDATION_STATUSES",
     "Outcome",
+    "evidence_policy_name",
     "outcome_for",
 ]
 
@@ -124,3 +129,34 @@ FINDING_VALIDATION_STATUSES: Final[frozenset[ValidationStatus]] = frozenset(
     for satisfaction in SatisfactionStatus
     if outcome_for(satisfaction, validation) is Outcome.PROVISIONAL_FINDING
 )
+
+
+def evidence_policy_name(
+    outcome: Callable[[SatisfactionStatus, ValidationStatus], Outcome],
+) -> str:
+    """Which of DEC-013's two thresholds a table implements, read off the table (DEC-165).
+
+    The distinguishing sentence is DEC-013's own: "`unverified` never produces a finding under
+    `direct-or-confirmed`", and under `permissive` a low-confidence finding built on absence
+    becomes reachable. So the name is a property of the cells, not a setting beside them, and
+    asking the table is the only way to get an answer that cannot drift from what runs.
+
+    Taking the table as an argument is what makes the answer falsifiable: both names are
+    reachable from this function, and `test_evidence_policy_name_reads_permissive_off_a_relaxed_table`
+    reaches the other one. A module-level constant computed inline would have been a third
+    instance of the defect this replaced.
+    """
+    if any(
+        outcome(SatisfactionStatus.UNVERIFIED, validation) is Outcome.PROVISIONAL_FINDING
+        for validation in ValidationStatus
+    ):
+        return "permissive"
+    return "direct-or-confirmed"
+
+
+# The evidence policy the pipeline applies, for the report's provenance block (DEC-165).
+#
+# Derived for the same reason `FINDING_VALIDATION_STATUSES` above is derived. It was a required
+# configuration field that selected nothing: every run applied this table whatever the field said,
+# and the report printed the field. The report now states what ran.
+APPLIED_EVIDENCE_POLICY: Final[str] = evidence_policy_name(outcome_for)

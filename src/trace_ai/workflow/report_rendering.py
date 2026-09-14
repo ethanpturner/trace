@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Final
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.base import now
 from trace_ai.domain.enums import Severity
+from trace_ai.domain.outcomes import APPLIED_EVIDENCE_POLICY
 from trace_ai.services.evidence.staleness import stale_citations
 
 if TYPE_CHECKING:
@@ -300,7 +301,10 @@ def render_report(
                 # provenance error in the one document that exists to carry provenance.
                 f"- Model profile: {versions.model_configuration}",
                 f"- Threat methodology: {assessment.configuration.threat_methodology}",
-                f"- Evidence threshold: {assessment.configuration.evidence_threshold.value}",
+                # The policy the outcome table implements, not a configured one: DEC-165 removed
+                # the field, which selected nothing while this line reported it. The comment above
+                # applies here too, and did not when it was written one line up.
+                f"- Evidence threshold: {APPLIED_EVIDENCE_POLICY}",
             ]
         ),
         "source_documents": _table(

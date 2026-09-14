@@ -115,9 +115,27 @@ one document that exists to carry provenance."
 `PERMISSIVE` is the type-A half: DEC-013 says it is "reachable only from the evaluation harness",
 and it is reachable from nothing.
 
-**Filed, not fixed** (#696). Enforcing DEC-013 changes which findings survive, which is a design
-decision and not an audit's to improvise. Removing the report line is also a decision, because
-DEC-035 fixes the report's sections and their owners.
+**Done:** DEC-165. The audit's framing was half wrong in a way worth recording: DEC-013's rules
+*are* enforced — `outcome_for` is total over all thirty cells, DEC-046 splits the four `unmet`
+conditions across two nodes, and `Finding` refuses a validation status no cell reaches. What none
+of that reads is the field. Every run applied `direct-or-confirmed` whatever the configuration
+said, so the rendered claim was true only by the accident that the default matched the single
+implemented branch; setting the field to `permissive` would have made the report name a policy
+that did not run.
+
+The field and the enum are removed, and the scope block now renders `APPLIED_EVIDENCE_POLICY`,
+derived from the table by `evidence_policy_name` in `domain/outcomes.py` — the idiom that module
+already used for `FINDING_VALIDATION_STATUSES`, whose comment calls a hardcoded restatement "the
+second opinion this module exists to prevent". The negative half is
+`test_evidence_policy_name_reads_permissive_off_a_relaxed_table`: pass the function a table where
+`unverified` reaches a finding and it returns `permissive`, so the name can come out otherwise.
+Closes #696.
+
+**The generalisation, for the next pass.** A rendered value taken from configuration rather than
+from what ran is this defect wherever it appears. The same block already had the fix one line
+above, for the model profile, with a comment explaining why — and the next line down did not
+follow it. Reviewing a claim in isolation would not have caught that; reading the block as a whole
+did.
 
 ## Examined and cleared
 

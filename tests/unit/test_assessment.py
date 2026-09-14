@@ -26,7 +26,6 @@ from trace_ai.domain.assessment import (
     WORKFLOW_VERSION,
     Assessment,
     AssessmentConfiguration,
-    EvidenceThreshold,
     default_configuration,
     new_assessment,
 )
@@ -60,7 +59,6 @@ def test_a_checkpoint_setting_is_refused(field: str) -> None:
                 "maximum_retries_per_node": 2,
                 "retain_debug_artifacts": False,
                 "enable_external_tracing": False,
-                "evidence_threshold": "direct-or-confirmed",
                 field: False,
             }
         )
@@ -92,11 +90,9 @@ def test_the_documented_example_constructs_as_written() -> None:
             "maximum_retries_per_node": 2,
             "retain_debug_artifacts": True,
             "enable_external_tracing": False,
-            "evidence_threshold": "direct-or-confirmed",
         }
     )
     assert configuration.maximum_cost == Decimal("8.00")
-    assert configuration.evidence_threshold is EvidenceThreshold.DIRECT_OR_CONFIRMED
 
 
 def test_maximum_cost_is_decimal_and_exact() -> None:
@@ -149,17 +145,10 @@ def test_the_optional_limits_default_to_absent() -> None:
     assert configuration.maximum_cost is None
 
 
-def test_evidence_threshold_accepts_only_the_two_dec_013_values() -> None:
-    assert {member.value for member in EvidenceThreshold} == {"direct-or-confirmed", "permissive"}
-    with pytest.raises(ValidationError):
-        a_configuration(evidence_threshold="lenient")
-
-
 def test_the_default_configuration_matches_the_corpus() -> None:
     """The defaults live in a factory, not on the fields, because section 6 marks them required."""
     configuration = default_configuration("primary-development", "stride-scenario-based")
     assert configuration.maximum_retries_per_node == DEFAULT_MAXIMUM_RETRIES_PER_NODE == 2
-    assert configuration.evidence_threshold is EvidenceThreshold.DIRECT_OR_CONFIRMED
     assert configuration.enable_external_tracing is False
     assert configuration.retain_debug_artifacts is False
 

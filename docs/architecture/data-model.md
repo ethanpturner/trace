@@ -558,7 +558,6 @@ Stores settings that affect an assessment run.
 | maximum_retries_per_node | integer | Yes | Retry limit |
 | retain_debug_artifacts | boolean | Yes | Preserve debugging output |
 | enable_external_tracing | boolean | Yes | Allow configured external tracing |
-| evidence_threshold | string | Yes | Minimum evidence policy for findings. `direct-or-confirmed` or `permissive` (DEC-013) |
 | evidence_age_threshold_days | integer | No | Days after which a cited evidence capture is flagged stale in the report and the view; flags only, nothing suppressed (DEC-118) |
 
 ## Example
@@ -576,8 +575,6 @@ maximum_retries_per_node: 2
 retain_debug_artifacts: true
 
 enable_external_tracing: false
-
-evidence_threshold: direct-or-confirmed
 
 ## Note on the example limits
 
