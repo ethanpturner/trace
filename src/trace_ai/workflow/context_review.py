@@ -512,11 +512,13 @@ def build_context_review_package(
 def _routing_reasons(handle: AssessmentHandle) -> dict[str, tuple[str, ...]]:
     """The per-subject routing reasons (DEC-062), derived from persisted state at build time.
 
-    `injection_flag` (issue #274) and `revisit_due` (DEC-061) are derived here; the other codes
-    attach as their inputs are built. The reasons are computed, never read from storage.
+    Five of DEC-062's six codes are derived here. `no_evidence` is not: which persisted field
+    produces it was never fixed, and choosing one now is a design decision rather than a
+    completion (#694). The reasons are computed, never read from storage.
     """
     from trace_ai.workflow.reason_codes import (
         ReasonCode,
+        contradicted_subjects,
         injection_flagged_subjects,
         low_confidence_subjects,
         report_derived_subjects,
@@ -532,6 +534,8 @@ def _routing_reasons(handle: AssessmentHandle) -> dict[str, tuple[str, ...]]:
         reasons.setdefault(object_id, []).append(ReasonCode.LOW_CONFIDENCE.value)
     for object_id in revisit_due_claims(handle):
         reasons.setdefault(object_id, []).append(ReasonCode.REVISIT_DUE.value)
+    for object_id in contradicted_subjects(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.CONTRADICTED.value)
     return {object_id: tuple(codes) for object_id, codes in reasons.items()}
 
 

@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ReasonCode",
+    "contradicted_subjects",
     "injection_flagged_subjects",
     "low_confidence_subjects",
     "report_derived_subjects",
@@ -99,6 +100,27 @@ def injection_flagged_subjects(handle: AssessmentHandle) -> set[str]:
         if object_id is not None and cited & evidence_in_flagged:
             flagged.add(str(object_id))
     return flagged
+
+
+def contradicted_subjects(handle: AssessmentHandle) -> set[str]:
+    """Every context claim a `SourceObservation` of kind `contradiction` names (DEC-062).
+
+    The derivation is the field itself, the same shape as `low_confidence_subjects`: a claim the
+    pipeline marked `contradicted` is one two passages disagree about, and DEC-062's own reasoning
+    names it — "this claim is here because it is contradicted" should be stated rather than
+    reconstructed by the reviewer against the vocabulary in their head.
+
+    The status is the subject rather than the observation, because the link runs one way by design
+    (`domain/source_observation.py`): a claim cannot see what contradicts it, and
+    `unsupported_contradictions` is what detects the two disagreeing. A claim marked `contradicted`
+    that no observation supports is a validation failure before this code is ever read, so reading
+    the status here cannot surface an unsupported one.
+    """
+    return {
+        claim.id
+        for claim in handle.objects.list(ContextClaim)
+        if claim.status is ClaimStatus.CONTRADICTED
+    }
 
 
 def revisit_due_findings(handle: AssessmentHandle, as_of: date) -> set[str]:

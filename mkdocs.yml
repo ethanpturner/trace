@@ -59,6 +59,7 @@ nav:
       - architecture/evaluation-plan.md
       - architecture/threat-model.md
       - architecture/adversarial-defence.md
+      - architecture/unfailable-checks.md
       - architecture/decision-log.md
   - Product:
       - product/vision.md

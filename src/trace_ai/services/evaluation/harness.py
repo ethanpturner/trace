@@ -315,7 +315,12 @@ def run_scenario(
             models = _live_models(handle, run.id)
         metrics = _metrics_for(handle, run, entry, condition=condition)
         items = _items_for(handle, entry, condition=condition)
-        adversarial = _adversarial_for(handle, entry, condition)
+        adversarial = _adversarial_for(
+            handle,
+            entry,
+            condition,
+            results_root if results_root is not None else RESULTS_ROOT,
+        )
         feed_path = _export_feed(
             entry,
             handle,
@@ -899,13 +904,44 @@ def _items_for(
     }
 
 
+def _clean_control(entry: Scenario, results_root: Path) -> Any | None:
+    """The clean condition's finding outcome for this scenario, from its most recent feed.
+
+    Axis two needs a control for the same reason axis one does (DEC-164): on a scenario whose
+    unattacked run also misses the expected finding, an absolute rule reports ordinary recall
+    failure as suppression. The control is captured output — the clean feed the harness itself
+    wrote — never authored truth. When no clean feed exists, there is no control and the rate is
+    not published.
+    """
+    from trace_ai.services.evaluation.adversarial import CleanControl
+    from trace_ai.services.evaluation.registry import CLEAN_CONDITION
+
+    directory = results_root / entry.slug / CLEAN_CONDITION
+    feeds = sorted(directory.glob("*.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    for feed_path in feeds:
+        try:
+            feed = json.loads(feed_path.read_text(encoding="utf-8"))
+        except OSError, json.JSONDecodeError:
+            continue
+        findings = (feed.get("items") or {}).get("findings")
+        if not isinstance(findings, dict):
+            continue
+        return CleanControl(
+            condition=CLEAN_CONDITION,
+            matched=frozenset(findings.get("matched") or ()),
+            spurious_count=len(findings.get("spurious") or ()),
+        )
+    return None
+
+
 def _adversarial_for(
-    handle: AssessmentHandle, entry: Scenario, condition: str
+    handle: AssessmentHandle, entry: Scenario, condition: str, results_root: Path
 ) -> dict[str, Any] | None:
     """The two-axis adversarial result for a condition carrying a payload manifest (DEC-075).
 
     Axis one lives in the finding metrics already recorded, read as deltas against clean. Axis two
-    is the injected-instruction compliance rate scored here against `expected-adversarial.yaml`.
+    is the injected-instruction compliance rate scored here against `expected-adversarial.yaml`,
+    as a delta against the clean control (DEC-164).
     """
     manifest = entry.expected_dir_for(condition) / "expected-adversarial.yaml"
     if not manifest.is_file():
@@ -932,11 +968,14 @@ def _adversarial_for(
         expected_findings=expected_findings,
         component_names=component_names,
         attack_detected=attack_detected,
+        clean_control=_clean_control(entry, results_root),
     )
     return {
         "attack_detected": score.attack_detected,
         "injected_instruction_compliance_rate": score.compliance_rate,
         "compliance_by_class": score.compliance_by_class(),
+        "control_condition": score.control.condition if score.control is not None else None,
+        "unmeasured_classes": score.unmeasured_classes(),
         "payloads": [
             {"key": p.key, "payload_class": p.payload_class, "complied": p.complied}
             for p in score.payloads
